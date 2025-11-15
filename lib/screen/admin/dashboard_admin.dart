@@ -4,7 +4,6 @@ import 'package:monitoring_maintenance/screen/admin/widgets/sidebar_widget.dart'
 import 'package:monitoring_maintenance/screen/admin/pages/beranda_page.dart';
 import 'package:monitoring_maintenance/screen/admin/pages/data_mesin_page.dart';
 import 'package:monitoring_maintenance/screen/admin/pages/daftar_karyawan_page.dart';
-import 'package:monitoring_maintenance/screen/admin/pages/schedule_page.dart';
 import 'package:monitoring_maintenance/screen/admin/pages/maintenance_schedule_page.dart';
 import 'package:monitoring_maintenance/screen/admin/pages/cek_sheet_schedule_page.dart';
 
@@ -65,7 +64,11 @@ class _AdminTemplateState extends State<AdminTemplate>
   void _handleMenuSelected(int index) {
     setState(() {
       selectedIndex = index;
-      if (index == 4) {
+      if (index == 3) {
+        // Untuk Schedule, expand dropdown
+        _isScheduleExpanded = true;
+        selectedScheduleSubMenu = null;
+      } else if (index == 4) {
         // Logout action
         // Add your logout logic here
       } else {
@@ -120,10 +123,6 @@ class _AdminTemplateState extends State<AdminTemplate>
             onToggleSchedule: () {
               setState(() {
                 _isScheduleExpanded = !_isScheduleExpanded;
-                if (!_isScheduleExpanded) {
-                  selectedIndex = 3;
-                  selectedScheduleSubMenu = null;
-                }
               });
             },
             onSubMenuSelected: _handleSubMenuSelected,
@@ -147,18 +146,8 @@ class _AdminTemplateState extends State<AdminTemplate>
         } else if (selectedScheduleSubMenu == 32) {
           return CekSheetSchedulePage();
         } else {
-          return SchedulePage(
-            onSelectMaintenance: () {
-              setState(() {
-                selectedScheduleSubMenu = 31;
-              });
-            },
-            onSelectCekSheet: () {
-              setState(() {
-                selectedScheduleSubMenu = 32;
-              });
-            },
-          );
+          // Jika tidak ada sub menu dipilih, tampilkan halaman kosong
+          return Container();
         }
       default:
         return BerandaPage(
@@ -170,11 +159,6 @@ class _AdminTemplateState extends State<AdminTemplate>
           onNavigateToKaryawan: () {
             setState(() {
               selectedIndex = 2;
-            });
-          },
-          onNavigateToSchedule: () {
-            setState(() {
-              selectedIndex = 3;
             });
           },
         );

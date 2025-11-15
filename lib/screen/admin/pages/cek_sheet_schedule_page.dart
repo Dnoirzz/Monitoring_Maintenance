@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
 import 'kalender_pengecekan_page.dart';
 
-class CekSheetSchedulePage extends StatelessWidget {
+class CekSheetSchedulePage extends StatefulWidget {
+  @override
+  _CekSheetSchedulePageState createState() => _CekSheetSchedulePageState();
+}
+
+class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
+  final ScrollController _horizontalScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _horizontalScrollController.dispose();
+    super.dispose();
+  }
+
   // Data mentah dengan detail per bagian
   final List<Map<String, dynamic>> _rawData = [
     {
@@ -126,11 +139,16 @@ class CekSheetSchedulePage extends StatelessWidget {
                 ),
               ],
             ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+            child: Scrollbar(
+              controller: _horizontalScrollController,
+              thumbVisibility: true,
               child: SingleChildScrollView(
-                scrollDirection: Axis.vertical,
-                child: _buildCekSheetTable(context),
+                controller: _horizontalScrollController,
+                scrollDirection: Axis.horizontal,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: _buildCekSheetTable(context),
+                ),
               ),
             ),
           ),

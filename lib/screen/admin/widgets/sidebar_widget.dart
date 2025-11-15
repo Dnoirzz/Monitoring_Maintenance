@@ -128,7 +128,7 @@ class SidebarWidget extends StatelessWidget {
   }
 
   Widget _buildScheduleMenu() {
-    bool isSelected = selectedIndex == 3;
+    bool isSelected = selectedIndex == 5;
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
