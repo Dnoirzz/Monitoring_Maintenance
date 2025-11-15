@@ -1,184 +1,143 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: KomponenPage(),
+  ));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Aplikasi Monitoring Maintenance Mesin',
-      theme: ThemeData(
-        fontFamily: 'Arial',
-        scaffoldBackgroundColor: Colors.white,
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF0A9C5D),
-          secondary: Color(0xFF022415),
-        ),
-        useMaterial3: true,
-      ),
-      home: const LoginPage(),
-    );
-  }
-}
-
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+class KomponenPage extends StatelessWidget {
+  const KomponenPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0A9C5D), Color(0xFF022415)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Text(
-                      'Aplikasi Monitoring\nMaintenance Mesin',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 70),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(36),
-                      topRight: Radius.circular(36),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 25,
-                        offset: const Offset(0, 12),
-                      ),
-                    ],
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(28, 36, 28, 32),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Center(
-                          child: Text(
-                            'LOGIN',
-                            style: TextStyle(
-                              color: Color(0xFF078C51),
-                              fontSize: 35,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-                        const _LoginTextField(
-                          hintText: 'E-mail atau nomor telepon',
-                          textInputType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: 18),
-                        const _LoginTextField(
-                          hintText: 'Password',
-                          obscureText: true,
-                        ),
-                        const SizedBox(height: 32),
-                        SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0A9C5D),
-                              foregroundColor: Colors.white,
-                              shape: const StadiumBorder(),
-                              elevation: 0,
-                            ),
-                            onPressed: () {},
-                            child: const Text(
-                              'LOGIN',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: const [
+          Text('Nomor Aset:-', style: TextStyle(fontSize: 16)),
+          SizedBox(height: 6),
+          Text('Bagian Mesin', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 20),
+          ItemPanel(
+            title: 'Roll Atas',
+            data: [
+              ['Bearing', 'SKF 6203'],
+              ['Shaft', 'Stainless Ø20'],
+              ['Baut Penahan', 'M8 x 25'],
             ],
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _LoginTextField extends StatelessWidget {
-  const _LoginTextField({
-    required this.hintText,
-    this.textInputType,
-    this.obscureText = false,
+class ItemPanel extends StatefulWidget {
+  final String title;
+  final List<List<String>> data;
+
+  const ItemPanel({
+    super.key,
+    required this.title,
+    required this.data,
   });
 
-  final String hintText;
-  final TextInputType? textInputType;
-  final bool obscureText;
+  @override
+  State<ItemPanel> createState() => _ItemPanelState();
+}
+
+class _ItemPanelState extends State<ItemPanel> {
+  late List<List<String>> rows;
+
+  @override
+  void initState() {
+    super.initState();
+    rows = widget.data.map((e) => [...e]).toList();
+  }
+
+  void editRow(int index) {
+    final controller = TextEditingController(text: rows[index][1]);
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text('Ubah Komponen'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(labelText: 'Komponen Digunakan'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  rows[index][1] = controller.text.trim();
+                });
+                Navigator.pop(context);
+              },
+              child: const Text('SIMPAN'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      keyboardType: textInputType,
-      obscureText: obscureText,
-      decoration: InputDecoration(
-        hintText: hintText,
-        filled: true,
-        fillColor: const Color(0xFFF2F2F2),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(bottom: 10),
+      title: Text(widget.title, style: const TextStyle(fontSize: 16)),
+      children: [
+        Table(
+          border: TableBorder.all(color: Colors.black54, width: 1),
+          columnWidths: const {
+            0: FlexColumnWidth(2),
+            1: FlexColumnWidth(3),
+            2: FlexColumnWidth(1),
+          },
+          children: [
+            TableRow(
+              decoration: BoxDecoration(color: Colors.grey.shade200),
+              children: const [
+                Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text('Bagian Komponen', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text('Komponen Digunakan', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text('Edit', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            ...List.generate(rows.length, (i) {
+              return TableRow(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(rows[i][0]),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(rows[i][1]),
+                  ),
+                  IconButton(
+                    onPressed: () => editRow(i),
+                    icon: const Icon(Icons.edit, size: 20),
+                  )
+                ],
+              );
+            }),
+          ],
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: Color(0xFF0A9C5D),
-            width: 1.4,
-          ),
-        ),
-      ),
-      style: const TextStyle(
-        color: Color(0xFF022415),
-        fontSize: 14,
-      ),
+      ],
     );
   }
 }
