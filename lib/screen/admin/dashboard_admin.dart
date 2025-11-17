@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:monitoring_maintenance/screen/admin/widgets/header_widget.dart';
 import 'package:monitoring_maintenance/screen/admin/widgets/sidebar_widget.dart';
 import 'package:monitoring_maintenance/screen/admin/pages/beranda_page.dart';
-import 'package:monitoring_maintenance/screen/admin/pages/data_mesin_page.dart';
+import 'package:monitoring_maintenance/screen/admin/pages/data_assets_page.dart';
 import 'package:monitoring_maintenance/screen/admin/pages/daftar_karyawan_page.dart';
 import 'package:monitoring_maintenance/screen/admin/pages/maintenance_schedule_page.dart';
 import 'package:monitoring_maintenance/screen/admin/pages/cek_sheet_schedule_page.dart';

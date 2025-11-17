@@ -79,7 +79,7 @@ class SidebarWidget extends StatelessWidget {
                   ),
                   SizedBox(height: 20),
                   _buildMenuItem(Icons.home, "Beranda", 0),
-                  _buildMenuItem(Icons.build, "Data Mesin", 1),
+                  _buildMenuItem(Icons.miscellaneous_services_outlined, "Assets", 1),
                   _buildMenuItem(Icons.group, "Daftar Karyawan", 2),
                   _buildScheduleMenu(),
                   Spacer(),

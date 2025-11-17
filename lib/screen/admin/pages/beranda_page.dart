@@ -39,9 +39,9 @@ class _BerandaPageState extends State<BerandaPage> {
             children: [
               _buildCard(
                 index: 0,
-                icon: Icons.build,
-                title: "Data Mesin",
-                subtitle: "Kelola data mesin",
+                icon: Icons.miscellaneous_services_outlined,
+                title: "Assets",
+                subtitle: "Kelola data assets",
                 color: Color(0xFF0A9C5D),
                 onTap: widget.onNavigateToDataMesin,
               ),
