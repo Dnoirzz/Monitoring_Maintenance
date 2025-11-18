@@ -161,6 +161,18 @@ class _AdminTemplateState extends State<AdminTemplate>
               selectedIndex = 2;
             });
           },
+          onNavigateToMaintenanceSchedule: () {
+            setState(() {
+              selectedIndex = 3;
+              selectedScheduleSubMenu = 31;
+            });
+          },
+          onNavigateToCekSheetSchedule: () {
+            setState(() {
+              selectedIndex = 3;
+              selectedScheduleSubMenu = 32;
+            });
+          },
         );
     }
   }
