@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class DataMesinPage extends StatefulWidget {
   @override
@@ -239,8 +241,10 @@ class _DataMesinPageState extends State<DataMesinPage> {
   void _showAddAssetForm(BuildContext context) {
     final _formKey = GlobalKey<FormState>();
     final _namaAsetController = TextEditingController();
+    final ImagePicker _imagePicker = ImagePicker();
 
     String? _selectedJenisAset;
+    XFile? _selectedImage;
 
     // List bagian aset - setiap bagian memiliki nama dan list komponen
     // Setiap komponen memiliki nama dan spesifikasi
@@ -297,6 +301,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                             onPressed: () {
                               Navigator.of(dialogContext).pop();
                               _namaAsetController.dispose();
+                              _selectedImage = null;
                             },
                           ),
                         ],
@@ -701,7 +706,118 @@ class _DataMesinPageState extends State<DataMesinPage> {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 8),
+                              SizedBox(height: 24),
+
+                              // Divider
+                              Divider(thickness: 2, color: Colors.grey[300]),
+                              SizedBox(height: 16),
+
+                              // Upload Gambar Asset
+                              Text(
+                                'Gambar Asset',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF022415),
+                                ),
+                              ),
+                              SizedBox(height: 16),
+
+                              // Preview dan Upload Button
+                              Container(
+                                padding: EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.grey[300]!,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: Colors.grey[50],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Preview Image
+                                    if (_selectedImage != null)
+                                      Container(
+                                        margin: EdgeInsets.only(bottom: 16),
+                                        width: double.infinity,
+                                        height: 200,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: Colors.grey[300]!,
+                                          ),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Image.file(
+                                            File(_selectedImage!.path),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      ),
+                                    // Upload Button
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: OutlinedButton.icon(
+                                        onPressed: () async {
+                                          try {
+                                            final XFile? image =
+                                                await _imagePicker.pickImage(
+                                              source: ImageSource.gallery,
+                                              imageQuality: 85,
+                                            );
+                                            if (image != null) {
+                                              setDialogState(() {
+                                                _selectedImage = image;
+                                              });
+                                            }
+                                          } catch (e) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Gagal memilih gambar: ${e.toString()}',
+                                                ),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        icon: Icon(Icons.upload_file),
+                                        label: Text('Upload Foto'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Color(0xFF0A9C5D),
+                                          side: BorderSide(
+                                            color: Color(0xFF0A9C5D),
+                                          ),
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    if (_selectedImage != null)
+                                      Padding(
+                                        padding: EdgeInsets.only(top: 12),
+                                        child: TextButton.icon(
+                                          onPressed: () {
+                                            setDialogState(() {
+                                              _selectedImage = null;
+                                            });
+                                          },
+                                          icon: Icon(Icons.delete_outline),
+                                          label: Text('Hapus Gambar'),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Colors.red,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 24),
+
                               Text(
                                 '* Wajib diisi',
                                 style: TextStyle(
@@ -732,6 +848,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                             onPressed: () {
                               Navigator.of(dialogContext).pop();
                               _namaAsetController.dispose();
+                              _selectedImage = null;
                             },
                             child: Text(
                               'Batal',
@@ -791,6 +908,9 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
                                 // Tambahkan data ke _rawData - setiap komponen menjadi satu row
                                 updateWidgetState(() {
+                                  // Simpan path gambar jika ada
+                                  String? gambarPath = _selectedImage?.path;
+                                  
                                   for (var bagian in bagianAsetList) {
                                     String namaBagian =
                                         bagian['namaBagian'] as String;
@@ -808,7 +928,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                                             komponen['namaKomponen'] as String,
                                         "produk_yang_digunakan":
                                             komponen['spesifikasi'] as String,
-                                        "gambar_aset": null,
+                                        "gambar_aset": gambarPath,
                                       });
                                     }
                                   }
@@ -816,6 +936,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
                                 Navigator.of(dialogContext).pop();
                                 _namaAsetController.dispose();
+                                _selectedImage = null;
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -1238,18 +1359,27 @@ class _DataMesinPageState extends State<DataMesinPage> {
       ),
       padding: const EdgeInsets.all(4),
       alignment: Alignment.center,
-      child:
-          imagePath != null
+      child: imagePath != null
+          ? (imagePath.startsWith('assets/')
               ? Image.asset(
-                imagePath,
-                width: width - 8,
-                height: height - 8,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.image_not_supported, size: 24);
-                },
-              )
-              : Icon(Icons.image, size: 24, color: Colors.grey),
+                  imagePath,
+                  width: width - 8,
+                  height: height - 8,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.image_not_supported, size: 24);
+                  },
+                )
+              : Image.file(
+                  File(imagePath),
+                  width: width - 8,
+                  height: height - 8,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.image_not_supported, size: 24);
+                  },
+                ))
+          : Icon(Icons.image, size: 24, color: Colors.grey),
     );
   }
 
