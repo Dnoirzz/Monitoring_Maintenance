@@ -12,7 +12,7 @@ class SidebarWidget extends StatelessWidget {
   final VoidCallback onOverlayTap;
 
   const SidebarWidget({
-    Key? key,
+    super.key,
     required this.isOpen,
     required this.animation,
     required this.selectedIndex,
@@ -22,7 +22,7 @@ class SidebarWidget extends StatelessWidget {
     required this.onToggleSchedule,
     required this.onSubMenuSelected,
     required this.onOverlayTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

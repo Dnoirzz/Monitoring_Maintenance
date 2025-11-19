@@ -8,6 +8,8 @@ import 'package:monitoring_maintenance/screen/admin/pages/maintenance_schedule_p
 import 'package:monitoring_maintenance/screen/admin/pages/cek_sheet_schedule_page.dart';
 
 class AdminApp extends StatelessWidget {
+  const AdminApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -18,6 +20,8 @@ class AdminApp extends StatelessWidget {
 }
 
 class AdminTemplate extends StatefulWidget {
+  const AdminTemplate({super.key});
+
   @override
   _AdminTemplateState createState() => _AdminTemplateState();
 }

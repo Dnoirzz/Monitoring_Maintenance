@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
-class DaftarKaryawanPage extends StatelessWidget {
-  final List<Map<String, String>> karyawan = [
+class DaftarKaryawanPage extends StatefulWidget {
+  const DaftarKaryawanPage({super.key});
+
+  @override
+  State<DaftarKaryawanPage> createState() => _DaftarKaryawanPageState();
+}
+
+class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
+  final List<Map<String, String>> _karyawan = [
     {
       "nama": "Ramadhan F",
       "mesin": "Creeper 1",
@@ -42,11 +49,7 @@ class DaftarKaryawanPage extends StatelessWidget {
 
         // Button Tambah
         ElevatedButton.icon(
-          onPressed: () {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text("Fitur Tambah Karyawan")));
-          },
+          onPressed: () => _showTambahKaryawanModal(context),
           icon: Icon(Icons.add),
           label: Text("Tambah"),
           style: ElevatedButton.styleFrom(
@@ -105,8 +108,8 @@ class DaftarKaryawanPage extends StatelessWidget {
 
     List<Widget> dataRows = [];
 
-    for (int i = 0; i < karyawan.length; i++) {
-      var item = karyawan[i];
+    for (int i = 0; i < _karyawan.length; i++) {
+      var item = _karyawan[i];
       dataRows.add(
         Row(
           children: [
@@ -174,6 +177,299 @@ class DaftarKaryawanPage extends StatelessWidget {
           ...dataRows,
         ],
       ),
+    );
+  }
+
+  void _showTambahKaryawanModal(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    final TextEditingController namaController = TextEditingController();
+    final TextEditingController telpController = TextEditingController();
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+
+    final List<TextEditingController> controllers = [
+      namaController,
+      telpController,
+      emailController,
+      passwordController,
+    ];
+
+    final List<String> mesinOptions = [
+      "Creeper 1",
+      "Creeper 2",
+      "Mixing Machine",
+      "Generator Set",
+      "Excavator",
+    ];
+    String selectedMesin = mesinOptions.first;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 32,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: StatefulBuilder(
+            builder: (childContext, setStateDialog) {
+              final double fieldWidth = _dialogFieldWidth(childContext);
+              return ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 26,
+                  ),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0A9C5D).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(
+                                Icons.badge_rounded,
+                                color: Color(0xFF0A9C5D),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  "Tambah Karyawan",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF022415),
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  "Lengkapi informasi karyawan untuk akses dashboard",
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 18,
+                          children: [
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _modalTextField(
+                                controller: namaController,
+                                label: "Nama Lengkap",
+                                icon: Icons.person_outline,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return "Nama wajib diisi";
+                                  }
+                                  if (value.trim().split(' ').length < 2) {
+                                    return "Masukkan nama lengkap";
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: DropdownButtonFormField<String>(
+                                value: selectedMesin,
+                                decoration: _modalInputDecoration(
+                                  label: "Mesin yang Dikerjakan",
+                                  icon: Icons.precision_manufacturing_outlined,
+                                ),
+                                items:
+                                    mesinOptions
+                                        .map(
+                                          (mesin) => DropdownMenuItem(
+                                            value: mesin,
+                                            child: Text(mesin),
+                                          ),
+                                        )
+                                        .toList(),
+                                onChanged: (value) {
+                                  if (value == null) return;
+                                  setStateDialog(() => selectedMesin = value);
+                                },
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _modalTextField(
+                                controller: telpController,
+                                label: "Nomor Telepon",
+                                icon: Icons.phone_outlined,
+                                keyboardType: TextInputType.phone,
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _modalTextField(
+                                controller: emailController,
+                                label: "Email",
+                                icon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return "Email wajib diisi";
+                                  }
+                                  final regex = RegExp(r'^.+@.+\..+$');
+                                  if (!regex.hasMatch(value.trim())) {
+                                    return "Format email tidak valid";
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _modalTextField(
+                                controller: passwordController,
+                                label: "Password",
+                                icon: Icons.lock_outline,
+                                obscureText: true,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return "Password wajib diisi";
+                                  }
+                                  if (value.length < 6) {
+                                    return "Minimal 6 karakter";
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 28),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed:
+                                  () => Navigator.of(dialogContext).pop(),
+                              child: const Text("Batal"),
+                            ),
+                            const SizedBox(width: 12),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                if (!(formKey.currentState?.validate() ??
+                                    false)) {
+                                  return;
+                                }
+                                setState(() {
+                                  _karyawan.add({
+                                    "nama": namaController.text.trim(),
+                                    "mesin": selectedMesin,
+                                    "telp": telpController.text.trim(),
+                                    "email": emailController.text.trim(),
+                                    "password": passwordController.text.trim(),
+                                  });
+                                });
+                                Navigator.of(dialogContext).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "Karyawan ${namaController.text.trim()} ditambahkan",
+                                    ),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0A9C5D),
+                                foregroundColor: Colors.white,
+                              ),
+                              label: const Text("Simpan"),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    ).whenComplete(() {
+      for (final controller in controllers) {
+        controller.dispose();
+      }
+    });
+  }
+
+  double _dialogFieldWidth(BuildContext context) {
+    final double maxWidth = MediaQuery.of(context).size.width;
+    return maxWidth > 720 ? 240 : double.infinity;
+  }
+
+  Widget _modalTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      validator:
+          validator ??
+          (value) {
+            if (value == null || value.trim().isEmpty) {
+              return "$label wajib diisi";
+            }
+            return null;
+          },
+      decoration: _modalInputDecoration(label: label, icon: icon),
+    );
+  }
+
+  InputDecoration _modalInputDecoration({
+    required String label,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: const Color(0xFF0A9C5D)),
+      filled: true,
+      fillColor: const Color(0xFFF7F9FB),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF0A9C5D), width: 1.6),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
     );
   }
 

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class KalenderPengecekanPage extends StatefulWidget {
   final Map<String, dynamic> item;
 
-  KalenderPengecekanPage({required this.item});
+  const KalenderPengecekanPage({super.key, required this.item});
 
   @override
   _KalenderPengecekanPageState createState() => _KalenderPengecekanPageState();

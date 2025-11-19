@@ -6,11 +6,11 @@ class HeaderWidget extends StatelessWidget {
   final Widget? trailing;
 
   const HeaderWidget({
-    Key? key,
+    super.key,
     required this.title,
     required this.onMenuPressed,
     this.trailing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

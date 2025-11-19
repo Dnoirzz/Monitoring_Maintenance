@@ -4,7 +4,7 @@ class BerandaPage extends StatefulWidget {
   final VoidCallback onNavigateToDataMesin;
   final VoidCallback onNavigateToKaryawan;
 
-  BerandaPage({
+  const BerandaPage({super.key, 
     required this.onNavigateToDataMesin,
     required this.onNavigateToKaryawan,
   });
@@ -14,7 +14,7 @@ class BerandaPage extends StatefulWidget {
 }
 
 class _BerandaPageState extends State<BerandaPage> {
-  List<bool> _isHovered = [false, false];
+  final List<bool> _isHovered = [false, false];
 
   @override
   Widget build(BuildContext context) {
