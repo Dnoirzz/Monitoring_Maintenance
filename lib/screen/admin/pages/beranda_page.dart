@@ -19,14 +19,13 @@ class BerandaPage extends StatefulWidget {
 }
 
 class _BerandaPageState extends State<BerandaPage> {
-  // Mock data - nanti bisa diganti dengan data dari API
+  final List<bool> _isHovered = [false, false];
   final int totalAssets = 45;
   final int totalKaryawan = 28;
   final int pendingRequests = 8;
   final int activeMaintenance = 5;
   final int overdueSchedule = 3;
 
-  // Track hover state for menu cards
   List<bool> _isMenuHovered = List.generate(4, (index) => false);
 
   @override
