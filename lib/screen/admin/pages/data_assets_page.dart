@@ -252,22 +252,47 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
     // Filter berdasarkan jenis aset
     if (_filterJenisAset != null && _filterJenisAset!.isNotEmpty) {
-      filtered = filtered.where((item) {
-        return item["jenis_aset"]?.toString() == _filterJenisAset;
-      }).toList();
+      filtered =
+          filtered.where((item) {
+            return item["jenis_aset"]?.toString() == _filterJenisAset;
+          }).toList();
     }
 
     // Filter berdasarkan search query
     if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((item) {
-        return item["nama_aset"]?.toString().toLowerCase().contains(_searchQuery) == true ||
-            item["jenis_aset"]?.toString().toLowerCase().contains(_searchQuery) == true ||
-            item["bagian_aset"]?.toString().toLowerCase().contains(_searchQuery) == true ||
-            item["komponen_aset"]?.toString().toLowerCase().contains(_searchQuery) == true ||
-            item["produk_yang_digunakan"]?.toString().toLowerCase().contains(_searchQuery) == true ||
-            item["maintenance_terakhir"]?.toString().toLowerCase().contains(_searchQuery) == true ||
-            item["maintenance_selanjutnya"]?.toString().toLowerCase().contains(_searchQuery) == true;
-      }).toList();
+      filtered =
+          filtered.where((item) {
+            return item["nama_aset"]?.toString().toLowerCase().contains(
+                      _searchQuery,
+                    ) ==
+                    true ||
+                item["jenis_aset"]?.toString().toLowerCase().contains(
+                      _searchQuery,
+                    ) ==
+                    true ||
+                item["bagian_aset"]?.toString().toLowerCase().contains(
+                      _searchQuery,
+                    ) ==
+                    true ||
+                item["komponen_aset"]?.toString().toLowerCase().contains(
+                      _searchQuery,
+                    ) ==
+                    true ||
+                item["produk_yang_digunakan"]
+                        ?.toString()
+                        .toLowerCase()
+                        .contains(_searchQuery) ==
+                    true ||
+                item["maintenance_terakhir"]?.toString().toLowerCase().contains(
+                      _searchQuery,
+                    ) ==
+                    true ||
+                item["maintenance_selanjutnya"]
+                        ?.toString()
+                        .toLowerCase()
+                        .contains(_searchQuery) ==
+                    true;
+          }).toList();
     }
 
     // Sort data
@@ -275,7 +300,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
       filtered.sort((a, b) {
         var aValue = a[_sortColumn]?.toString() ?? '';
         var bValue = b[_sortColumn]?.toString() ?? '';
-        
+
         int comparison = aValue.compareTo(bValue);
         return _sortAscending ? comparison : -comparison;
       });
@@ -814,9 +839,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                               Container(
                                 padding: EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.grey[300]!,
-                                  ),
+                                  border: Border.all(color: Colors.grey[300]!),
                                   borderRadius: BorderRadius.circular(8),
                                   color: Colors.grey[50],
                                 ),
@@ -833,10 +856,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
                                           border: Border.all(
                                             color: Colors.grey[300]!,
                                           ),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           child: Image.file(
                                             File(_selectedImage!.path),
                                             fit: BoxFit.cover,
@@ -851,17 +878,18 @@ class _DataMesinPageState extends State<DataMesinPage> {
                                           try {
                                             final XFile? image =
                                                 await _imagePicker.pickImage(
-                                              source: ImageSource.gallery,
-                                              imageQuality: 85,
-                                            );
+                                                  source: ImageSource.gallery,
+                                                  imageQuality: 85,
+                                                );
                                             if (image != null) {
                                               setDialogState(() {
                                                 _selectedImage = image;
                                               });
                                             }
                                           } catch (e) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
                                               SnackBar(
                                                 content: Text(
                                                   'Gagal memilih gambar: ${e.toString()}',
@@ -997,7 +1025,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                                 updateWidgetState(() {
                                   // Simpan path gambar jika ada
                                   String? gambarPath = _selectedImage?.path;
-                                  
+
                                   for (var bagian in bagianAsetList) {
                                     String namaBagian =
                                         bagian['namaBagian'] as String;
@@ -1117,17 +1145,30 @@ class _DataMesinPageState extends State<DataMesinPage> {
                     ),
                     child: TextField(
                       controller: _searchController,
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value;
+                        });
+                      },
                       decoration: InputDecoration(
                         hintText: 'Cari data aset...',
-                        prefixIcon: Icon(Icons.search, color: Color(0xFF0A9C5D)),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(Icons.clear, color: Colors.grey),
-                                onPressed: () {
-                                  _searchController.clear();
-                                },
-                              )
-                            : null,
+                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Color(0xFF0A9C5D),
+                        ),
+                        suffixIcon:
+                            _searchQuery.isNotEmpty
+                                ? IconButton(
+                                  icon: Icon(Icons.clear, color: Colors.grey),
+                                  onPressed: () {
+                                    setState(() {
+                                      _searchController.clear();
+                                      _searchQuery = '';
+                                    });
+                                  },
+                                )
+                                : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -1138,9 +1179,15 @@ class _DataMesinPageState extends State<DataMesinPage> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Color(0xFF0A9C5D), width: 2),
+                          borderSide: BorderSide(
+                            color: Color(0xFF0A9C5D),
+                            width: 2,
+                          ),
                         ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -1167,7 +1214,11 @@ class _DataMesinPageState extends State<DataMesinPage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.filter_list, color: Color(0xFF0A9C5D), size: 20),
+                          Icon(
+                            Icons.filter_list,
+                            color: Color(0xFF0A9C5D),
+                            size: 20,
+                          ),
                           SizedBox(width: 8),
                           Text('Filter Jenis'),
                         ],
@@ -1204,7 +1255,10 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   icon: Icon(Icons.add),
                   label: Text("Tambah"),
                   style: ElevatedButton.styleFrom(
-                    textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    textStyle: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                     backgroundColor: Color(0xFF0A9C5D),
                     iconColor: Colors.white,
                     foregroundColor: Colors.white,
@@ -1301,8 +1355,20 @@ class _DataMesinPageState extends State<DataMesinPage> {
     Widget headerRowContent = Row(
       children: [
         _sortableHeaderCell("NO", colNo, rowHeight, headerStyle, null),
-        _sortableHeaderCell("NAMA ASET", col1, rowHeight, headerStyle, "nama_aset"),
-        _sortableHeaderCell("JENIS ASET", col2, rowHeight, headerStyle, "jenis_aset"),
+        _sortableHeaderCell(
+          "NAMA ASET",
+          col1,
+          rowHeight,
+          headerStyle,
+          "nama_aset",
+        ),
+        _sortableHeaderCell(
+          "JENIS ASET",
+          col2,
+          rowHeight,
+          headerStyle,
+          "jenis_aset",
+        ),
         _sortableHeaderCell(
           "MAINTENANCE TERAKHIR",
           col3,
@@ -1317,13 +1383,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
           headerStyle,
           "maintenance_selanjutnya",
         ),
-        _sortableHeaderCell(
-          "BAGIAN ASET",
-          col5,
-          rowHeight,
-          headerStyle,
-          null,
-        ),
+        _sortableHeaderCell("BAGIAN ASET", col5, rowHeight, headerStyle, null),
         _sortableHeaderCell(
           "KOMPONEN ASET",
           col6,
@@ -1331,20 +1391,8 @@ class _DataMesinPageState extends State<DataMesinPage> {
           headerStyle,
           null,
         ),
-        _sortableHeaderCell(
-          "SPESIFIKASI",
-          col7,
-          rowHeight,
-          headerStyle,
-          null,
-        ),
-        _sortableHeaderCell(
-          "GAMBAR ASET",
-          col8,
-          rowHeight,
-          headerStyle,
-          null,
-        ),
+        _sortableHeaderCell("SPESIFIKASI", col7, rowHeight, headerStyle, null),
+        _sortableHeaderCell("GAMBAR ASET", col8, rowHeight, headerStyle, null),
         _sortableHeaderCell("AKSI", col9, rowHeight, headerStyle, null),
       ],
     );
@@ -1410,16 +1458,11 @@ class _DataMesinPageState extends State<DataMesinPage> {
                     ),
                   ],
                 ),
-                child: Scrollbar(
+                child: SingleChildScrollView(
                   controller: _headerScrollController,
-                  thumbVisibility: true,
-                  scrollbarOrientation: ScrollbarOrientation.bottom,
-                  child: SingleChildScrollView(
-                    controller: _headerScrollController,
-                    scrollDirection: Axis.horizontal,
-                    physics: AlwaysScrollableScrollPhysics(),
-                    child: headerRowContent,
-                  ),
+                  scrollDirection: Axis.horizontal,
+                  physics: AlwaysScrollableScrollPhysics(),
+                  child: headerRowContent,
                 ),
               ),
             ),
@@ -1445,10 +1488,11 @@ class _DataMesinPageState extends State<DataMesinPage> {
     const double col9 = 200.0; // Kolom AKSI
 
     Map<String, List<Map<String, dynamic>>> grouped = _groupByAset();
-    
+
     // Hitung total lebar kolom
-    const double totalWidth = colNo + col1 + col2 + col3 + col4 + col5 + col6 + col7 + col8 + col9;
-    
+    const double totalWidth =
+        colNo + col1 + col2 + col3 + col4 + col5 + col6 + col7 + col8 + col9;
+
     // Empty state
     if (grouped.isEmpty) {
       return Container(
@@ -1465,11 +1509,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.inbox_outlined,
-                  size: 80,
-                  color: Colors.grey[400],
-                ),
+                Icon(Icons.search_off, size: 80, color: Colors.grey[400]),
                 SizedBox(height: 16),
                 Text(
                   'Tidak ada data ditemukan',
@@ -1484,26 +1524,32 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   _searchQuery.isNotEmpty || _filterJenisAset != null
                       ? 'Coba ubah kata kunci pencarian atau filter'
                       : 'Mulai dengan menambahkan data aset baru',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                   textAlign: TextAlign.center,
                 ),
                 if (_searchQuery.isNotEmpty || _filterJenisAset != null) ...[
                   SizedBox(height: 16),
-                  ElevatedButton.icon(
+                  TextButton.icon(
                     onPressed: () {
                       setState(() {
                         _searchController.clear();
-                        _filterJenisAset = null;
+                        _searchQuery = '';
                       });
                     },
-                    icon: Icon(Icons.clear_all),
-                    label: Text('Hapus Filter'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF0A9C5D),
-                      foregroundColor: Colors.white,
+                    icon: Icon(Icons.clear, color: Color(0xFF0A9C5D)),
+                    label: Text(
+                      "Bersihkan Pencarian",
+                      style: TextStyle(color: Color(0xFF0A9C5D)),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      backgroundColor: Color(0xFF0A9C5D).withOpacity(0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ],
@@ -1550,8 +1596,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Bagian - merged untuk semua komponen dalam bagian ini
-                _cellCenter(bagian, col5, bagianMergedHeight, null,
-                    isEvenRow: isBagianEvenRow, isHovered: isHovered),
+                _cellCenter(
+                  bagian,
+                  col5,
+                  bagianMergedHeight,
+                  null,
+                  isEvenRow: isBagianEvenRow,
+                  isHovered: isHovered,
+                ),
 
                 // Data untuk setiap komponen dalam bagian (tanpa gambar dan aksi)
                 Column(
@@ -1559,7 +1611,8 @@ class _DataMesinPageState extends State<DataMesinPage> {
                       bagianItems.asMap().entries.map((entry) {
                         int itemIndex = entry.key;
                         var item = entry.value;
-                        bool isItemEvenRow = (rowIndex + bagianRowIndex + itemIndex) % 2 == 0;
+                        bool isItemEvenRow =
+                            (rowIndex + bagianRowIndex + itemIndex) % 2 == 0;
                         return Row(
                           children: [
                             _cellCenter(
@@ -1591,10 +1644,22 @@ class _DataMesinPageState extends State<DataMesinPage> {
           bagianRows.add(
             Row(
               children: [
-                _cellCenter(bagian, col5, rowHeight, null,
-                    isEvenRow: isBagianEvenRow, isHovered: isHovered),
-                _cellCenter(item["komponen_aset"]!, col6, rowHeight, null,
-                    isEvenRow: isBagianEvenRow, isHovered: isHovered),
+                _cellCenter(
+                  bagian,
+                  col5,
+                  rowHeight,
+                  null,
+                  isEvenRow: isBagianEvenRow,
+                  isHovered: isHovered,
+                ),
+                _cellCenter(
+                  item["komponen_aset"]!,
+                  col6,
+                  rowHeight,
+                  null,
+                  isEvenRow: isBagianEvenRow,
+                  isHovered: isHovered,
+                ),
                 _cellCenter(
                   item["produk_yang_digunakan"]!,
                   col7,
@@ -1612,30 +1677,38 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
       dataRows.add(
         MouseRegion(
-          onEnter: (_) {
-            setState(() {
-              _hoveredRowKey = rowKey;
-            });
-          },
-          onExit: (_) {
-            setState(() {
-              _hoveredRowKey = null;
-            });
-          },
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Kolom NO - merged untuk semua baris
-              _cellCenter(globalNo.toString(), colNo, mergedHeight, null,
-                  isEvenRow: isEvenRow, isHovered: isHovered),
+              _cellCenter(
+                globalNo.toString(),
+                colNo,
+                mergedHeight,
+                null,
+                isEvenRow: isEvenRow,
+                isHovered: isHovered,
+              ),
 
               // Kolom NAMA ASET - merged untuk semua baris
-              _cellCenter(namaAset, col1, mergedHeight, null,
-                  isEvenRow: isEvenRow, isHovered: isHovered),
+              _cellCenter(
+                namaAset,
+                col1,
+                mergedHeight,
+                null,
+                isEvenRow: isEvenRow,
+                isHovered: isHovered,
+              ),
 
               // Kolom JENIS ASET - merged untuk semua baris
-              _cellCenter(firstItem["jenis_aset"]!, col2, mergedHeight, null,
-                  isEvenRow: isEvenRow, isHovered: isHovered),
+              _cellCenter(
+                firstItem["jenis_aset"]!,
+                col2,
+                mergedHeight,
+                null,
+                isEvenRow: isEvenRow,
+                isHovered: isHovered,
+              ),
 
               // Kolom MAINTENANCE TERAKHIR - merged untuk semua baris
               _cellCenter(
@@ -1661,12 +1734,24 @@ class _DataMesinPageState extends State<DataMesinPage> {
               Column(children: bagianRows),
 
               // Kolom GAMBAR ASET - merged untuk semua baris dalam satu aset
-              _imageCell(firstItem["gambar_aset"], col8, mergedHeight,
-                  isEvenRow: isEvenRow, isHovered: isHovered, context: context),
+              _imageCell(
+                firstItem["gambar_aset"],
+                col8,
+                mergedHeight,
+                isEvenRow: isEvenRow,
+                isHovered: isHovered,
+                context: context,
+              ),
 
               // Kolom AKSI - merged untuk semua baris dalam satu aset
-              _actionCell(context, firstItem, col9, mergedHeight,
-                  isEvenRow: isEvenRow, isHovered: isHovered),
+              _actionCell(
+                context,
+                firstItem,
+                col9,
+                mergedHeight,
+                isEvenRow: isEvenRow,
+                isHovered: isHovered,
+              ),
             ],
           ),
         ),
@@ -1693,13 +1778,13 @@ class _DataMesinPageState extends State<DataMesinPage> {
   ) {
     bool isSortable = sortColumn != null;
     bool isActive = _sortColumn == sortColumn;
-    
+
     void handleTap() {
       if (sortColumn != null) {
         _handleSort(sortColumn);
       }
     }
-    
+
     return MouseRegion(
       cursor: isSortable ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: GestureDetector(
@@ -1708,10 +1793,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
           width: width,
           height: height,
           decoration: BoxDecoration(
-            color: isActive ? Colors.white.withOpacity(0.1) : Colors.transparent,
+            color:
+                isActive ? Colors.white.withOpacity(0.1) : Colors.transparent,
             border: Border(
               right: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
-              bottom: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
+              bottom: BorderSide(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1733,7 +1822,9 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 SizedBox(width: 4),
                 Icon(
                   isActive
-                      ? (_sortAscending ? Icons.arrow_upward : Icons.arrow_downward)
+                      ? (_sortAscending
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward)
                       : Icons.unfold_more,
                   size: 16,
                   color: Colors.white,
@@ -1778,10 +1869,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
       alignment: Alignment.center,
       child: Text(
         text,
-        style: style ?? TextStyle(
-          fontSize: 12,
-          color: Colors.grey[800],
-        ),
+        style: style ?? TextStyle(fontSize: 12, color: Colors.grey[800]),
         textAlign: TextAlign.center,
         maxLines: null,
         overflow: TextOverflow.visible,
@@ -1789,7 +1877,10 @@ class _DataMesinPageState extends State<DataMesinPage> {
     );
   }
 
-  Widget _imageCell(String? imagePath, double width, double height, {
+  Widget _imageCell(
+    String? imagePath,
+    double width,
+    double height, {
     bool isEvenRow = true,
     bool isHovered = false,
     BuildContext? context,
@@ -1802,9 +1893,15 @@ class _DataMesinPageState extends State<DataMesinPage> {
     }
 
     return GestureDetector(
-      onTap: imagePath != null && context != null ? () => _showImagePreview(context, imagePath) : null,
+      onTap:
+          imagePath != null && context != null
+              ? () => _showImagePreview(context, imagePath)
+              : null,
       child: MouseRegion(
-        cursor: imagePath != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        cursor:
+            imagePath != null
+                ? SystemMouseCursors.click
+                : SystemMouseCursors.basic,
         child: Container(
           width: width,
           height: height,
@@ -1815,56 +1912,65 @@ class _DataMesinPageState extends State<DataMesinPage> {
               bottom: BorderSide(color: Colors.grey[300]!, width: 0.5),
             ),
           ),
-      padding: const EdgeInsets.all(6),
-      alignment: Alignment.center,
-      child: imagePath != null
-          ? (imagePath.startsWith('assets/')
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: Image.asset(
-                    imagePath,
-                    width: width - 12,
-                    height: height - 12,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(4),
+          padding: const EdgeInsets.all(6),
+          alignment: Alignment.center,
+          child:
+              imagePath != null
+                  ? (imagePath.startsWith('assets/')
+                      ? ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.asset(
+                          imagePath,
+                          width: width - 12,
+                          height: height - 12,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Icon(
+                                Icons.image_not_supported,
+                                size: 24,
+                                color: Colors.grey[600],
+                              ),
+                            );
+                          },
                         ),
-                        child: Icon(Icons.image_not_supported, size: 24, color: Colors.grey[600]),
-                      );
-                    },
-                  ),
-                )
-              : ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: Image.file(
-                    File(imagePath),
-                    width: width - 12,
-                    height: height - 12,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(4),
+                      )
+                      : ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.file(
+                          File(imagePath),
+                          width: width - 12,
+                          height: height - 12,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Icon(
+                                Icons.image_not_supported,
+                                size: 24,
+                                color: Colors.grey[600],
+                              ),
+                            );
+                          },
                         ),
-                        child: Icon(Icons.image_not_supported, size: 24, color: Colors.grey[600]),
-                      );
-                    },
+                      ))
+                  : Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Icon(Icons.image, size: 24, color: Colors.grey[600]),
                   ),
-                ))
-          : Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Icon(Icons.image, size: 24, color: Colors.grey[600]),
-            ),
         ),
       ),
     );
@@ -1944,9 +2050,10 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: imagePath.startsWith('assets/')
-                      ? Image.asset(imagePath, fit: BoxFit.contain)
-                      : Image.file(File(imagePath), fit: BoxFit.contain),
+                  child:
+                      imagePath.startsWith('assets/')
+                          ? Image.asset(imagePath, fit: BoxFit.contain)
+                          : Image.file(File(imagePath), fit: BoxFit.contain),
                 ),
               ),
               Positioned(
@@ -1969,7 +2076,10 @@ class _DataMesinPageState extends State<DataMesinPage> {
   }
 
   // Method untuk menampilkan confirmation dialog sebelum hapus
-  void _showDeleteConfirmation(BuildContext context, Map<String, dynamic> item) {
+  void _showDeleteConfirmation(
+    BuildContext context,
+    Map<String, dynamic> item,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -2022,20 +2132,19 @@ class _DataMesinPageState extends State<DataMesinPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Batal',
-                style: TextStyle(color: Colors.grey[700]),
-              ),
+              child: Text('Batal', style: TextStyle(color: Colors.grey[700])),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 // TODO: Implementasi hapus data
                 setState(() {
-                  _rawData.removeWhere((data) =>
-                      data["nama_aset"] == item["nama_aset"] &&
-                      data["bagian_aset"] == item["bagian_aset"] &&
-                      data["komponen_aset"] == item["komponen_aset"]);
+                  _rawData.removeWhere(
+                    (data) =>
+                        data["nama_aset"] == item["nama_aset"] &&
+                        data["bagian_aset"] == item["bagian_aset"] &&
+                        data["komponen_aset"] == item["komponen_aset"],
+                  );
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
