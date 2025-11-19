@@ -21,7 +21,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
   @override
   void initState() {
     super.initState();
-    // Sinkronkan scroll body ke header
     _horizontalScrollController.addListener(() {
       if (!_isSyncing && _headerScrollController.hasClients) {
         _isSyncing = true;
@@ -29,7 +28,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
         Future.microtask(() => _isSyncing = false);
       }
     });
-    // Sinkronkan scroll header ke body
     _headerScrollController.addListener(() {
       if (!_isSyncing && _horizontalScrollController.hasClients) {
         _isSyncing = true;
@@ -67,7 +65,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
     }
   }
 
-  // Data mentah dengan detail per bagian
   final List<Map<String, dynamic>> _rawData = [
     {
       "no": 1,
@@ -111,35 +108,20 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
     },
   ];
 
-  // Mengelompokkan data berdasarkan nama_infrastruktur
   Map<String, List<Map<String, dynamic>>> _groupByInfrastruktur() {
     Map<String, List<Map<String, dynamic>>> grouped = {};
 
-    // Filter data berdasarkan search query
-    List<Map<String, dynamic>> filteredData =
-        _rawData.where((item) {
-          if (_searchQuery.isEmpty) return true;
+    List<Map<String, dynamic>> filteredData = _rawData.where((item) {
+      if (_searchQuery.isEmpty) return true;
 
-          String query = _searchQuery.toLowerCase();
-          return item["nama_infrastruktur"]?.toString().toLowerCase().contains(
-                    query,
-                  ) ==
-                  true ||
-              item["bagian"]?.toString().toLowerCase().contains(query) ==
-                  true ||
-              item["periode"]?.toString().toLowerCase().contains(query) ==
-                  true ||
-              item["jenis_pekerjaan"]?.toString().toLowerCase().contains(
-                    query,
-                  ) ==
-                  true ||
-              item["standar_perawatan"]?.toString().toLowerCase().contains(
-                    query,
-                  ) ==
-                  true ||
-              item["alat_bahan"]?.toString().toLowerCase().contains(query) ==
-                  true;
-        }).toList();
+      String query = _searchQuery.toLowerCase();
+      return item["nama_infrastruktur"]?.toString().toLowerCase().contains(query) == true ||
+          item["bagian"]?.toString().toLowerCase().contains(query) == true ||
+          item["periode"]?.toString().toLowerCase().contains(query) == true ||
+          item["jenis_pekerjaan"]?.toString().toLowerCase().contains(query) == true ||
+          item["standar_perawatan"]?.toString().toLowerCase().contains(query) == true ||
+          item["alat_bahan"]?.toString().toLowerCase().contains(query) == true;
+    }).toList();
 
     for (var item in filteredData) {
       String nama = item["nama_infrastruktur"];
@@ -151,7 +133,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
     return grouped;
   }
 
-  // Mengelompokkan data berdasarkan bagian dalam satu infrastruktur
   Map<String, List<Map<String, dynamic>>> _groupByBagian(
     List<Map<String, dynamic>> items,
   ) {
@@ -181,10 +162,8 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
         ),
         SizedBox(height: 20),
 
-        // Search Bar dan Button Tambah
         Row(
           children: [
-            // Search Field
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
@@ -207,22 +186,20 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                     });
                   },
                   decoration: InputDecoration(
-                    hintText:
-                        "Cari infrastruktur, bagian, periode, jenis pekerjaan...",
+                    hintText: "Cari infrastruktur, bagian, periode, jenis pekerjaan...",
                     hintStyle: TextStyle(color: Colors.grey[400]),
                     prefixIcon: Icon(Icons.search, color: Color(0xFF0A9C5D)),
-                    suffixIcon:
-                        _searchQuery.isNotEmpty
-                            ? IconButton(
-                              icon: Icon(Icons.clear, color: Colors.grey),
-                              onPressed: () {
-                                setState(() {
-                                  _searchController.clear();
-                                  _searchQuery = '';
-                                });
-                              },
-                            )
-                            : null,
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear, color: Colors.grey),
+                            onPressed: () {
+                              setState(() {
+                                _searchController.clear();
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide(color: Colors.grey[300]!),
@@ -233,21 +210,14 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                        color: Color(0xFF0A9C5D),
-                        width: 2,
-                      ),
+                      borderSide: BorderSide(color: Color(0xFF0A9C5D), width: 2),
                     ),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                 ),
               ),
             ),
             SizedBox(width: 12),
-            // Button Tambah
             ElevatedButton.icon(
               onPressed: () => _showTambahScheduleModal(context),
               icon: Icon(Icons.add),
@@ -268,7 +238,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
         ),
         SizedBox(height: 20),
 
-        // ================= TABLE ==================
         Expanded(
           child: Container(
             decoration: BoxDecoration(
@@ -298,126 +267,129 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
     );
     const double rowHeight = 65.0;
     const double horizontalScrollbarThickness = 12.0;
-    const double horizontalScrollbarPadding =
-        horizontalScrollbarThickness + 8.0;
+    const double horizontalScrollbarPadding = horizontalScrollbarThickness + 8.0;
 
-    // Lebar kolom
     const double colNo = 60.0;
     const double col1 = 180.0;
     const double col2 = 150.0;
     const double col3 = 120.0;
-    const double col4 = 220.0;
-    const double col5 = 260.0;
-    const double col6 = 260.0;
-    const double col7 = 200.0; // Kolom AKSI
+    const double col7 = 200.0;
+    
+    const double fixedColumnsWidth = colNo + col1 + col2 + col3 + col7;
 
-    // Build header row content
-    Widget headerRowContent = Row(
-      children: [
-        _headerCell("NO", colNo, rowHeight, headerStyle),
-        _headerCell("NAMA INFRASTRUKTUR", col1, rowHeight, headerStyle),
-        _headerCell("BAGIAN", col2, rowHeight, headerStyle),
-        _headerCell("PERIODE", col3, rowHeight, headerStyle),
-        _headerCell("JENIS PEKERJAAN", col4, rowHeight, headerStyle),
-        _headerCell("STANDAR PERAWATAN", col5, rowHeight, headerStyle),
-        _headerCell("ALAT DAN BAHAN", col6, rowHeight, headerStyle),
-        _headerCell("AKSI", col7, rowHeight, headerStyle),
-      ],
-    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth - fixedColumnsWidth;
+        final expandedColWidth = availableWidth > 0 ? availableWidth / 3 : 220.0;
+        
+        final col4 = expandedColWidth < 220 ? 220.0 : expandedColWidth;
+        final col5 = expandedColWidth < 220 ? 220.0 : expandedColWidth;
+        final col6 = expandedColWidth < 220 ? 220.0 : expandedColWidth;
 
-    // Build body dengan padding tambahan agar tidak tertutup scrollbar horizontal
-    Widget tableBody = Padding(
-      padding: const EdgeInsets.only(bottom: horizontalScrollbarPadding),
-      child: _buildTableBody(context),
-    );
+        Widget headerRowContent = Row(
+          children: [
+            _headerCell("NO", colNo, rowHeight, headerStyle),
+            _headerCell("NAMA INFRASTRUKTUR", col1, rowHeight, headerStyle),
+            _headerCell("BAGIAN", col2, rowHeight, headerStyle),
+            _headerCell("PERIODE", col3, rowHeight, headerStyle),
+            _headerCell("JENIS PEKERJAAN", col4, rowHeight, headerStyle),
+            _headerCell("STANDAR PERAWATAN", col5, rowHeight, headerStyle),
+            _headerCell("ALAT DAN BAHAN", col6, rowHeight, headerStyle),
+            _headerCell("AKSI", col7, rowHeight, headerStyle),
+          ],
+        );
 
-    return Scrollbar(
-      controller: _horizontalScrollController,
-      thumbVisibility: true,
-      thickness: horizontalScrollbarThickness,
-      scrollbarOrientation: ScrollbarOrientation.bottom,
-      child: Stack(
-        children: [
-          // Scrollable Body dengan horizontal scroll
-          Column(
+        Widget tableBody = Padding(
+          padding: const EdgeInsets.only(bottom: horizontalScrollbarPadding),
+          child: _buildTableBodyDynamic(context, col4, col5, col6),
+        );
+
+        final totalTableWidth = colNo + col1 + col2 + col3 + col4 + col5 + col6 + col7;
+        final needsScroll = totalTableWidth > constraints.maxWidth;
+
+        return Scrollbar(
+          controller: _horizontalScrollController,
+          thumbVisibility: needsScroll,
+          thickness: horizontalScrollbarThickness,
+          scrollbarOrientation: ScrollbarOrientation.bottom,
+          child: Stack(
             children: [
-              // Spacer untuk header
-              SizedBox(height: rowHeight),
-              // Scrollable Body
-              Expanded(
-                child: Scrollbar(
-                  controller: _verticalScrollController,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                    controller: _verticalScrollController,
-                    scrollDirection: Axis.vertical,
+              Column(
+                children: [
+                  SizedBox(height: rowHeight),
+                  Expanded(
+                    child: Scrollbar(
+                      controller: _verticalScrollController,
+                      thumbVisibility: true,
+                      child: SingleChildScrollView(
+                        controller: _verticalScrollController,
+                        scrollDirection: Axis.vertical,
+                        child: SingleChildScrollView(
+                          controller: _horizontalScrollController,
+                          scrollDirection: Axis.horizontal,
+                          physics: needsScroll
+                              ? AlwaysScrollableScrollPhysics()
+                              : NeverScrollableScrollPhysics(),
+                          child: tableBody,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerSignal: _handleHeaderPointerSignal,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF0A9C5D), Color(0xFF088A52)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
                     child: SingleChildScrollView(
-                      controller: _horizontalScrollController,
+                      controller: _headerScrollController,
                       scrollDirection: Axis.horizontal,
-                      physics: AlwaysScrollableScrollPhysics(),
-                      child: tableBody,
+                      physics: needsScroll
+                          ? AlwaysScrollableScrollPhysics()
+                          : NeverScrollableScrollPhysics(),
+                      child: headerRowContent,
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          // Sticky Header
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Listener(
-              behavior: HitTestBehavior.translucent,
-              onPointerSignal: _handleHeaderPointerSignal,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF0A9C5D), Color(0xFF088A52)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: SingleChildScrollView(
-                  controller: _headerScrollController,
-                  scrollDirection: Axis.horizontal,
-                  physics: AlwaysScrollableScrollPhysics(),
-                  child: headerRowContent,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildTableBody(BuildContext context) {
+  Widget _buildTableBodyDynamic(BuildContext context, double col4, double col5, double col6) {
     const double rowHeight = 65.0;
 
-    // Lebar kolom
     const double colNo = 60.0;
     const double col1 = 180.0;
     const double col2 = 150.0;
     const double col3 = 120.0;
-    const double col4 = 220.0;
-    const double col5 = 260.0;
-    const double col6 = 260.0;
-    const double col7 = 200.0; // Kolom AKSI
+    const double col7 = 200.0;
 
     Map<String, List<Map<String, dynamic>>> grouped = _groupByInfrastruktur();
 
-    // Check if no data found
     if (grouped.isEmpty) {
-      // Get screen width for proper centering
       final screenWidth = MediaQuery.of(context).size.width;
 
       return Container(
@@ -478,7 +450,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
 
     List<Widget> dataRows = [];
 
-    // Data Rows dengan MERGED CELLS
     int globalNo = 1;
     int rowIndex = 0;
     grouped.forEach((namaInfrastruktur, items) {
@@ -486,14 +457,10 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
       double mergedHeight = rowHeight * totalRows;
       bool isEvenRow = rowIndex % 2 == 0;
 
-      // Setup hover state
       String rowKey = "${namaInfrastruktur}_$rowIndex";
       bool isHovered = _hoveredRowKey == rowKey;
 
-      // Kelompokkan berdasarkan bagian
-      Map<String, List<Map<String, dynamic>>> groupedByBagian = _groupByBagian(
-        items,
-      );
+      Map<String, List<Map<String, dynamic>>> groupedByBagian = _groupByBagian(items);
       List<Widget> bagianRows = [];
 
       groupedByBagian.forEach((bagian, bagianItems) {
@@ -501,26 +468,24 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
         double bagianMergedHeight = rowHeight * bagianRowCount;
 
         if (bagianRowCount > 1) {
-          // Jika bagian memiliki lebih dari 1 item, merge bagian
           bagianRows.add(
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Bagian - merged untuk semua baris bagian ini
-                _cellCenter(
-                  bagian,
-                  col2,
-                  bagianMergedHeight,
-                  null,
-                  isEvenRow: isEvenRow,
-                  isHovered: isHovered,
-                ),
-
-                // Data untuk setiap item dalam bagian
-                Column(
-                  children:
-                      bagianItems.map((item) {
-                        return Row(
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _cellCenter(
+                    bagian,
+                    col2,
+                    bagianMergedHeight,
+                    null,
+                    isEvenRow: isEvenRow,
+                    isHovered: isHovered,
+                  ),
+                  Column(
+                    children: bagianItems.map((item) {
+                      return SizedBox(
+                        height: rowHeight,
+                        child: Row(
                           children: [
                             _cellCenter(
                               item["periode"],
@@ -563,67 +528,71 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                               isHovered: isHovered,
                             ),
                           ],
-                        );
-                      }).toList(),
-                ),
-              ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
             ),
           );
         } else {
-          // Jika bagian hanya 1 item, tidak perlu merge
           var item = bagianItems[0];
           bagianRows.add(
-            Row(
-              children: [
-                _cellCenter(
-                  bagian,
-                  col2,
-                  rowHeight,
-                  null,
-                  isEvenRow: isEvenRow,
-                  isHovered: isHovered,
-                ),
-                _cellCenter(
-                  item["periode"],
-                  col3,
-                  rowHeight,
-                  null,
-                  isEvenRow: isEvenRow,
-                  isHovered: isHovered,
-                ),
-                _cellCenter(
-                  item["jenis_pekerjaan"],
-                  col4,
-                  rowHeight,
-                  null,
-                  isEvenRow: isEvenRow,
-                  isHovered: isHovered,
-                ),
-                _cellCenter(
-                  item["standar_perawatan"],
-                  col5,
-                  rowHeight,
-                  null,
-                  isEvenRow: isEvenRow,
-                  isHovered: isHovered,
-                ),
-                _cellCenter(
-                  item["alat_bahan"],
-                  col6,
-                  rowHeight,
-                  null,
-                  isEvenRow: isEvenRow,
-                  isHovered: isHovered,
-                ),
-                _actionCell(
-                  context,
-                  item,
-                  col7,
-                  rowHeight,
-                  isEvenRow: isEvenRow,
-                  isHovered: isHovered,
-                ),
-              ],
+            SizedBox(
+              height: rowHeight,
+              child: Row(
+                children: [
+                  _cellCenter(
+                    bagian,
+                    col2,
+                    rowHeight,
+                    null,
+                    isEvenRow: isEvenRow,
+                    isHovered: isHovered,
+                  ),
+                  _cellCenter(
+                    item["periode"],
+                    col3,
+                    rowHeight,
+                    null,
+                    isEvenRow: isEvenRow,
+                    isHovered: isHovered,
+                  ),
+                  _cellCenter(
+                    item["jenis_pekerjaan"],
+                    col4,
+                    rowHeight,
+                    null,
+                    isEvenRow: isEvenRow,
+                    isHovered: isHovered,
+                  ),
+                  _cellCenter(
+                    item["standar_perawatan"],
+                    col5,
+                    rowHeight,
+                    null,
+                    isEvenRow: isEvenRow,
+                    isHovered: isHovered,
+                  ),
+                  _cellCenter(
+                    item["alat_bahan"],
+                    col6,
+                    rowHeight,
+                    null,
+                    isEvenRow: isEvenRow,
+                    isHovered: isHovered,
+                  ),
+                  _actionCell(
+                    context,
+                    item,
+                    col7,
+                    rowHeight,
+                    isEvenRow: isEvenRow,
+                    isHovered: isHovered,
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -631,32 +600,29 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
 
       dataRows.add(
         MouseRegion(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Kolom NO - merged untuk semua baris
-              _cellCenter(
-                globalNo.toString(),
-                colNo,
-                mergedHeight,
-                null,
-                isEvenRow: isEvenRow,
-                isHovered: isHovered,
-              ),
-
-              // Kolom NAMA INFRASTRUKTUR - merged untuk semua baris
-              _cellCenter(
-                namaInfrastruktur,
-                col1,
-                mergedHeight,
-                null,
-                isEvenRow: isEvenRow,
-                isHovered: isHovered,
-              ),
-
-              // Kolom 2-7 dengan data per bagian (yang sudah di-merge jika perlu)
-              Column(children: bagianRows),
-            ],
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _cellCenter(
+                  globalNo.toString(),
+                  colNo,
+                  mergedHeight,
+                  null,
+                  isEvenRow: isEvenRow,
+                  isHovered: isHovered,
+                ),
+                _cellCenter(
+                  namaInfrastruktur,
+                  col1,
+                  mergedHeight,
+                  null,
+                  isEvenRow: isEvenRow,
+                  isHovered: isHovered,
+                ),
+                Column(children: bagianRows),
+              ],
+            ),
           ),
         ),
       );
@@ -717,7 +683,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
 
     return Container(
       width: width,
-      height: height,
+      constraints: BoxConstraints(minHeight: height),
       decoration: BoxDecoration(
         color: backgroundColor,
         border: Border(
@@ -731,8 +697,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
         text,
         style: style ?? TextStyle(fontSize: 12, color: Colors.grey[800]),
         textAlign: TextAlign.center,
-        maxLines: null,
-        overflow: TextOverflow.visible,
       ),
     );
   }
@@ -766,7 +730,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Tombol Kalender
           _iconButton(
             icon: Icons.calendar_today,
             color: Color(0xFF0A9C5D),
@@ -780,7 +743,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
             },
           ),
           const SizedBox(width: 8),
-          // Tombol Edit
           _iconButton(
             icon: Icons.edit,
             color: Color(0xFF2196F3),
@@ -796,7 +758,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
             },
           ),
           const SizedBox(width: 8),
-          // Tombol Hapus
           _iconButton(
             icon: Icons.delete,
             color: Color(0xFFF44336),
@@ -838,7 +799,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
     );
   }
 
-  // ==================== MODAL FORM ====================
   void _showTambahScheduleModal(BuildContext context) {
     final formKey = GlobalKey<FormState>();
     final namaInfrastrukturController = TextEditingController();
@@ -865,7 +825,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header Modal
                       Row(
                         children: [
                           Container(
@@ -914,13 +873,11 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                       Divider(),
                       const SizedBox(height: 20),
 
-                      // Form Content - Scrollable
                       Expanded(
                         child: SingleChildScrollView(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Nama Infrastruktur
                               _modalTextField(
                                 controller: namaInfrastrukturController,
                                 label: "Nama Infrastruktur",
@@ -934,10 +891,8 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                               ),
                               const SizedBox(height: 24),
 
-                              // Section Bagian-Bagian
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     "Bagian dan Detail Pekerjaan",
@@ -963,7 +918,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                               ),
                               const SizedBox(height: 12),
 
-                              // List Bagian
                               ...bagianList.asMap().entries.map((entry) {
                                 int index = entry.key;
                                 BagianScheduleItem bagian = entry.value;
@@ -980,10 +934,8 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                                     ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      // Header Bagian
                                       Row(
                                         children: [
                                           Container(
@@ -993,8 +945,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                                             ),
                                             decoration: BoxDecoration(
                                               color: Color(0xFF0A9C5D),
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
+                                              borderRadius: BorderRadius.circular(6),
                                             ),
                                             child: Text(
                                               "Bagian ${index + 1}",
@@ -1024,14 +975,12 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                                       ),
                                       SizedBox(height: 12),
 
-                                      // Form Fields untuk Bagian
                                       _modalTextField(
                                         controller: bagian.bagianController,
                                         label: "Nama Bagian",
                                         icon: Icons.category,
                                         validator: (value) {
-                                          if (value == null ||
-                                              value.trim().isEmpty) {
+                                          if (value == null || value.trim().isEmpty) {
                                             return "Nama bagian wajib diisi";
                                           }
                                           return null;
@@ -1039,7 +988,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                                       ),
                                       SizedBox(height: 12),
 
-                                      // Dropdown Periode
                                       DropdownButtonFormField<String>(
                                         value: bagian.selectedPeriode,
                                         decoration: _modalInputDecoration(
@@ -1074,7 +1022,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                                       ),
                                       SizedBox(height: 12),
 
-                                      // Field Interval (muncul jika periode sudah dipilih)
                                       if (bagian.selectedPeriode != null) ...[
                                         _buildIntervalSpinBox(
                                           bagian: bagian,
@@ -1084,13 +1031,11 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                                       ],
 
                                       _modalTextField(
-                                        controller:
-                                            bagian.jenisPekerjaanController,
+                                        controller: bagian.jenisPekerjaanController,
                                         label: "Jenis Pekerjaan",
                                         icon: Icons.work_outline,
                                         validator: (value) {
-                                          if (value == null ||
-                                              value.trim().isEmpty) {
+                                          if (value == null || value.trim().isEmpty) {
                                             return "Jenis pekerjaan wajib diisi";
                                           }
                                           return null;
@@ -1099,14 +1044,12 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                                       SizedBox(height: 12),
 
                                       _modalTextField(
-                                        controller:
-                                            bagian.standarPerawatanController,
+                                        controller: bagian.standarPerawatanController,
                                         label: "Standar Perawatan",
                                         icon: Icons.checklist,
                                         maxLines: 2,
                                         validator: (value) {
-                                          if (value == null ||
-                                              value.trim().isEmpty) {
+                                          if (value == null || value.trim().isEmpty) {
                                             return "Standar perawatan wajib diisi";
                                           }
                                           return null;
@@ -1120,8 +1063,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                                         icon: Icons.build,
                                         maxLines: 2,
                                         validator: (value) {
-                                          if (value == null ||
-                                              value.trim().isEmpty) {
+                                          if (value == null || value.trim().isEmpty) {
                                             return "Alat dan bahan wajib diisi";
                                           }
                                           return null;
@@ -1140,7 +1082,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                       Divider(),
                       const SizedBox(height: 16),
 
-                      // Action Buttons
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -1151,15 +1092,12 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                           const SizedBox(width: 12),
                           ElevatedButton.icon(
                             onPressed: () {
-                              if (!(formKey.currentState?.validate() ??
-                                  false)) {
+                              if (!(formKey.currentState?.validate() ?? false)) {
                                 return;
                               }
 
-                              // Simpan data
                               setState(() {
                                 for (var bagian in bagianList) {
-                                  // Convert periode ke format interval
                                   String intervalUnit = "";
                                   switch (bagian.selectedPeriode) {
                                     case "Harian":
@@ -1178,15 +1116,12 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                                     "no": _rawData.length + 1,
                                     "nama_infrastruktur":
                                         namaInfrastrukturController.text.trim(),
-                                    "bagian":
-                                        bagian.bagianController.text.trim(),
+                                    "bagian": bagian.bagianController.text.trim(),
                                     "periode": periodeText,
                                     "jenis_pekerjaan":
-                                        bagian.jenisPekerjaanController.text
-                                            .trim(),
+                                        bagian.jenisPekerjaanController.text.trim(),
                                     "standar_perawatan":
-                                        bagian.standarPerawatanController.text
-                                            .trim(),
+                                        bagian.standarPerawatanController.text.trim(),
                                     "alat_bahan":
                                         bagian.alatBahanController.text.trim(),
                                     "tanggal_status": Map<int, String>.from({}),
@@ -1212,6 +1147,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                                 vertical: 12,
                               ),
                             ),
+                            icon: Icon(Icons.save),
                             label: const Text("Simpan"),
                           ),
                         ],
@@ -1236,12 +1172,10 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
     required BagianScheduleItem bagian,
     required StateSetter setModalState,
   }) {
-    // Inisialisasi nilai interval jika kosong
     if (bagian.intervalController.text.isEmpty) {
       bagian.intervalController.text = "1";
     }
 
-    // Convert periode ke format interval
     String getIntervalLabel(String? periode) {
       switch (periode) {
         case "Harian":
@@ -1315,20 +1249,15 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                   ),
                   Row(
                     children: [
-                      // Tombol Minus
                       Material(
                         color:
-                            (int.tryParse(bagian.intervalController.text) ??
-                                        1) >
-                                    1
+                            (int.tryParse(bagian.intervalController.text) ?? 1) > 1
                                 ? Color(0xFFF44336)
                                 : Colors.grey[300],
                         borderRadius: BorderRadius.circular(8),
                         child: InkWell(
                           onTap:
-                              (int.tryParse(bagian.intervalController.text) ??
-                                          1) >
-                                      1
+                              (int.tryParse(bagian.intervalController.text) ?? 1) > 1
                                   ? () {
                                     setModalState(() {
                                       int currentValue =
@@ -1338,9 +1267,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                                           1;
                                       bagian.intervalController.text =
                                           (currentValue - 1).toString();
-                                      formFieldState.didChange(
-                                        currentValue - 1,
-                                      );
+                                      formFieldState.didChange(currentValue - 1);
                                     });
                                   }
                                   : null,
@@ -1352,9 +1279,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                             child: Icon(
                               Icons.remove,
                               color:
-                                  (int.tryParse(
-                                                bagian.intervalController.text,
-                                              ) ??
+                                  (int.tryParse(bagian.intervalController.text) ??
                                               1) >
                                           1
                                       ? Colors.white
@@ -1365,7 +1290,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                         ),
                       ),
                       SizedBox(width: 12),
-                      // Input Field
                       Container(
                         width: 60,
                         height: 40,
@@ -1385,15 +1309,11 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
-                              ),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
-                              ),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -1411,7 +1331,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                         ),
                       ),
                       SizedBox(width: 12),
-                      // Tombol Plus
                       Material(
                         color: Color(0xFF0A9C5D),
                         borderRadius: BorderRadius.circular(8),
@@ -1419,10 +1338,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                           onTap: () {
                             setModalState(() {
                               int currentValue =
-                                  int.tryParse(
-                                    bagian.intervalController.text,
-                                  ) ??
-                                  1;
+                                  int.tryParse(bagian.intervalController.text) ?? 1;
                               bagian.intervalController.text =
                                   (currentValue + 1).toString();
                               formFieldState.didChange(currentValue + 1);
@@ -1433,11 +1349,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                             width: 36,
                             height: 36,
                             alignment: Alignment.center,
-                            child: Icon(
-                              Icons.add,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                            child: Icon(Icons.add, color: Colors.white, size: 20),
                           ),
                         ),
                       ),
@@ -1520,15 +1432,12 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
   }
 }
 
-// ==================== CLASS HELPER ====================
 class BagianScheduleItem {
   final TextEditingController bagianController = TextEditingController();
   String? selectedPeriode;
   final TextEditingController intervalController = TextEditingController();
-  final TextEditingController jenisPekerjaanController =
-      TextEditingController();
-  final TextEditingController standarPerawatanController =
-      TextEditingController();
+  final TextEditingController jenisPekerjaanController = TextEditingController();
+  final TextEditingController standarPerawatanController = TextEditingController();
   final TextEditingController alatBahanController = TextEditingController();
 
   void dispose() {

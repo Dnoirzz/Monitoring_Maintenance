@@ -21,7 +21,6 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
   @override
   void initState() {
     super.initState();
-    // Sinkronkan scroll body ke header
     _horizontalScrollController.addListener(() {
       if (!_isSyncing && _headerScrollController.hasClients) {
         _isSyncing = true;
@@ -29,7 +28,6 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
         Future.microtask(() => _isSyncing = false);
       }
     });
-    // Sinkronkan scroll header ke body
     _headerScrollController.addListener(() {
       if (!_isSyncing && _horizontalScrollController.hasClients) {
         _isSyncing = true;
@@ -37,7 +35,6 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
         Future.microtask(() => _isSyncing = false);
       }
     });
-    // Listener untuk search
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -97,43 +94,27 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     },
   ];
 
-  // Method untuk filter dan search data
   List<Map<String, String>> _getFilteredData() {
     List<Map<String, String>> filtered = _karyawan;
 
-    // Filter berdasarkan mesin
     if (_filterMesin != null && _filterMesin!.isNotEmpty) {
-      filtered =
-          filtered.where((item) {
-            return item["mesin"]?.toString() == _filterMesin;
-          }).toList();
+      filtered = filtered.where((item) {
+        return item["mesin"]?.toString() == _filterMesin;
+      }).toList();
     }
 
-    // Filter berdasarkan search query
     if (_searchQuery.isNotEmpty) {
-      filtered =
-          filtered.where((item) {
-            return item["nama"]?.toString().toLowerCase().contains(
-                      _searchQuery,
-                    ) ==
-                    true ||
-                item["mesin"]?.toString().toLowerCase().contains(
-                      _searchQuery,
-                    ) ==
-                    true ||
-                item["telp"]?.toString().toLowerCase().contains(_searchQuery) ==
-                    true ||
-                item["email"]?.toString().toLowerCase().contains(
-                      _searchQuery,
-                    ) ==
-                    true;
-          }).toList();
+      filtered = filtered.where((item) {
+        return item["nama"]?.toString().toLowerCase().contains(_searchQuery) == true ||
+            item["mesin"]?.toString().toLowerCase().contains(_searchQuery) == true ||
+            item["telp"]?.toString().toLowerCase().contains(_searchQuery) == true ||
+            item["email"]?.toString().toLowerCase().contains(_searchQuery) == true;
+      }).toList();
     }
 
     return filtered;
   }
 
-  // Method untuk mendapatkan list mesin unik
   List<String> _getMesinList() {
     Set<String> mesinSet = {};
     for (var item in _karyawan) {
@@ -159,12 +140,10 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
         ),
         SizedBox(height: 20),
 
-        // Search Bar, Filter, dan Button Tambah
         Column(
           children: [
             Row(
               children: [
-                // Search Bar
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -189,22 +168,18 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                       decoration: InputDecoration(
                         hintText: 'Cari karyawan...',
                         hintStyle: TextStyle(color: Colors.grey[400]),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: Color(0xFF0A9C5D),
-                        ),
-                        suffixIcon:
-                            _searchQuery.isNotEmpty
-                                ? IconButton(
-                                  icon: Icon(Icons.clear, color: Colors.grey),
-                                  onPressed: () {
-                                    setState(() {
-                                      _searchController.clear();
-                                      _searchQuery = '';
-                                    });
-                                  },
-                                )
-                                : null,
+                        prefixIcon: Icon(Icons.search, color: Color(0xFF0A9C5D)),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(Icons.clear, color: Colors.grey),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchController.clear();
+                                    _searchQuery = '';
+                                  });
+                                },
+                              )
+                            : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -215,21 +190,14 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color: Color(0xFF0A9C5D),
-                            width: 2,
-                          ),
+                          borderSide: BorderSide(color: Color(0xFF0A9C5D), width: 2),
                         ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
                   ),
                 ),
                 SizedBox(width: 12),
-                // Filter Dropdown
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -250,11 +218,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.filter_list,
-                            color: Color(0xFF0A9C5D),
-                            size: 20,
-                          ),
+                          Icon(Icons.filter_list, color: Color(0xFF0A9C5D), size: 20),
                           SizedBox(width: 8),
                           Text('Filter Mesin'),
                         ],
@@ -283,16 +247,12 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                   ),
                 ),
                 SizedBox(width: 12),
-                // Button Tambah
                 ElevatedButton.icon(
                   onPressed: () => _showTambahKaryawanModal(context),
                   icon: Icon(Icons.add),
                   label: Text("Tambah"),
                   style: ElevatedButton.styleFrom(
-                    textStyle: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     backgroundColor: Color(0xFF0A9C5D),
                     iconColor: Colors.white,
                     foregroundColor: Colors.white,
@@ -305,7 +265,6 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 ),
               ],
             ),
-            // Filter tag jika ada filter aktif
             if (_filterMesin != null) ...[
               SizedBox(height: 8),
               Row(
@@ -328,7 +287,6 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
         ),
         SizedBox(height: 20),
 
-        // ================= TABLE ==================
         Expanded(
           child: Container(
             decoration: BoxDecoration(
@@ -358,227 +316,226 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     );
     const double rowHeight = 65.0;
     const double horizontalScrollbarThickness = 12.0;
-    const double horizontalScrollbarPadding =
-        horizontalScrollbarThickness + 8.0;
+    const double horizontalScrollbarPadding = horizontalScrollbarThickness + 8.0;
 
-    // Lebar kolom
     const double colNo = 60.0;
-    const double col1 = 250.0;
-    const double col2 = 200.0;
     const double col3 = 150.0;
-    const double col4 = 250.0;
-    const double col5 = 200.0;
     const double col6 = 150.0;
 
-    // Build header row content
-    Widget headerRowContent = Row(
-      children: [
-        _headerCell("NO", colNo, rowHeight, headerStyle),
-        _headerCell("NAMA PETUGAS", col1, rowHeight, headerStyle),
-        _headerCell("MESIN YANG DIKERJAKAN", col2, rowHeight, headerStyle),
-        _headerCell("NOMOR TELEPON", col3, rowHeight, headerStyle),
-        _headerCell("ALAMAT EMAIL", col4, rowHeight, headerStyle),
-        _headerCell("PASSWORD", col5, rowHeight, headerStyle),
-        _headerCell("AKSI", col6, rowHeight, headerStyle),
-      ],
-    );
+    // Kolom tetap
+    const double fixedColumnsWidth = colNo + col3 + col6;
 
-    // Build body dengan padding tambahan agar tidak tertutup scrollbar horizontal
-    Widget tableBody = Padding(
-      padding: const EdgeInsets.only(bottom: horizontalScrollbarPadding),
-      child: _buildTableBody(context),
-    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Hitung sisa lebar untuk 3 kolom yang akan di-expand
+        final availableWidth = constraints.maxWidth - fixedColumnsWidth;
+        final expandedColWidth = availableWidth > 0 ? availableWidth / 4 : 200.0;
 
-    return Scrollbar(
-      controller: _horizontalScrollController,
-      thumbVisibility: true,
-      thickness: horizontalScrollbarThickness,
-      scrollbarOrientation: ScrollbarOrientation.bottom,
-      child: Stack(
-        children: [
-          // Scrollable Body dengan horizontal scroll
-          Column(
+        // Pastikan lebar minimum untuk kolom yang di-expand
+        final col1 = expandedColWidth < 200 ? 200.0 : expandedColWidth;
+        final col2 = expandedColWidth < 200 ? 200.0 : expandedColWidth;
+        final col4 = expandedColWidth < 200 ? 200.0 : expandedColWidth;
+        final col5 = expandedColWidth < 200 ? 200.0 : expandedColWidth;
+
+        Widget headerRowContent = Row(
+          children: [
+            _headerCell("NO", colNo, rowHeight, headerStyle),
+            _headerCell("NAMA PETUGAS", col1, rowHeight, headerStyle),
+            _headerCell("MESIN YANG DIKERJAKAN", col2, rowHeight, headerStyle),
+            _headerCell("NOMOR TELEPON", col3, rowHeight, headerStyle),
+            _headerCell("ALAMAT EMAIL", col4, rowHeight, headerStyle),
+            _headerCell("PASSWORD", col5, rowHeight, headerStyle),
+            _headerCell("AKSI", col6, rowHeight, headerStyle),
+          ],
+        );
+
+        Widget tableBody = Padding(
+          padding: const EdgeInsets.only(bottom: horizontalScrollbarPadding),
+          child: _buildTableBodyDynamic(context, col1, col2, col4, col5),
+        );
+
+        final totalTableWidth = colNo + col1 + col2 + col3 + col4 + col5 + col6;
+        final needsScroll = totalTableWidth > constraints.maxWidth;
+
+        return Scrollbar(
+          controller: _horizontalScrollController,
+          thumbVisibility: needsScroll,
+          thickness: horizontalScrollbarThickness,
+          scrollbarOrientation: ScrollbarOrientation.bottom,
+          child: Stack(
             children: [
-              // Spacer untuk header
-              SizedBox(height: rowHeight),
-              // Scrollable Body
-              Expanded(
-                child: Scrollbar(
-                  controller: _verticalScrollController,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                    controller: _verticalScrollController,
-                    scrollDirection: Axis.vertical,
+              Column(
+                children: [
+                  SizedBox(height: rowHeight),
+                  Expanded(
+                    child: Scrollbar(
+                      controller: _verticalScrollController,
+                      thumbVisibility: true,
+                      child: SingleChildScrollView(
+                        controller: _verticalScrollController,
+                        scrollDirection: Axis.vertical,
+                        child: SingleChildScrollView(
+                          controller: _horizontalScrollController,
+                          scrollDirection: Axis.horizontal,
+                          physics: needsScroll
+                              ? AlwaysScrollableScrollPhysics()
+                              : NeverScrollableScrollPhysics(),
+                          child: tableBody,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerSignal: _handleHeaderPointerSignal,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF0A9C5D), Color(0xFF088A52)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
                     child: SingleChildScrollView(
-                      controller: _horizontalScrollController,
+                      controller: _headerScrollController,
                       scrollDirection: Axis.horizontal,
-                      physics: AlwaysScrollableScrollPhysics(),
-                      child: tableBody,
+                      physics: needsScroll
+                          ? AlwaysScrollableScrollPhysics()
+                          : NeverScrollableScrollPhysics(),
+                      child: headerRowContent,
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          // Sticky Header
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Listener(
-              behavior: HitTestBehavior.translucent,
-              onPointerSignal: _handleHeaderPointerSignal,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF0A9C5D), Color(0xFF088A52)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Scrollbar(
-                  controller: _headerScrollController,
-                  thumbVisibility: true,
-                  scrollbarOrientation: ScrollbarOrientation.bottom,
-                  child: SingleChildScrollView(
-                    controller: _headerScrollController,
-                    scrollDirection: Axis.horizontal,
-                    physics: AlwaysScrollableScrollPhysics(),
-                    child: headerRowContent,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildTableBody(BuildContext context) {
+  Widget _buildTableBodyDynamic(
+    BuildContext context,
+    double col1,
+    double col2,
+    double col4,
+    double col5,
+  ) {
     const double rowHeight = 65.0;
-
-    // Lebar kolom
     const double colNo = 60.0;
-    const double col1 = 250.0;
-    const double col2 = 200.0;
     const double col3 = 150.0;
-    const double col4 = 250.0;
-    const double col5 = 200.0;
     const double col6 = 150.0;
 
-    // Hitung total lebar kolom
-    const double totalWidth = colNo + col1 + col2 + col3 + col4 + col5 + col6;
+    List<Map<String, String>> filteredData = _getFilteredData();
 
-    // Empty state
     if (_karyawan.isEmpty) {
+      final screenWidth = MediaQuery.of(context).size.width;
       return Container(
-        width: totalWidth,
-        height: 400,
+        width: screenWidth,
+        padding: EdgeInsets.all(60),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: Colors.grey[300]!, width: 1),
         ),
         child: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 60, horizontal: 40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.inbox_outlined, size: 80, color: Colors.grey[400]),
-                SizedBox(height: 16),
-                Text(
-                  'Tidak ada data karyawan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[600],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.inbox_outlined, size: 80, color: Colors.grey[400]),
+              SizedBox(height: 16),
+              Text(
+                'Tidak ada data karyawan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[600],
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Mulai dengan menambahkan data karyawan baru',
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (filteredData.isEmpty) {
+      final screenWidth = MediaQuery.of(context).size.width;
+      return Container(
+        width: screenWidth,
+        padding: EdgeInsets.all(60),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.grey[300]!, width: 1),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.search_off, size: 80, color: Colors.grey[400]),
+              SizedBox(height: 16),
+              Text(
+                'Tidak ada data ditemukan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[600],
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Coba ubah kata kunci pencarian atau filter',
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _searchController.clear();
+                    _searchQuery = '';
+                  });
+                },
+                icon: Icon(Icons.clear, color: Color(0xFF0A9C5D)),
+                label: Text(
+                  "Bersihkan Pencarian",
+                  style: TextStyle(color: Color(0xFF0A9C5D)),
+                ),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  backgroundColor: Color(0xFF0A9C5D).withOpacity(0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Mulai dengan menambahkan data karyawan baru',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
     }
 
     List<Widget> dataRows = [];
-    List<Map<String, String>> filteredData = _getFilteredData();
-
-    // Empty state untuk hasil filter
-    if (filteredData.isEmpty) {
-      return Container(
-        width: totalWidth,
-        height: 400,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.grey[300]!, width: 1),
-        ),
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 60, horizontal: 40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.search_off, size: 80, color: Colors.grey[400]),
-                SizedBox(height: 16),
-                Text(
-                  'Tidak ada data ditemukan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Coba ubah kata kunci pencarian atau filter',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 16),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _searchController.clear();
-                      _searchQuery = '';
-                    });
-                  },
-                  icon: Icon(Icons.clear, color: Color(0xFF0A9C5D)),
-                  label: Text(
-                    "Bersihkan Pencarian",
-                    style: TextStyle(color: Color(0xFF0A9C5D)),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    backgroundColor: Color(0xFF0A9C5D).withOpacity(0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
 
     for (int i = 0; i < filteredData.length; i++) {
       var item = filteredData[i];
@@ -689,10 +646,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
       barrierDismissible: true,
       builder: (dialogContext) {
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 32,
-          ),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -702,10 +656,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
               return ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 560),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 26,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 26),
                   child: Form(
                     key: formKey,
                     child: Column(
@@ -740,10 +691,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                 SizedBox(height: 4),
                                 Text(
                                   "Lengkapi informasi karyawan untuk akses dashboard",
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 14,
-                                  ),
+                                  style: TextStyle(color: Colors.grey, fontSize: 14),
                                 ),
                               ],
                             ),
@@ -779,15 +727,12 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                   label: "Mesin yang Dikerjakan",
                                   icon: Icons.precision_manufacturing_outlined,
                                 ),
-                                items:
-                                    mesinOptions
-                                        .map(
-                                          (mesin) => DropdownMenuItem(
-                                            value: mesin,
-                                            child: Text(mesin),
-                                          ),
-                                        )
-                                        .toList(),
+                                items: mesinOptions
+                                    .map((mesin) => DropdownMenuItem(
+                                          value: mesin,
+                                          child: Text(mesin),
+                                        ))
+                                    .toList(),
                                 onChanged: (value) {
                                   if (value == null) return;
                                   setStateDialog(() => selectedMesin = value);
@@ -847,15 +792,13 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             TextButton(
-                              onPressed:
-                                  () => Navigator.of(dialogContext).pop(),
+                              onPressed: () => Navigator.of(dialogContext).pop(),
                               child: const Text("Batal"),
                             ),
                             const SizedBox(width: 12),
                             ElevatedButton.icon(
                               onPressed: () {
-                                if (!(formKey.currentState?.validate() ??
-                                    false)) {
+                                if (!(formKey.currentState?.validate() ?? false)) {
                                   return;
                                 }
                                 setState(() {
@@ -880,6 +823,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                 backgroundColor: const Color(0xFF0A9C5D),
                                 foregroundColor: Colors.white,
                               ),
+                              icon: Icon(Icons.save),
                               label: const Text("Simpan"),
                             ),
                           ],
@@ -917,8 +861,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      validator:
-          validator ??
+      validator: validator ??
           (value) {
             if (value == null || value.trim().isEmpty) {
               return "$label wajib diisi";
@@ -1064,9 +1007,9 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
             icon: Icons.delete,
             color: Color(0xFFF44336),
             onPressed: () {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text("Hapus: ${item["nama"]}")));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Hapus: ${item["nama"]}")),
+              );
             },
           ),
         ],
