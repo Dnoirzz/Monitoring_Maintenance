@@ -1,13 +1,17 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 class DataMesinPage extends StatefulWidget {
+  const DataMesinPage({super.key});
+
   @override
   _DataMesinPageState createState() => _DataMesinPageState();
 }
 
 class _DataMesinPageState extends State<DataMesinPage> {
+  final ScrollController _verticalScrollController = ScrollController();
   final ScrollController _horizontalScrollController = ScrollController();
   final ScrollController _headerScrollController = ScrollController();
   bool _isSyncing = false;
@@ -35,9 +39,29 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
   @override
   void dispose() {
+    _verticalScrollController.dispose();
     _horizontalScrollController.dispose();
     _headerScrollController.dispose();
     super.dispose();
+  }
+
+  void _handleHeaderPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) {
+      return;
+    }
+    if (!_verticalScrollController.hasClients) {
+      return;
+    }
+
+    final double targetOffset =
+        (_verticalScrollController.offset + event.scrollDelta.dy).clamp(
+          _verticalScrollController.position.minScrollExtent,
+          _verticalScrollController.position.maxScrollExtent,
+        );
+
+    if (targetOffset != _verticalScrollController.offset) {
+      _verticalScrollController.jumpTo(targetOffset);
+    }
   }
 
   // Data mentah dengan detail per komponen (setiap komponen = 1 row)
@@ -727,9 +751,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                               Container(
                                 padding: EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.grey[300]!,
-                                  ),
+                                  border: Border.all(color: Colors.grey[300]!),
                                   borderRadius: BorderRadius.circular(8),
                                   color: Colors.grey[50],
                                 ),
@@ -746,10 +768,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
                                           border: Border.all(
                                             color: Colors.grey[300]!,
                                           ),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           child: Image.file(
                                             File(_selectedImage!.path),
                                             fit: BoxFit.cover,
@@ -764,17 +790,18 @@ class _DataMesinPageState extends State<DataMesinPage> {
                                           try {
                                             final XFile? image =
                                                 await _imagePicker.pickImage(
-                                              source: ImageSource.gallery,
-                                              imageQuality: 85,
-                                            );
+                                                  source: ImageSource.gallery,
+                                                  imageQuality: 85,
+                                                );
                                             if (image != null) {
                                               setDialogState(() {
                                                 _selectedImage = image;
                                               });
                                             }
                                           } catch (e) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
                                               SnackBar(
                                                 content: Text(
                                                   'Gagal memilih gambar: ${e.toString()}',
@@ -910,7 +937,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                                 updateWidgetState(() {
                                   // Simpan path gambar jika ada
                                   String? gambarPath = _selectedImage?.path;
-                                  
+
                                   for (var bagian in bagianAsetList) {
                                     String namaBagian =
                                         bagian['namaBagian'] as String;
@@ -1053,6 +1080,9 @@ class _DataMesinPageState extends State<DataMesinPage> {
   Widget _buildTableWithStickyHeader(BuildContext context) {
     final headerStyle = const TextStyle(fontWeight: FontWeight.bold);
     const double rowHeight = 65.0;
+    const double horizontalScrollbarThickness = 12.0;
+    const double horizontalScrollbarPadding =
+        horizontalScrollbarThickness + 8.0;
 
     // Lebar kolom
     const double colNo = 60.0;
@@ -1118,26 +1148,32 @@ class _DataMesinPageState extends State<DataMesinPage> {
       ],
     );
 
-    // Build body
-    Widget tableBody = _buildTableBody(context);
+    // Build body dengan padding tambahan agar tidak tertutup scrollbar horizontal
+    Widget tableBody = Padding(
+      padding: const EdgeInsets.only(bottom: horizontalScrollbarPadding),
+      child: _buildTableBody(context),
+    );
 
-    return Stack(
-      children: [
-        // Scrollable Body dengan horizontal scroll
-        Column(
-          children: [
-            // Spacer untuk header
-            SizedBox(height: rowHeight),
-            // Scrollable Body
-            Expanded(
-              child: Scrollbar(
-                thumbVisibility: true,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: Scrollbar(
-                    controller: _horizontalScrollController,
-                    thumbVisibility: true,
-                    scrollbarOrientation: ScrollbarOrientation.bottom,
+    return Scrollbar(
+      controller: _horizontalScrollController,
+      thumbVisibility: true,
+      thickness: horizontalScrollbarThickness,
+      scrollbarOrientation: ScrollbarOrientation.bottom,
+      child: Stack(
+        children: [
+          // Scrollable Body dengan horizontal scroll
+          Column(
+            children: [
+              // Spacer untuk header
+              SizedBox(height: rowHeight),
+              // Scrollable Body
+              Expanded(
+                child: Scrollbar(
+                  controller: _verticalScrollController,
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: _verticalScrollController,
+                    scrollDirection: Axis.vertical,
                     child: SingleChildScrollView(
                       controller: _horizontalScrollController,
                       scrollDirection: Axis.horizontal,
@@ -1147,33 +1183,32 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-        // Sticky Header
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black, width: 1),
-              color: Colors.white,
-            ),
-            child: Scrollbar(
-              controller: _headerScrollController,
-              thumbVisibility: true,
-              scrollbarOrientation: ScrollbarOrientation.bottom,
-              child: SingleChildScrollView(
-                controller: _headerScrollController,
-                scrollDirection: Axis.horizontal,
-                physics: AlwaysScrollableScrollPhysics(),
-                child: headerRowContent,
+            ],
+          ),
+          // Sticky Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black, width: 1),
+                color: Colors.white,
+              ),
+              child: Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerSignal: _handleHeaderPointerSignal,
+                child: SingleChildScrollView(
+                  controller: _headerScrollController,
+                  scrollDirection: Axis.horizontal,
+                  physics: AlwaysScrollableScrollPhysics(),
+                  child: headerRowContent,
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1359,27 +1394,28 @@ class _DataMesinPageState extends State<DataMesinPage> {
       ),
       padding: const EdgeInsets.all(4),
       alignment: Alignment.center,
-      child: imagePath != null
-          ? (imagePath.startsWith('assets/')
-              ? Image.asset(
-                  imagePath,
-                  width: width - 8,
-                  height: height - 8,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(Icons.image_not_supported, size: 24);
-                  },
-                )
-              : Image.file(
-                  File(imagePath),
-                  width: width - 8,
-                  height: height - 8,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(Icons.image_not_supported, size: 24);
-                  },
-                ))
-          : Icon(Icons.image, size: 24, color: Colors.grey),
+      child:
+          imagePath != null
+              ? (imagePath.startsWith('assets/')
+                  ? Image.asset(
+                    imagePath,
+                    width: width - 8,
+                    height: height - 8,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(Icons.image_not_supported, size: 24);
+                    },
+                  )
+                  : Image.file(
+                    File(imagePath),
+                    width: width - 8,
+                    height: height - 8,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(Icons.image_not_supported, size: 24);
+                    },
+                  ))
+              : Icon(Icons.image, size: 24, color: Colors.grey),
     );
   }
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class MaintenanceSchedulePage extends StatelessWidget {
+  const MaintenanceSchedulePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Column(
