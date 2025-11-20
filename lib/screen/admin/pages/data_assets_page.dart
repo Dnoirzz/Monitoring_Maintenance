@@ -1852,7 +1852,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
     } else if (isHovered) {
       backgroundColor = Color(0xFF0A9C5D).withOpacity(0.1);
     } else {
-      backgroundColor = isEvenRow ? Colors.white : Colors.grey[50]!;
+      backgroundColor = Colors.white;
     }
 
     return Container(
@@ -1889,7 +1889,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
     if (isHovered) {
       backgroundColor = Color(0xFF0A9C5D).withOpacity(0.1);
     } else {
-      backgroundColor = isEvenRow ? Colors.grey[50]! : Colors.grey[100]!;
+      backgroundColor = Colors.white;
     }
 
     return GestureDetector(
@@ -1988,7 +1988,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
     if (isHovered) {
       backgroundColor = Color(0xFF0A9C5D).withOpacity(0.1);
     } else {
-      backgroundColor = isEvenRow ? Colors.white : Colors.grey[50]!;
+      backgroundColor = Colors.white;
     }
 
     return Container(
