@@ -1,9 +1,19 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'kalender_pengecekan_page.dart';
+import 'package:monitoring_maintenance/controller/cek_sheet_controller.dart';
+import 'package:monitoring_maintenance/model/maintenance_model.dart';
+import 'package:monitoring_maintenance/controller/asset_controller.dart';
 
 class CekSheetSchedulePage extends StatefulWidget {
-  const CekSheetSchedulePage({super.key});
+  final CekSheetController? cekSheetController;
+  final AssetController? assetController;
+  
+  const CekSheetSchedulePage({
+    super.key,
+    this.cekSheetController,
+    this.assetController,
+  });
 
   @override
   _CekSheetSchedulePageState createState() => _CekSheetSchedulePageState();
@@ -65,48 +75,74 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
     }
   }
 
-  final List<Map<String, dynamic>> _rawData = [
-    {
-      "no": 1,
-      "nama_infrastruktur": "SCREW BREAKER",
-      "bagian": "Pisau Duduk",
-      "periode": "Per 1 Minggu",
-      "jenis_pekerjaan": "Cek hasil potongan remahan",
-      "standar_perawatan": "Ukuran output remahan < 15cm",
-      "alat_bahan": "Kunci 33,48,28,19,41,24",
-      "tanggal_status": Map<int, String>.from({}),
-    },
-    {
-      "no": 2,
-      "nama_infrastruktur": "SCREW BREAKER",
-      "bagian": "Pisau Duduk",
-      "periode": "Per 2 Minggu",
-      "jenis_pekerjaan": "Las tambah daging + pengasahan",
-      "standar_perawatan": "Ujung pisau max 3mm dari screen",
-      "alat_bahan": "Kunci 33,48,28,19,41,24",
-      "tanggal_status": Map<int, String>.from({}),
-    },
-    {
-      "no": 3,
-      "nama_infrastruktur": "SCREW BREAKER",
-      "bagian": "V-Belt",
-      "periode": "Per 3 Hari",
-      "jenis_pekerjaan": "Cek",
-      "standar_perawatan": "Tidak ada slip, retak, getar",
-      "alat_bahan": "Kunci 33,48,28,19,41,24",
-      "tanggal_status": Map<int, String>.from({}),
-    },
-    {
-      "no": 4,
-      "nama_infrastruktur": "SCREW BREAKER",
-      "bagian": "Gearbox",
-      "periode": "Per 12 Bulan",
-      "jenis_pekerjaan": "Ganti Oli",
-      "standar_perawatan": "Volume oli sesuai standard",
-      "alat_bahan": "Kunci 33,48,28,19,41,24",
-      "tanggal_status": Map<int, String>.from({}),
-    },
-  ];
+  // Get data from controller or use fallback
+  List<Map<String, dynamic>> get _rawData {
+    if (widget.cekSheetController == null || widget.assetController == null) {
+      // Fallback to empty list if controllers not provided
+      return [];
+    }
+
+    final templates = widget.cekSheetController!.getAllTemplates();
+    
+    List<Map<String, dynamic>> data = [];
+    int no = 1;
+
+    for (var template in templates) {
+      // Get asset name from komponen_assets -> bg_mesin -> assets
+      // For now, we'll use a simplified approach
+      String assetName = "Unknown";
+      String bagianName = template.komponenAssetsId ?? "Unknown";
+      
+      // Format periode
+      String periodeText = _formatPeriode(template.periode, template.intervalPeriode);
+
+      data.add({
+        "no": no++,
+        "nama_infrastruktur": assetName,
+        "bagian": bagianName,
+        "periode": periodeText,
+        "jenis_pekerjaan": template.jenisPekerjaan ?? "",
+        "standar_perawatan": template.stdPrwtn ?? "",
+        "alat_bahan": template.alatBahan ?? "",
+        "tanggal_status": Map<int, String>.from({}),
+        "template_id": template.id,
+      });
+    }
+
+    return data;
+  }
+
+  String _formatPeriode(Periode? periode, int? interval) {
+    if (periode == null) return "Tidak ditentukan";
+    
+    String periodeText = "";
+    switch (periode) {
+      case Periode.harian:
+        periodeText = "Hari";
+        break;
+      case Periode.mingguan:
+        periodeText = "Minggu";
+        break;
+      case Periode.bulanan:
+        periodeText = "Bulan";
+        break;
+      case Periode.triwulan:
+        periodeText = "Triwulan";
+        break;
+      case Periode.semesteran:
+        periodeText = "Semester";
+        break;
+      case Periode.tahunan:
+        periodeText = "Tahun";
+        break;
+    }
+
+    if (interval != null && interval > 1) {
+      return "Per $interval $periodeText";
+    } else {
+      return "Per 1 $periodeText";
+    }
+  }
 
   Map<String, List<Map<String, dynamic>>> _groupByInfrastruktur() {
     Map<String, List<Map<String, dynamic>>> grouped = {};

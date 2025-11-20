@@ -145,25 +145,6 @@ class MergedTable extends StatelessWidget {
     );
   }
 
-  Widget _cell(String text, double width, double height, TextStyle? style, {bool isHeader = false}) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: isHeader ? const Color(0xFFE0E0E0) : Colors.white,
-        border: Border.all(color: Colors.black, width: 0.5),
-      ),
-      padding: const EdgeInsets.all(8),
-      alignment: Alignment.topLeft,
-      child: Text(
-        text,
-        style: style,
-        maxLines: null, // Allow unlimited lines
-        overflow: TextOverflow.visible,
-      ),
-    );
-  }
-
   Widget _cellCenter(String text, double width, double height, TextStyle? style, {bool isHeader = false}) {
     return Container(
       width: width,
