@@ -1,8 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:monitoring_maintenance/controller/karyawan_controller.dart';
+import 'package:monitoring_maintenance/model/karyawan_model.dart';
 
 class DaftarKaryawanPage extends StatefulWidget {
-  const DaftarKaryawanPage({super.key});
+  final KaryawanController karyawanController;
+  
+  const DaftarKaryawanPage({super.key, required this.karyawanController});
 
   @override
   State<DaftarKaryawanPage> createState() => _DaftarKaryawanPageState();
@@ -70,59 +74,15 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     }
   }
 
-  final List<Map<String, String>> _karyawan = [
-    {
-      "nama": "Ramadhan F",
-      "mesin": "Creeper 1",
-      "telp": "08123456789",
-      "email": "ramadhan@example.com",
-      "password": "******",
-    },
-    {
-      "nama": "Adityo Saputro",
-      "mesin": "Mixing Machine",
-      "telp": "087812345678",
-      "email": "adityo@example.com",
-      "password": "******",
-    },
-    {
-      "nama": "Rama Wijaya",
-      "mesin": "Creeper 2",
-      "telp": "085312345678",
-      "email": "rama@example.com",
-      "password": "******",
-    },
-  ];
-
-  List<Map<String, String>> _getFilteredData() {
-    List<Map<String, String>> filtered = _karyawan;
-
-    if (_filterMesin != null && _filterMesin!.isNotEmpty) {
-      filtered = filtered.where((item) {
-        return item["mesin"]?.toString() == _filterMesin;
-      }).toList();
-    }
-
-    if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((item) {
-        return item["nama"]?.toString().toLowerCase().contains(_searchQuery) == true ||
-            item["mesin"]?.toString().toLowerCase().contains(_searchQuery) == true ||
-            item["telp"]?.toString().toLowerCase().contains(_searchQuery) == true ||
-            item["email"]?.toString().toLowerCase().contains(_searchQuery) == true;
-      }).toList();
-    }
-
-    return filtered;
+  List<KaryawanModel> _getFilteredData() {
+    return widget.karyawanController.filterKaryawan(
+      mesin: _filterMesin,
+      searchQuery: _searchQuery,
+    );
   }
 
   List<String> _getMesinList() {
-    Set<String> mesinSet = {};
-    for (var item in _karyawan) {
-      if (item["mesin"] != null) {
-        mesinSet.add(item["mesin"]!);
-      }
-    }
-    return mesinSet.toList()..sort();
+    return widget.karyawanController.getMesinList();
   }
 
   @override
@@ -440,9 +400,9 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     const double col3 = 150.0;
     const double col6 = 150.0;
 
-    List<Map<String, String>> filteredData = _getFilteredData();
+    List<KaryawanModel> filteredData = _getFilteredData();
 
-    if (_karyawan.isEmpty) {
+    if (widget.karyawanController.getAllKaryawan().isEmpty) {
       final screenWidth = MediaQuery.of(context).size.width;
       return Container(
         width: screenWidth,
@@ -538,9 +498,9 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     List<Widget> dataRows = [];
 
     for (int i = 0; i < filteredData.length; i++) {
-      var item = filteredData[i];
+      KaryawanModel item = filteredData[i];
       bool isEvenRow = i % 2 == 0;
-      String rowKey = "${item['nama']}_$i";
+      String rowKey = "${item.nama}_$i";
       bool isHovered = _hoveredRowKey == rowKey;
 
       dataRows.add(
@@ -556,7 +516,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item["nama"]!,
+                item.nama,
                 col1,
                 rowHeight,
                 null,
@@ -564,7 +524,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item["mesin"]!,
+                item.mesin,
                 col2,
                 rowHeight,
                 null,
@@ -572,7 +532,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item["telp"]!,
+                item.telp,
                 col3,
                 rowHeight,
                 null,
@@ -580,7 +540,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item["email"]!,
+                item.email,
                 col4,
                 rowHeight,
                 null,
@@ -588,7 +548,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item["password"]!,
+                item.password,
                 col5,
                 rowHeight,
                 null,
@@ -802,13 +762,15 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                   return;
                                 }
                                 setState(() {
-                                  _karyawan.add({
-                                    "nama": namaController.text.trim(),
-                                    "mesin": selectedMesin,
-                                    "telp": telpController.text.trim(),
-                                    "email": emailController.text.trim(),
-                                    "password": passwordController.text.trim(),
-                                  });
+                                  widget.karyawanController.addKaryawan(
+                                    KaryawanModel(
+                                      nama: namaController.text.trim(),
+                                      mesin: selectedMesin,
+                                      telp: telpController.text.trim(),
+                                      email: emailController.text.trim(),
+                                      password: passwordController.text.trim(),
+                                    ),
+                                  );
                                 });
                                 Navigator.of(dialogContext).pop();
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -963,7 +925,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
 
   Widget _actionCell(
     BuildContext context,
-    Map<String, String> item,
+    KaryawanModel item,
     double width,
     double height, {
     bool isEvenRow = true,
@@ -996,7 +958,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text("Edit: ${item["nama"]}"),
+                  content: Text("Edit: ${item.nama}"),
                   backgroundColor: Color(0xFF0A9C5D),
                 ),
               );
@@ -1007,8 +969,11 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
             icon: Icons.delete,
             color: Color(0xFFF44336),
             onPressed: () {
+              setState(() {
+                widget.karyawanController.deleteKaryawan(item.nama);
+              });
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Hapus: ${item["nama"]}")),
+                SnackBar(content: Text("Hapus: ${item.nama}")),
               );
             },
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:monitoring_maintenance/screen/admin/dashboard_admin.dart';
+import 'package:monitoring_maintenance/screen/login_page.dart';
 // import 'screen/splach_scr.dart';
 
 void main() {
@@ -23,9 +24,8 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-
       // home: SplashScreen(),
-      home: AdminTemplate(),
+      home: const LoginPage(),
     );
   }
 }

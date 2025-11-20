@@ -2,9 +2,13 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:monitoring_maintenance/controller/asset_controller.dart';
+import 'package:monitoring_maintenance/model/asset_model.dart';
 
 class DataMesinPage extends StatefulWidget {
-  const DataMesinPage({super.key});
+  final AssetController assetController;
+  
+  const DataMesinPage({super.key, required this.assetController});
 
   @override
   _DataMesinPageState createState() => _DataMesinPageState();
@@ -77,276 +81,30 @@ class _DataMesinPageState extends State<DataMesinPage> {
     }
   }
 
-  // Data mentah dengan detail per komponen (setiap komponen = 1 row)
-  List<Map<String, dynamic>> _rawData = [
-    // Creeper 1 - Roll Atas (3 komponen)
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Atas",
-      "komponen_aset": "Bearing",
-      "produk_yang_digunakan": "SKF 6205",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Atas",
-      "komponen_aset": "Seal",
-      "produk_yang_digunakan": "Oil Seal 25x40x7",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Atas",
-      "komponen_aset": "Shaft",
-      "produk_yang_digunakan": "Shaft Steel 40mm",
-      "gambar_aset": null,
-    },
-    // Creeper 1 - Roll Bawah (4 komponen)
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Bawah",
-      "komponen_aset": "Bearing",
-      "produk_yang_digunakan": "SKF 6206",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Bawah",
-      "komponen_aset": "Seal",
-      "produk_yang_digunakan": "Oil Seal 30x45x7",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Bawah",
-      "komponen_aset": "Shaft",
-      "produk_yang_digunakan": "Shaft Steel 45mm",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Bawah",
-      "komponen_aset": "Pulley",
-      "produk_yang_digunakan": "Pulley V-Belt 8PK",
-      "gambar_aset": null,
-    },
-    // Excavator
-    {
-      "nama_aset": "Excavator",
-      "jenis_aset": "Alat Berat",
-      "maintenance_terakhir": "10 Januari 2024",
-      "maintenance_selanjutnya": "10 Februari 2024",
-      "bagian_aset": "Hydraulic System",
-      "komponen_aset": "Hydraulic Pump",
-      "produk_yang_digunakan": "Hydraulic Oil AW46",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Excavator",
-      "jenis_aset": "Alat Berat",
-      "maintenance_terakhir": "10 Januari 2024",
-      "maintenance_selanjutnya": "10 Februari 2024",
-      "bagian_aset": "Hydraulic System",
-      "komponen_aset": "Cylinder",
-      "produk_yang_digunakan": "Seal Kit Cylinder",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Excavator",
-      "jenis_aset": "Alat Berat",
-      "maintenance_terakhir": "10 Januari 2024",
-      "maintenance_selanjutnya": "10 Februari 2024",
-      "bagian_aset": "Hydraulic System",
-      "komponen_aset": "Hose",
-      "produk_yang_digunakan": "Hydraulic Hose 1/2 inch",
-      "gambar_aset": null,
-    },
-    // Generator Set
-    {
-      "nama_aset": "Generator Set",
-      "jenis_aset": "Listrik",
-      "maintenance_terakhir": "5 Januari 2024",
-      "maintenance_selanjutnya": "5 Februari 2024",
-      "bagian_aset": "Engine",
-      "komponen_aset": "Alternator",
-      "produk_yang_digunakan": "Alternator 12V 100A",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Generator Set",
-      "jenis_aset": "Listrik",
-      "maintenance_terakhir": "5 Januari 2024",
-      "maintenance_selanjutnya": "5 Februari 2024",
-      "bagian_aset": "Engine",
-      "komponen_aset": "Battery",
-      "produk_yang_digunakan": "Battery Dry 12V 100Ah",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Generator Set",
-      "jenis_aset": "Listrik",
-      "maintenance_terakhir": "5 Januari 2024",
-      "maintenance_selanjutnya": "5 Februari 2024",
-      "bagian_aset": "Engine",
-      "komponen_aset": "Fuel System",
-      "produk_yang_digunakan": "Fuel Filter Element",
-      "gambar_aset": null,
-    },
-    // Mixing Machine
-    {
-      "nama_aset": "Mixing Machine",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "20 Januari 2024",
-      "maintenance_selanjutnya": "20 Februari 2024",
-      "bagian_aset": "Gearbox",
-      "komponen_aset": "Gear",
-      "produk_yang_digunakan": "Gear Oil EP90",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Mixing Machine",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "20 Januari 2024",
-      "maintenance_selanjutnya": "20 Februari 2024",
-      "bagian_aset": "Gearbox",
-      "komponen_aset": "Oli",
-      "produk_yang_digunakan": "Gear Oil EP90 5L",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Mixing Machine",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "20 Januari 2024",
-      "maintenance_selanjutnya": "20 Februari 2024",
-      "bagian_aset": "Gearbox",
-      "komponen_aset": "Seal",
-      "produk_yang_digunakan": "Oil Seal 50x70x8",
-      "gambar_aset": null,
-    },
-  ];
-
-  // Method untuk filter dan sort data
-  List<Map<String, dynamic>> _getFilteredAndSortedData() {
-    List<Map<String, dynamic>> filtered = _rawData;
-
-    // Filter berdasarkan jenis aset
-    if (_filterJenisAset != null && _filterJenisAset!.isNotEmpty) {
-      filtered =
-          filtered.where((item) {
-            return item["jenis_aset"]?.toString() == _filterJenisAset;
-          }).toList();
-    }
-
-    // Filter berdasarkan search query
-    if (_searchQuery.isNotEmpty) {
-      filtered =
-          filtered.where((item) {
-            return item["nama_aset"]?.toString().toLowerCase().contains(
-                      _searchQuery,
-                    ) ==
-                    true ||
-                item["jenis_aset"]?.toString().toLowerCase().contains(
-                      _searchQuery,
-                    ) ==
-                    true ||
-                item["bagian_aset"]?.toString().toLowerCase().contains(
-                      _searchQuery,
-                    ) ==
-                    true ||
-                item["komponen_aset"]?.toString().toLowerCase().contains(
-                      _searchQuery,
-                    ) ==
-                    true ||
-                item["produk_yang_digunakan"]
-                        ?.toString()
-                        .toLowerCase()
-                        .contains(_searchQuery) ==
-                    true ||
-                item["maintenance_terakhir"]?.toString().toLowerCase().contains(
-                      _searchQuery,
-                    ) ==
-                    true ||
-                item["maintenance_selanjutnya"]
-                        ?.toString()
-                        .toLowerCase()
-                        .contains(_searchQuery) ==
-                    true;
-          }).toList();
-    }
-
-    // Sort data
-    if (_sortColumn != null) {
-      filtered.sort((a, b) {
-        var aValue = a[_sortColumn]?.toString() ?? '';
-        var bValue = b[_sortColumn]?.toString() ?? '';
-
-        int comparison = aValue.compareTo(bValue);
-        return _sortAscending ? comparison : -comparison;
-      });
-    }
-
-    return filtered;
+  // Get filtered and sorted data from controller
+  List<AssetModel> _getFilteredAndSortedData() {
+    return widget.assetController.filterAssets(
+      jenisAset: _filterJenisAset,
+      searchQuery: _searchQuery,
+      sortColumn: _sortColumn,
+      sortAscending: _sortAscending,
+    );
   }
 
-  // Method untuk mendapatkan list jenis aset unik
+  // Get jenis aset list from controller
   List<String> _getJenisAsetList() {
-    Set<String> jenisSet = {};
-    for (var item in _rawData) {
-      if (item["jenis_aset"] != null) {
-        jenisSet.add(item["jenis_aset"].toString());
-      }
-    }
-    return jenisSet.toList()..sort();
+    return widget.assetController.getJenisAsetList();
   }
 
-  // Mengelompokkan data berdasarkan nama_aset
-  Map<String, List<Map<String, dynamic>>> _groupByAset() {
-    List<Map<String, dynamic>> data = _getFilteredAndSortedData();
-    Map<String, List<Map<String, dynamic>>> grouped = {};
-    for (var item in data) {
-      String nama = item["nama_aset"];
-      if (!grouped.containsKey(nama)) {
-        grouped[nama] = [];
-      }
-      grouped[nama]!.add(item);
-    }
-    return grouped;
+  // Group by aset
+  Map<String, List<AssetModel>> _groupByAset() {
+    List<AssetModel> data = _getFilteredAndSortedData();
+    return widget.assetController.groupByAset(data);
   }
 
-  // Mengelompokkan data berdasarkan bagian dalam satu aset
-  Map<String, List<Map<String, dynamic>>> _groupByBagian(
-    List<Map<String, dynamic>> items,
-  ) {
-    Map<String, List<Map<String, dynamic>>> grouped = {};
-    for (var item in items) {
-      String bagian = item["bagian_aset"];
-      if (!grouped.containsKey(bagian)) {
-        grouped[bagian] = [];
-      }
-      grouped[bagian]!.add(item);
-    }
-    return grouped;
+  // Group by bagian
+  Map<String, List<AssetModel>> _groupByBagian(List<AssetModel> items) {
+    return widget.assetController.groupByBagian(items);
   }
 
   // Method untuk menampilkan form tambah data asset
@@ -1021,32 +779,16 @@ class _DataMesinPageState extends State<DataMesinPage> {
                                   return;
                                 }
 
-                                // Tambahkan data ke _rawData - setiap komponen menjadi satu row
+                                // Tambahkan data melalui controller
                                 updateWidgetState(() {
-                                  // Simpan path gambar jika ada
                                   String? gambarPath = _selectedImage?.path;
-
-                                  for (var bagian in bagianAsetList) {
-                                    String namaBagian =
-                                        bagian['namaBagian'] as String;
-                                    List<Map<String, dynamic>> komponenList =
-                                        bagian['komponen']
-                                            as List<Map<String, dynamic>>;
-                                    for (var komponen in komponenList) {
-                                      _rawData.add({
-                                        "nama_aset": _namaAsetController.text,
-                                        "jenis_aset": _selectedJenisAset!,
-                                        "maintenance_terakhir": null,
-                                        "maintenance_selanjutnya": null,
-                                        "bagian_aset": namaBagian,
-                                        "komponen_aset":
-                                            komponen['namaKomponen'] as String,
-                                        "produk_yang_digunakan":
-                                            komponen['spesifikasi'] as String,
-                                        "gambar_aset": gambarPath,
-                                      });
-                                    }
-                                  }
+                                  widget.assetController.addAssetsFromForm(
+                                    namaAset: _namaAsetController.text,
+                                    jenisAset: _selectedJenisAset!,
+                                    bagianAsetList: bagianAsetList,
+                                    gambarPath: gambarPath,
+                                  );
+                                  setState(() {}); // Refresh UI
                                 });
 
                                 Navigator.of(dialogContext).pop();
@@ -1487,7 +1229,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
     const double col8 = 120.0; // Gambar Aset
     const double col9 = 200.0; // Kolom AKSI
 
-    Map<String, List<Map<String, dynamic>>> grouped = _groupByAset();
+    Map<String, List<AssetModel>> grouped = _groupByAset();
 
     // Hitung total lebar kolom
     const double totalWidth =
@@ -1571,16 +1313,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
       bool isEvenRow = rowIndex % 2 == 0;
 
       // Ambil data dari item pertama untuk kolom yang di-merge
-      var firstItem = items[0];
+      AssetModel firstItem = items[0];
 
       // Setup hover state
       String rowKey = namaAset;
       bool isHovered = _hoveredRowKey == rowKey;
 
       // Kelompokkan berdasarkan bagian
-      Map<String, List<Map<String, dynamic>>> groupedByBagian = _groupByBagian(
-        items,
-      );
+      Map<String, List<AssetModel>> groupedByBagian = _groupByBagian(items);
       List<Widget> bagianRows = [];
       int bagianRowIndex = 0;
 
@@ -1610,13 +1350,13 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   children:
                       bagianItems.asMap().entries.map((entry) {
                         int itemIndex = entry.key;
-                        var item = entry.value;
+                        AssetModel item = entry.value;
                         bool isItemEvenRow =
                             (rowIndex + bagianRowIndex + itemIndex) % 2 == 0;
                         return Row(
                           children: [
                             _cellCenter(
-                              item["komponen_aset"]!,
+                              item.komponenAset,
                               col6,
                               rowHeight,
                               null,
@@ -1624,7 +1364,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                               isHovered: isHovered,
                             ),
                             _cellCenter(
-                              item["produk_yang_digunakan"]!,
+                              item.produkYangDigunakan,
                               col7,
                               rowHeight,
                               null,
@@ -1640,7 +1380,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
           );
         } else {
           // Jika bagian hanya 1 komponen, tidak perlu merge
-          var item = bagianItems[0];
+          AssetModel item = bagianItems[0];
           bagianRows.add(
             Row(
               children: [
@@ -1653,7 +1393,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   isHovered: isHovered,
                 ),
                 _cellCenter(
-                  item["komponen_aset"]!,
+                  item.komponenAset,
                   col6,
                   rowHeight,
                   null,
@@ -1661,7 +1401,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   isHovered: isHovered,
                 ),
                 _cellCenter(
-                  item["produk_yang_digunakan"]!,
+                  item.produkYangDigunakan,
                   col7,
                   rowHeight,
                   null,
@@ -1702,7 +1442,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
               // Kolom JENIS ASET - merged untuk semua baris
               _cellCenter(
-                firstItem["jenis_aset"]!,
+                firstItem.jenisAset,
                 col2,
                 mergedHeight,
                 null,
@@ -1712,7 +1452,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
               // Kolom MAINTENANCE TERAKHIR - merged untuk semua baris
               _cellCenter(
-                firstItem["maintenance_terakhir"]!,
+                firstItem.maintenanceTerakhir ?? "",
                 col3,
                 mergedHeight,
                 null,
@@ -1722,7 +1462,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
               // Kolom MAINTENANCE SELANJUTNYA - merged untuk semua baris
               _cellCenter(
-                firstItem["maintenance_selanjutnya"]!,
+                firstItem.maintenanceSelanjutnya ?? "",
                 col4,
                 mergedHeight,
                 null,
@@ -1735,7 +1475,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
               // Kolom GAMBAR ASET - merged untuk semua baris dalam satu aset
               _imageCell(
-                firstItem["gambar_aset"],
+                firstItem.gambarAset,
                 col8,
                 mergedHeight,
                 isEvenRow: isEvenRow,
@@ -1978,7 +1718,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
   Widget _actionCell(
     BuildContext context,
-    Map<String, dynamic> item,
+    AssetModel item,
     double width,
     double height, {
     bool isEvenRow = true,
@@ -2013,7 +1753,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text("Edit: ${item["nama_aset"]}"),
+                  content: Text("Edit: ${item.namaAset}"),
                   backgroundColor: Color(0xFF0A9C5D),
                 ),
               );
@@ -2078,7 +1818,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
   // Method untuk menampilkan confirmation dialog sebelum hapus
   void _showDeleteConfirmation(
     BuildContext context,
-    Map<String, dynamic> item,
+    AssetModel item,
   ) {
     showDialog(
       context: context,
@@ -2110,11 +1850,10 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Nama Aset: ${item["nama_aset"]}',
+                      'Nama Aset: ${item.namaAset}',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    if (item["jenis_aset"] != null)
-                      Text('Jenis: ${item["jenis_aset"]}'),
+                    Text('Jenis: ${item.jenisAset}'),
                   ],
                 ),
               ),
@@ -2137,13 +1876,11 @@ class _DataMesinPageState extends State<DataMesinPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                // TODO: Implementasi hapus data
                 setState(() {
-                  _rawData.removeWhere(
-                    (data) =>
-                        data["nama_aset"] == item["nama_aset"] &&
-                        data["bagian_aset"] == item["bagian_aset"] &&
-                        data["komponen_aset"] == item["komponen_aset"],
+                  widget.assetController.deleteAsset(
+                    namaAset: item.namaAset,
+                    bagianAset: item.bagianAset,
+                    komponenAset: item.komponenAset,
                   );
                 });
                 ScaffoldMessenger.of(context).showSnackBar(

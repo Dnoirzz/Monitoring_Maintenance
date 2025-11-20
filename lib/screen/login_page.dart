@@ -1,7 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:monitoring_maintenance/controller/login_controller.dart';
+import 'package:monitoring_maintenance/model/login_model.dart';
+import 'package:monitoring_maintenance/screen/admin/dashboard_admin.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final LoginController _loginController = LoginController();
+  final TextEditingController _emailOrPhoneController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailOrPhoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (_emailOrPhoneController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Email/Telepon dan Password harus diisi')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final credentials = LoginCredentials(
+      emailOrPhone: _emailOrPhoneController.text,
+      password: _passwordController.text,
+    );
+
+    final success = await _loginController.login(credentials);
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (success) {
+      // Navigate to admin dashboard
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const AdminTemplate()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login gagal. Periksa kembali email/telepon dan password.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,12 +129,14 @@ class LoginPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 28),
-                        const _LoginTextField(
+                        _LoginTextField(
+                          controller: _emailOrPhoneController,
                           hintText: 'E-mail atau nomor telepon',
                           textInputType: TextInputType.emailAddress,
                         ),
                         const SizedBox(height: 18),
-                        const _LoginTextField(
+                        _LoginTextField(
+                          controller: _passwordController,
                           hintText: 'Password',
                           obscureText: true,
                         ),
@@ -93,14 +150,23 @@ class LoginPage extends StatelessWidget {
                               shape: const StadiumBorder(),
                               elevation: 0,
                             ),
-                            onPressed: () {},
-                            child: const Text(
-                              'LOGIN',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            onPressed: _isLoading ? null : _handleLogin,
+                            child: _isLoading
+                                ? SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Text(
+                                    'LOGIN',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
@@ -118,11 +184,13 @@ class LoginPage extends StatelessWidget {
 
 class _LoginTextField extends StatelessWidget {
   const _LoginTextField({
+    required this.controller,
     required this.hintText,
     this.textInputType,
     this.obscureText = false,
   });
 
+  final TextEditingController controller;
   final String hintText;
   final TextInputType? textInputType;
   final bool obscureText;
@@ -130,6 +198,7 @@ class _LoginTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
       keyboardType: textInputType,
       obscureText: obscureText,
       decoration: InputDecoration(
