@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'add_asset_page.dart';
 
 class DataMesinPage extends StatefulWidget {
   const DataMesinPage({super.key});
@@ -1089,7 +1090,6 @@ class _DataMesinPageState extends State<DataMesinPage> {
     );
   }
 
-  // Helper method untuk mendapatkan nama bulan
   String _getMonthName(int month) {
     const months = [
       'Januari',
@@ -1249,8 +1249,18 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 SizedBox(width: 12),
                 // Button Tambah
                 ElevatedButton.icon(
-                  onPressed: () {
-                    _showAddAssetForm(context);
+                  onPressed: () async {
+                    // Navigate to AddAssetPage
+                    final result = await Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const AddAssetPage()),
+                    );
+
+                    // Reload data if asset was added successfully
+                    if (result == true) {
+                      setState(() {
+                        // TODO: Load data from Supabase
+                      });
+                    }
                   },
                   icon: Icon(Icons.add),
                   label: Text("Tambah"),
