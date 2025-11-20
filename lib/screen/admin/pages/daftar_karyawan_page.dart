@@ -13,65 +13,11 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
   final ScrollController _horizontalScrollController = ScrollController();
   final ScrollController _headerScrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+
   bool _isSyncing = false;
   String _searchQuery = '';
   String? _filterMesin;
   String? _hoveredRowKey;
-
-  @override
-  void initState() {
-    super.initState();
-    // Sinkronkan scroll body ke header
-    _horizontalScrollController.addListener(() {
-      if (!_isSyncing && _headerScrollController.hasClients) {
-        _isSyncing = true;
-        _headerScrollController.jumpTo(_horizontalScrollController.offset);
-        Future.microtask(() => _isSyncing = false);
-      }
-    });
-    // Sinkronkan scroll header ke body
-    _headerScrollController.addListener(() {
-      if (!_isSyncing && _horizontalScrollController.hasClients) {
-        _isSyncing = true;
-        _horizontalScrollController.jumpTo(_headerScrollController.offset);
-        Future.microtask(() => _isSyncing = false);
-      }
-    });
-    // Listener untuk search
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _verticalScrollController.dispose();
-    _horizontalScrollController.dispose();
-    _headerScrollController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _handleHeaderPointerSignal(PointerSignalEvent event) {
-    if (event is! PointerScrollEvent) {
-      return;
-    }
-    if (!_verticalScrollController.hasClients) {
-      return;
-    }
-
-    final double targetOffset =
-        (_verticalScrollController.offset + event.scrollDelta.dy).clamp(
-          _verticalScrollController.position.minScrollExtent,
-          _verticalScrollController.position.maxScrollExtent,
-        );
-
-    if (targetOffset != _verticalScrollController.offset) {
-      _verticalScrollController.jumpTo(targetOffset);
-    }
-  }
 
   final List<Map<String, String>> _karyawan = [
     {
@@ -97,51 +43,99 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     },
   ];
 
-  // Method untuk filter dan search data
+  @override
+  void initState() {
+    super.initState();
+
+    // Sinkron horizontal scroll header & body
+    _horizontalScrollController.addListener(() {
+      if (!_isSyncing && _headerScrollController.hasClients) {
+        _isSyncing = true;
+        _headerScrollController.jumpTo(_horizontalScrollController.offset);
+        Future.microtask(() => _isSyncing = false);
+      }
+    });
+
+    _headerScrollController.addListener(() {
+      if (!_isSyncing && _horizontalScrollController.hasClients) {
+        _isSyncing = true;
+        _horizontalScrollController.jumpTo(_headerScrollController.offset);
+        Future.microtask(() => _isSyncing = false);
+      }
+    });
+
+    // Listener search
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _verticalScrollController.dispose();
+    _horizontalScrollController.dispose();
+    _headerScrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Scroll header pakai scroll wheel untuk scroll vertikal body
+  void _handleHeaderPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) return;
+    if (!_verticalScrollController.hasClients) return;
+
+    final double targetOffset =
+        (_verticalScrollController.offset + event.scrollDelta.dy).clamp(
+      _verticalScrollController.position.minScrollExtent,
+      _verticalScrollController.position.maxScrollExtent,
+    );
+
+    if (targetOffset != _verticalScrollController.offset) {
+      _verticalScrollController.jumpTo(targetOffset);
+    }
+  }
+
   List<Map<String, String>> _getFilteredData() {
     List<Map<String, String>> filtered = _karyawan;
 
     // Filter berdasarkan mesin
     if (_filterMesin != null && _filterMesin!.isNotEmpty) {
-      filtered =
-          filtered.where((item) {
-            return item["mesin"]?.toString() == _filterMesin;
-          }).toList();
+      filtered = filtered.where((item) {
+        return item["mesin"] == _filterMesin;
+      }).toList();
     }
 
-    // Filter berdasarkan search query
+    // Search
     if (_searchQuery.isNotEmpty) {
-      filtered =
-          filtered.where((item) {
-            return item["nama"]?.toString().toLowerCase().contains(
-                      _searchQuery,
-                    ) ==
-                    true ||
-                item["mesin"]?.toString().toLowerCase().contains(
-                      _searchQuery,
-                    ) ==
-                    true ||
-                item["telp"]?.toString().toLowerCase().contains(_searchQuery) ==
-                    true ||
-                item["email"]?.toString().toLowerCase().contains(
-                      _searchQuery,
-                    ) ==
-                    true;
-          }).toList();
+      filtered = filtered.where((item) {
+        final nama = item["nama"]?.toLowerCase() ?? '';
+        final mesin = item["mesin"]?.toLowerCase() ?? '';
+        final telp = item["telp"]?.toLowerCase() ?? '';
+        final email = item["email"]?.toLowerCase() ?? '';
+
+        return nama.contains(_searchQuery) ||
+            mesin.contains(_searchQuery) ||
+            telp.contains(_searchQuery) ||
+            email.contains(_searchQuery);
+      }).toList();
     }
 
     return filtered;
   }
 
-  // Method untuk mendapatkan list mesin unik
   List<String> _getMesinList() {
-    Set<String> mesinSet = {};
+    final mesinSet = <String>{};
     for (var item in _karyawan) {
-      if (item["mesin"] != null) {
-        mesinSet.add(item["mesin"]!);
+      final mesin = item["mesin"];
+      if (mesin != null) {
+        mesinSet.add(mesin);
       }
     }
-    return mesinSet.toList()..sort();
+    final list = mesinSet.toList();
+    list.sort();
+    return list;
   }
 
   @override
@@ -149,7 +143,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           "Daftar Karyawan",
           style: TextStyle(
             fontSize: 24,
@@ -157,14 +151,14 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
             color: Color(0xFF022415),
           ),
         ),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
 
-        // Search Bar, Filter, dan Button Tambah
+        // Search + Filter + Tambah
         Column(
           children: [
             Row(
               children: [
-                // Search Bar
+                // Search
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -175,36 +169,30 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                           color: Colors.grey.withOpacity(0.1),
                           spreadRadius: 1,
                           blurRadius: 5,
-                          offset: Offset(0, 2),
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
                     child: TextField(
                       controller: _searchController,
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                      },
                       decoration: InputDecoration(
                         hintText: 'Cari karyawan...',
                         hintStyle: TextStyle(color: Colors.grey[400]),
-                        prefixIcon: Icon(
+                        prefixIcon: const Icon(
                           Icons.search,
                           color: Color(0xFF0A9C5D),
                         ),
-                        suffixIcon:
-                            _searchQuery.isNotEmpty
-                                ? IconButton(
-                                  icon: Icon(Icons.clear, color: Colors.grey),
-                                  onPressed: () {
-                                    setState(() {
-                                      _searchController.clear();
-                                      _searchQuery = '';
-                                    });
-                                  },
-                                )
-                                : null,
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, color: Colors.grey),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {
+                                    _searchQuery = '';
+                                  });
+                                },
+                              )
+                            : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -215,12 +203,12 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
+                          borderSide: const BorderSide(
                             color: Color(0xFF0A9C5D),
                             width: 2,
                           ),
                         ),
-                        contentPadding: EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
                         ),
@@ -228,8 +216,9 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                     ),
                   ),
                 ),
-                SizedBox(width: 12),
-                // Filter Dropdown
+                const SizedBox(width: 12),
+
+                // Filter Mesin (perbaikan: support null dengan String?)
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -239,64 +228,68 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                         color: Colors.grey.withOpacity(0.1),
                         spreadRadius: 1,
                         blurRadius: 5,
-                        offset: Offset(0, 2),
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                  child: DropdownButton<String>(
+                  child: DropdownButton<String?>(
                     value: _filterMesin,
-                    hint: Padding(
+                    hint: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.filter_list,
-                            color: Color(0xFF0A9C5D),
-                            size: 20,
-                          ),
+                          Icon(Icons.filter_list,
+                              color: Color(0xFF0A9C5D), size: 20),
                           SizedBox(width: 8),
                           Text('Filter Mesin'),
                         ],
                       ),
                     ),
                     items: [
-                      DropdownMenuItem<String>(
+                      const DropdownMenuItem<String?>(
                         value: null,
                         child: Text('Semua Mesin'),
                       ),
-                      ..._getMesinList().map((mesin) {
-                        return DropdownMenuItem<String>(
+                      ..._getMesinList().map(
+                        (mesin) => DropdownMenuItem<String?>(
                           value: mesin,
                           child: Text(mesin),
-                        );
-                      }),
+                        ),
+                      ),
                     ],
                     onChanged: (value) {
                       setState(() {
                         _filterMesin = value;
                       });
                     },
-                    underline: SizedBox(),
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    icon: Icon(Icons.arrow_drop_down, color: Color(0xFF0A9C5D)),
+                    underline: const SizedBox(),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    icon: const Icon(Icons.arrow_drop_down,
+                        color: Color(0xFF0A9C5D)),
                   ),
                 ),
-                SizedBox(width: 12),
-                // Button Tambah
+
+                const SizedBox(width: 12),
+
+                // Tombol Tambah
                 ElevatedButton.icon(
                   onPressed: () => _showTambahKaryawanModal(context),
-                  icon: Icon(Icons.add),
-                  label: Text("Tambah"),
+                  icon: const Icon(Icons.add),
+                  label: const Text("Tambah"),
                   style: ElevatedButton.styleFrom(
-                    textStyle: TextStyle(
+                    textStyle: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
-                    backgroundColor: Color(0xFF0A9C5D),
+                    backgroundColor: const Color(0xFF0A9C5D),
                     iconColor: Colors.white,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 20,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -305,9 +298,9 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 ),
               ],
             ),
-            // Filter tag jika ada filter aktif
+
             if (_filterMesin != null) ...[
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Chip(
@@ -317,18 +310,20 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                         _filterMesin = null;
                       });
                     },
-                    deleteIcon: Icon(Icons.close, size: 18),
-                    backgroundColor: Color(0xFF0A9C5D).withOpacity(0.1),
-                    labelStyle: TextStyle(color: Color(0xFF0A9C5D)),
+                    deleteIcon: const Icon(Icons.close, size: 18),
+                    backgroundColor:
+                        const Color(0xFF0A9C5D).withOpacity(0.1),
+                    labelStyle: const TextStyle(color: Color(0xFF0A9C5D)),
                   ),
                 ],
               ),
             ],
           ],
         ),
-        SizedBox(height: 20),
 
-        // ================= TABLE ==================
+        const SizedBox(height: 20),
+
+        // Tabel
         Expanded(
           child: Container(
             decoration: BoxDecoration(
@@ -339,7 +334,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                   color: Colors.grey.withOpacity(0.1),
                   spreadRadius: 1,
                   blurRadius: 5,
-                  offset: Offset(0, 3),
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -351,7 +346,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
   }
 
   Widget _buildTableWithStickyHeader(BuildContext context) {
-    final headerStyle = const TextStyle(
+    const headerStyle = TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 13,
       color: Colors.white,
@@ -361,233 +356,251 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     const double horizontalScrollbarPadding =
         horizontalScrollbarThickness + 8.0;
 
-    // Lebar kolom
     const double colNo = 60.0;
-    const double col1 = 250.0;
-    const double col2 = 200.0;
     const double col3 = 150.0;
-    const double col4 = 250.0;
-    const double col5 = 200.0;
     const double col6 = 150.0;
 
-    // Build header row content
-    Widget headerRowContent = Row(
-      children: [
-        _headerCell("NO", colNo, rowHeight, headerStyle),
-        _headerCell("NAMA PETUGAS", col1, rowHeight, headerStyle),
-        _headerCell("MESIN YANG DIKERJAKAN", col2, rowHeight, headerStyle),
-        _headerCell("NOMOR TELEPON", col3, rowHeight, headerStyle),
-        _headerCell("ALAMAT EMAIL", col4, rowHeight, headerStyle),
-        _headerCell("PASSWORD", col5, rowHeight, headerStyle),
-        _headerCell("AKSI", col6, rowHeight, headerStyle),
-      ],
-    );
+    // Kolom fix (no, telp, aksi)
+    const double fixedColumnsWidth = colNo + col3 + col6;
 
-    // Build body dengan padding tambahan agar tidak tertutup scrollbar horizontal
-    Widget tableBody = Padding(
-      padding: const EdgeInsets.only(bottom: horizontalScrollbarPadding),
-      child: _buildTableBody(context),
-    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Sisa lebar untuk kolom nama, mesin, email, password
+        final availableWidth = constraints.maxWidth - fixedColumnsWidth;
+        final expandedColWidth = availableWidth > 0 ? availableWidth / 4 : 200.0;
 
-    return Scrollbar(
-      controller: _horizontalScrollController,
-      thumbVisibility: true,
-      thickness: horizontalScrollbarThickness,
-      scrollbarOrientation: ScrollbarOrientation.bottom,
-      child: Stack(
-        children: [
-          // Scrollable Body dengan horizontal scroll
-          Column(
+        final col1 = expandedColWidth < 200 ? 200.0 : expandedColWidth;
+        final col2 = expandedColWidth < 200 ? 200.0 : expandedColWidth;
+        final col4 = expandedColWidth < 200 ? 200.0 : expandedColWidth;
+        final col5 = expandedColWidth < 200 ? 200.0 : expandedColWidth;
+
+        final headerRowContent = Row(
+          children: [
+            _headerCell("NO", colNo, rowHeight, headerStyle),
+            _headerCell("NAMA PETUGAS", col1, rowHeight, headerStyle),
+            _headerCell("MESIN YANG DIKERJAKAN", col2, rowHeight, headerStyle),
+            _headerCell("NOMOR TELEPON", col3, rowHeight, headerStyle),
+            _headerCell("ALAMAT EMAIL", col4, rowHeight, headerStyle),
+            _headerCell("PASSWORD", col5, rowHeight, headerStyle),
+            _headerCell("AKSI", col6, rowHeight, headerStyle),
+          ],
+        );
+
+        final tableBody = Padding(
+          padding: const EdgeInsets.only(bottom: horizontalScrollbarPadding),
+          child: _buildTableBodyDynamic(
+            context,
+            col1,
+            col2,
+            col4,
+            col5,
+          ),
+        );
+
+        final totalTableWidth =
+            colNo + col1 + col2 + col3 + col4 + col5 + col6;
+        final needsScroll = totalTableWidth > constraints.maxWidth;
+
+        return Scrollbar(
+          controller: _horizontalScrollController,
+          thumbVisibility: needsScroll,
+          thickness: horizontalScrollbarThickness,
+          scrollbarOrientation: ScrollbarOrientation.bottom,
+          child: Stack(
             children: [
-              // Spacer untuk header
-              SizedBox(height: rowHeight),
-              // Scrollable Body
-              Expanded(
-                child: Scrollbar(
-                  controller: _verticalScrollController,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                    controller: _verticalScrollController,
-                    scrollDirection: Axis.vertical,
+              Column(
+                children: [
+                  const SizedBox(height: rowHeight),
+                  Expanded(
+                    child: Scrollbar(
+                      controller: _verticalScrollController,
+                      thumbVisibility: true,
+                      child: SingleChildScrollView(
+                        controller: _verticalScrollController,
+                        scrollDirection: Axis.vertical,
+                        child: SingleChildScrollView(
+                          controller: _horizontalScrollController,
+                          scrollDirection: Axis.horizontal,
+                          physics: needsScroll
+                              ? const AlwaysScrollableScrollPhysics()
+                              : const NeverScrollableScrollPhysics(),
+                          child: tableBody,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerSignal: _handleHeaderPointerSignal,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0A9C5D), Color(0xFF088A52)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
                     child: SingleChildScrollView(
-                      controller: _horizontalScrollController,
+                      controller: _headerScrollController,
                       scrollDirection: Axis.horizontal,
-                      physics: AlwaysScrollableScrollPhysics(),
-                      child: tableBody,
+                      physics: needsScroll
+                          ? const AlwaysScrollableScrollPhysics()
+                          : const NeverScrollableScrollPhysics(),
+                      child: headerRowContent,
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          // Sticky Header
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Listener(
-              behavior: HitTestBehavior.translucent,
-              onPointerSignal: _handleHeaderPointerSignal,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF0A9C5D), Color(0xFF088A52)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Scrollbar(
-                  controller: _headerScrollController,
-                  thumbVisibility: true,
-                  scrollbarOrientation: ScrollbarOrientation.bottom,
-                  child: SingleChildScrollView(
-                    controller: _headerScrollController,
-                    scrollDirection: Axis.horizontal,
-                    physics: AlwaysScrollableScrollPhysics(),
-                    child: headerRowContent,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildTableBody(BuildContext context) {
+  Widget _buildTableBodyDynamic(
+    BuildContext context,
+    double col1,
+    double col2,
+    double col4,
+    double col5,
+  ) {
     const double rowHeight = 65.0;
-
-    // Lebar kolom
     const double colNo = 60.0;
-    const double col1 = 250.0;
-    const double col2 = 200.0;
     const double col3 = 150.0;
-    const double col4 = 250.0;
-    const double col5 = 200.0;
     const double col6 = 150.0;
 
-    // Hitung total lebar kolom
-    const double totalWidth = colNo + col1 + col2 + col3 + col4 + col5 + col6;
+    final filteredData = _getFilteredData();
 
-    // Empty state
     if (_karyawan.isEmpty) {
+      final screenWidth = MediaQuery.of(context).size.width;
       return Container(
-        width: totalWidth,
-        height: 400,
+        width: screenWidth,
+        padding: const EdgeInsets.all(60),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: Colors.grey[300]!, width: 1),
         ),
         child: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 60, horizontal: 40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.inbox_outlined, size: 80, color: Colors.grey[400]),
-                SizedBox(height: 16),
-                Text(
-                  'Tidak ada data karyawan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[600],
-                  ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.inbox_outlined, size: 80, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text(
+                'Tidak ada data karyawan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[600],
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Mulai dengan menambahkan data karyawan baru',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Mulai dengan menambahkan data karyawan baru',
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       );
     }
 
-    List<Widget> dataRows = [];
-    List<Map<String, String>> filteredData = _getFilteredData();
-
-    // Empty state untuk hasil filter
     if (filteredData.isEmpty) {
+      final screenWidth = MediaQuery.of(context).size.width;
       return Container(
-        width: totalWidth,
-        height: 400,
+        width: screenWidth,
+        padding: const EdgeInsets.all(60),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: Colors.grey[300]!, width: 1),
         ),
         child: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 60, horizontal: 40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.search_off, size: 80, color: Colors.grey[400]),
-                SizedBox(height: 16),
-                Text(
-                  'Tidak ada data ditemukan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[600],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.search_off, size: 80, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text(
+                'Tidak ada data ditemukan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Coba ubah kata kunci pencarian atau filter',
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _searchController.clear();
+                    _searchQuery = '';
+                  });
+                },
+                icon: const Icon(Icons.clear, color: Color(0xFF0A9C5D)),
+                label: const Text(
+                  "Bersihkan Pencarian",
+                  style: TextStyle(color: Color(0xFF0A9C5D)),
+                ),
+                style: TextButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  backgroundColor:
+                      const Color(0xFF0A9C5D).withOpacity(0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Coba ubah kata kunci pencarian atau filter',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 16),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _searchController.clear();
-                      _searchQuery = '';
-                    });
-                  },
-                  icon: Icon(Icons.clear, color: Color(0xFF0A9C5D)),
-                  label: Text(
-                    "Bersihkan Pencarian",
-                    style: TextStyle(color: Color(0xFF0A9C5D)),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    backgroundColor: Color(0xFF0A9C5D).withOpacity(0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
     }
+
+    final List<Widget> dataRows = [];
 
     for (int i = 0; i < filteredData.length; i++) {
-      var item = filteredData[i];
-      bool isEvenRow = i % 2 == 0;
-      String rowKey = "${item['nama']}_$i";
-      bool isHovered = _hoveredRowKey == rowKey;
+      final item = filteredData[i];
+      final bool isEvenRow = i % 2 == 0;
+      final rowKey = "${item['nama']}_$i";
+      final bool isHovered = _hoveredRowKey == rowKey;
 
       dataRows.add(
         MouseRegion(
+          onEnter: (_) {
+            setState(() {
+              _hoveredRowKey = rowKey;
+            });
+          },
+          onExit: (_) {
+            setState(() {
+              _hoveredRowKey = null;
+            });
+          },
           child: Row(
             children: [
               _cellCenter(
@@ -599,7 +612,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item["nama"]!,
+                item["nama"] ?? '-',
                 col1,
                 rowHeight,
                 null,
@@ -607,7 +620,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item["mesin"]!,
+                item["mesin"] ?? '-',
                 col2,
                 rowHeight,
                 null,
@@ -615,7 +628,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item["telp"]!,
+                item["telp"] ?? '-',
                 col3,
                 rowHeight,
                 null,
@@ -623,7 +636,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item["email"]!,
+                item["email"] ?? '-',
                 col4,
                 rowHeight,
                 null,
@@ -631,7 +644,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item["password"]!,
+                item["password"] ?? '-',
                 col5,
                 rowHeight,
                 null,
@@ -661,6 +674,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     );
   }
 
+  // Modal Tambah Karyawan
   void _showTambahKaryawanModal(BuildContext context) {
     final formKey = GlobalKey<FormState>();
     final TextEditingController namaController = TextEditingController();
@@ -689,10 +703,8 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
       barrierDismissible: true,
       builder: (dialogContext) {
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 32,
-          ),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -750,6 +762,8 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                           ],
                         ),
                         const SizedBox(height: 24),
+
+                        // Fields
                         Wrap(
                           spacing: 16,
                           runSpacing: 18,
@@ -777,17 +791,17 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                 value: selectedMesin,
                                 decoration: _modalInputDecoration(
                                   label: "Mesin yang Dikerjakan",
-                                  icon: Icons.precision_manufacturing_outlined,
+                                  icon:
+                                      Icons.precision_manufacturing_outlined,
                                 ),
-                                items:
-                                    mesinOptions
-                                        .map(
-                                          (mesin) => DropdownMenuItem(
-                                            value: mesin,
-                                            child: Text(mesin),
-                                          ),
-                                        )
-                                        .toList(),
+                                items: mesinOptions
+                                    .map(
+                                      (mesin) => DropdownMenuItem<String>(
+                                        value: mesin,
+                                        child: Text(mesin),
+                                      ),
+                                    )
+                                    .toList(),
                                 onChanged: (value) {
                                   if (value == null) return;
                                   setStateDialog(() => selectedMesin = value);
@@ -842,13 +856,14 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                             ),
                           ],
                         ),
+
                         const SizedBox(height: 28),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             TextButton(
-                              onPressed:
-                                  () => Navigator.of(dialogContext).pop(),
+                              onPressed: () =>
+                                  Navigator.of(dialogContext).pop(),
                               child: const Text("Batal"),
                             ),
                             const SizedBox(width: 12),
@@ -864,7 +879,8 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                     "mesin": selectedMesin,
                                     "telp": telpController.text.trim(),
                                     "email": emailController.text.trim(),
-                                    "password": passwordController.text.trim(),
+                                    "password":
+                                        passwordController.text.trim(),
                                   });
                                 });
                                 Navigator.of(dialogContext).pop();
@@ -880,6 +896,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                 backgroundColor: const Color(0xFF0A9C5D),
                                 foregroundColor: Colors.white,
                               ),
+                              icon: const Icon(Icons.save),
                               label: const Text("Simpan"),
                             ),
                           ],
@@ -894,8 +911,246 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
         );
       },
     ).whenComplete(() {
-      for (final controller in controllers) {
-        controller.dispose();
+      for (final c in controllers) {
+        c.dispose();
+      }
+    });
+  }
+
+  // Modal Edit Karyawan
+  void _showEditKaryawanModal(BuildContext context, int index) {
+    final item = _karyawan[index];
+
+    final formKey = GlobalKey<FormState>();
+    final TextEditingController namaController =
+        TextEditingController(text: item["nama"]);
+    final TextEditingController telpController =
+        TextEditingController(text: item["telp"]);
+    final TextEditingController emailController =
+        TextEditingController(text: item["email"]);
+    final TextEditingController passwordController =
+        TextEditingController(text: item["password"]);
+
+    final controllers = [
+      namaController,
+      telpController,
+      emailController,
+      passwordController,
+    ];
+
+    final List<String> mesinOptions = [
+      "Creeper 1",
+      "Creeper 2",
+      "Mixing Machine",
+      "Generator Set",
+      "Excavator",
+    ];
+    String selectedMesin = item["mesin"] ?? mesinOptions.first;
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: StatefulBuilder(
+            builder: (childContext, setStateDialog) {
+              final double fieldWidth = _dialogFieldWidth(childContext);
+              return ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 26,
+                  ),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0A9C5D).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(
+                                Icons.edit,
+                                color: Color(0xFF0A9C5D),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Text(
+                              "Edit Karyawan",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF022415),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 18,
+                          children: [
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _modalTextField(
+                                controller: namaController,
+                                label: "Nama Lengkap",
+                                icon: Icons.person_outline,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return "Nama wajib diisi";
+                                  }
+                                  if (value.trim().split(' ').length < 2) {
+                                    return "Masukkan nama lengkap";
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: DropdownButtonFormField<String>(
+                                value: selectedMesin,
+                                decoration: _modalInputDecoration(
+                                  label: "Mesin yang Dikerjakan",
+                                  icon:
+                                      Icons.precision_manufacturing_outlined,
+                                ),
+                                items: mesinOptions
+                                    .map(
+                                      (mesin) => DropdownMenuItem<String>(
+                                        value: mesin,
+                                        child: Text(mesin),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) {
+                                  if (value == null) return;
+                                  setStateDialog(() => selectedMesin = value);
+                                },
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _modalTextField(
+                                controller: telpController,
+                                label: "Nomor Telepon",
+                                icon: Icons.phone_outlined,
+                                keyboardType: TextInputType.phone,
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _modalTextField(
+                                controller: emailController,
+                                label: "Email",
+                                icon: Icons.email_outlined,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return "Email wajib diisi";
+                                  }
+                                  final regex = RegExp(r'^.+@.+\..+$');
+                                  if (!regex.hasMatch(value.trim())) {
+                                    return "Format email tidak valid";
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: _modalTextField(
+                                controller: passwordController,
+                                label: "Password",
+                                icon: Icons.lock_outline,
+                                obscureText: true,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return "Password wajib diisi";
+                                  }
+                                  if (value.length < 6) {
+                                    return "Minimal 6 karakter";
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 28),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.of(dialogContext).pop(),
+                              child: const Text("Batal"),
+                            ),
+                            const SizedBox(width: 12),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                if (!(formKey.currentState?.validate() ??
+                                    false)) {
+                                  return;
+                                }
+
+                                setState(() {
+                                  _karyawan[index] = {
+                                    "nama": namaController.text.trim(),
+                                    "mesin": selectedMesin,
+                                    "telp": telpController.text.trim(),
+                                    "email": emailController.text.trim(),
+                                    "password":
+                                        passwordController.text.trim(),
+                                  };
+                                });
+
+                                Navigator.of(dialogContext).pop();
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Data karyawan berhasil diperbarui",
+                                    ),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0A9C5D),
+                                foregroundColor: Colors.white,
+                              ),
+                              icon: const Icon(Icons.save),
+                              label: const Text("Simpan Perubahan"),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    ).whenComplete(() {
+      for (final c in controllers) {
+        c.dispose();
       }
     });
   }
@@ -917,8 +1172,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      validator:
-          validator ??
+      validator: validator ??
           (value) {
             if (value == null || value.trim().isEmpty) {
               return "$label wajib diisi";
@@ -950,7 +1204,8 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: Color(0xFF0A9C5D), width: 1.6),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
     );
   }
 
@@ -991,7 +1246,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
   }) {
     Color backgroundColor;
     if (isHovered) {
-      backgroundColor = Color(0xFF0A9C5D).withOpacity(0.1);
+      backgroundColor = const Color(0xFF0A9C5D).withOpacity(0.1);
     } else {
       backgroundColor = isEvenRow ? Colors.white : Colors.grey[50]!;
     }
@@ -1010,7 +1265,11 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
       alignment: Alignment.center,
       child: Text(
         text,
-        style: style ?? TextStyle(fontSize: 12, color: Colors.grey[800]),
+        style: style ??
+            TextStyle(
+              fontSize: 12,
+              color: Colors.grey[800],
+            ),
         textAlign: TextAlign.center,
         maxLines: null,
         overflow: TextOverflow.visible,
@@ -1028,7 +1287,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
   }) {
     Color backgroundColor;
     if (isHovered) {
-      backgroundColor = Color(0xFF0A9C5D).withOpacity(0.1);
+      backgroundColor = const Color(0xFF0A9C5D).withOpacity(0.1);
     } else {
       backgroundColor = isEvenRow ? Colors.white : Colors.grey[50]!;
     }
@@ -1049,24 +1308,23 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
         children: [
           _iconButton(
             icon: Icons.edit,
-            color: Color(0xFF2196F3),
+            color: const Color(0xFF2196F3),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("Edit: ${item["nama"]}"),
-                  backgroundColor: Color(0xFF0A9C5D),
-                ),
-              );
+              final index = _karyawan.indexOf(item);
+              if (index == -1) return;
+              _showEditKaryawanModal(context, index);
             },
           ),
           const SizedBox(width: 8),
           _iconButton(
             icon: Icons.delete,
-            color: Color(0xFFF44336),
+            color: const Color(0xFFF44336),
             onPressed: () {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text("Hapus: ${item["nama"]}")));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("Hapus: ${item["nama"]}"),
+                ),
+              );
             },
           ),
         ],
@@ -1087,10 +1345,9 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(8),
-        child: Container(
+        child: SizedBox(
           width: 36,
           height: 36,
-          alignment: Alignment.center,
           child: Icon(icon, color: Colors.white, size: 18),
         ),
       ),

@@ -6,7 +6,8 @@ class BerandaPage extends StatefulWidget {
   final VoidCallback? onNavigateToMaintenanceSchedule;
   final VoidCallback? onNavigateToCekSheetSchedule;
 
-  const BerandaPage({super.key, 
+  const BerandaPage({
+    super.key,
     required this.onNavigateToDataMesin,
     required this.onNavigateToKaryawan,
     this.onNavigateToMaintenanceSchedule,
@@ -24,8 +25,8 @@ class _BerandaPageState extends State<BerandaPage> {
   final int pendingRequests = 8;
   final int activeMaintenance = 5;
   final int overdueSchedule = 3;
-  List<bool> _isMenuHovered = List.generate(4, (index) => false);
 
+  List<bool> _isMenuHovered = List.generate(4, (index) => false);
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +48,7 @@ class _BerandaPageState extends State<BerandaPage> {
               ),
               Text(
                 _getCurrentDate(),
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
               ),
             ],
           ),
@@ -76,13 +74,9 @@ class _BerandaPageState extends State<BerandaPage> {
           // Recent Activities / Informasi Penting
           Row(
             children: [
-              Expanded(
-                child: _buildPendingRequestsCard(),
-              ),
+              Expanded(child: _buildPendingRequestsCard()),
               SizedBox(width: 20),
-              Expanded(
-                child: _buildUpcomingScheduleCard(),
-              ),
+              Expanded(child: _buildUpcomingScheduleCard()),
             ],
           ),
         ],
@@ -93,8 +87,18 @@ class _BerandaPageState extends State<BerandaPage> {
   String _getCurrentDate() {
     final now = DateTime.now();
     final months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
     ];
     return '${now.day} ${months[now.month - 1]} ${now.year}';
   }
@@ -144,9 +148,7 @@ class _BerandaPageState extends State<BerandaPage> {
   }) {
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         padding: EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -190,10 +192,7 @@ class _BerandaPageState extends State<BerandaPage> {
             SizedBox(height: 3),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
             ),
           ],
         ),
@@ -260,9 +259,10 @@ class _BerandaPageState extends State<BerandaPage> {
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        transform: _isMenuHovered[index]
-            ? (Matrix4.identity()..translate(0.0, -10.0))
-            : Matrix4.identity(),
+        transform:
+            _isMenuHovered[index]
+                ? (Matrix4.identity()..translate(0.0, -10.0))
+                : Matrix4.identity(),
         child: Card(
           elevation: _isMenuHovered[index] ? 12 : 4,
           shape: RoundedRectangleBorder(
@@ -320,9 +320,7 @@ class _BerandaPageState extends State<BerandaPage> {
   Widget _buildPendingRequestsCard() {
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         padding: EdgeInsets.all(20),
         child: Column(
@@ -343,11 +341,26 @@ class _BerandaPageState extends State<BerandaPage> {
               ],
             ),
             SizedBox(height: 15),
-            _buildRequestItem("Breakdown - Mesin Produksi A", "Disetujui", Colors.green, "2 hari lalu"),
+            _buildRequestItem(
+              "Breakdown - Mesin Produksi A",
+              "Disetujui",
+              Colors.green,
+              "2 hari lalu",
+            ),
             SizedBox(height: 10),
-            _buildRequestItem("Cleaning - Alat Berat B", "Disetujui", Colors.green, "5 hari lalu"),
+            _buildRequestItem(
+              "Cleaning - Alat Berat B",
+              "Disetujui",
+              Colors.green,
+              "5 hari lalu",
+            ),
             SizedBox(height: 10),
-            _buildRequestItem("Upgrade - Listrik C", "Ditolak", Colors.red, "1 minggu lalu"),
+            _buildRequestItem(
+              "Upgrade - Listrik C",
+              "Ditolak",
+              Colors.red,
+              "1 minggu lalu",
+            ),
             SizedBox(height: 10),
             TextButton(
               onPressed: () {
@@ -361,7 +374,12 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
-  Widget _buildRequestItem(String title, String status, Color statusColor, String date) {
+  Widget _buildRequestItem(
+    String title,
+    String status,
+    Color statusColor,
+    String date,
+  ) {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -431,9 +449,7 @@ class _BerandaPageState extends State<BerandaPage> {
   Widget _buildUpcomingScheduleCard() {
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         padding: EdgeInsets.all(20),
         child: Column(
@@ -534,10 +550,7 @@ class _BerandaPageState extends State<BerandaPage> {
                 SizedBox(height: 4),
                 Text(
                   date,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
