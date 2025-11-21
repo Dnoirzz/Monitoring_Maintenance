@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:monitoring_maintenance/screen/admin/dashboard_admin.dart';
 import 'package:monitoring_maintenance/screen/login_page.dart';
-import 'package:monitoring_maintenance/service/supabase_service.dart';
 // import 'screen/splach_scr.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Supabase
-  await SupabaseService.initialize();
-  
+void main() {
   runApp(const MyApp());
 }
 

@@ -19,7 +19,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSyncing = false;
   String _searchQuery = '';
-  String? _filterDepartment;
+  String? _filterMesin;
   String? _hoveredRowKey;
 
   @override
@@ -76,13 +76,13 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
 
   List<KaryawanModel> _getFilteredData() {
     return widget.karyawanController.filterKaryawan(
-      department: _filterDepartment,
+      mesin: _filterMesin,
       searchQuery: _searchQuery,
     );
   }
 
-  List<String> _getDepartmentList() {
-    return widget.karyawanController.getDepartmentList();
+  List<String> _getMesinList() {
+    return widget.karyawanController.getMesinList();
   }
 
   @override
@@ -172,7 +172,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                     ],
                   ),
                   child: DropdownButton<String>(
-                    value: _filterDepartment,
+                    value: _filterMesin,
                     hint: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
                       child: Row(
@@ -180,25 +180,25 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                         children: [
                           Icon(Icons.filter_list, color: Color(0xFF0A9C5D), size: 20),
                           SizedBox(width: 8),
-                          Text('Filter Department'),
+                          Text('Filter Mesin'),
                         ],
                       ),
                     ),
                     items: [
                       DropdownMenuItem<String>(
                         value: null,
-                        child: Text('Semua Department'),
+                        child: Text('Semua Mesin'),
                       ),
-                      ..._getDepartmentList().map((dept) {
+                      ..._getMesinList().map((mesin) {
                         return DropdownMenuItem<String>(
-                          value: dept,
-                          child: Text(dept),
+                          value: mesin,
+                          child: Text(mesin),
                         );
                       }),
                     ],
                     onChanged: (value) {
                       setState(() {
-                        _filterDepartment = value;
+                        _filterMesin = value;
                       });
                     },
                     underline: SizedBox(),
@@ -225,15 +225,15 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 ),
               ],
             ),
-            if (_filterDepartment != null) ...[
+            if (_filterMesin != null) ...[
               SizedBox(height: 8),
               Row(
                 children: [
                   Chip(
-                    label: Text('Filter: $_filterDepartment'),
+                    label: Text('Filter: $_filterMesin'),
                     onDeleted: () {
                       setState(() {
-                        _filterDepartment = null;
+                        _filterMesin = null;
                       });
                     },
                     deleteIcon: Icon(Icons.close, size: 18),
@@ -301,7 +301,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
           children: [
             _headerCell("NO", colNo, rowHeight, headerStyle),
             _headerCell("NAMA PETUGAS", col1, rowHeight, headerStyle),
-            _headerCell("DEPARTMENT", col2, rowHeight, headerStyle),
+            _headerCell("MESIN YANG DIKERJAKAN", col2, rowHeight, headerStyle),
             _headerCell("NOMOR TELEPON", col3, rowHeight, headerStyle),
             _headerCell("ALAMAT EMAIL", col4, rowHeight, headerStyle),
             _headerCell("PASSWORD", col5, rowHeight, headerStyle),
@@ -500,7 +500,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     for (int i = 0; i < filteredData.length; i++) {
       KaryawanModel item = filteredData[i];
       bool isEvenRow = i % 2 == 0;
-      String rowKey = "${item.fullName ?? item.email}_$i";
+      String rowKey = "${item.nama}_$i";
       bool isHovered = _hoveredRowKey == rowKey;
 
       dataRows.add(
@@ -516,7 +516,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item.fullName ?? "-",
+                item.nama,
                 col1,
                 rowHeight,
                 null,
@@ -524,7 +524,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item.department ?? "-",
+                item.mesin,
                 col2,
                 rowHeight,
                 null,
@@ -532,7 +532,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item.phone ?? "-",
+                item.telp,
                 col3,
                 rowHeight,
                 null,
@@ -548,7 +548,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                item.passwordHash != null ? "******" : "-",
+                item.password,
                 col5,
                 rowHeight,
                 null,
@@ -592,14 +592,14 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
       passwordController,
     ];
 
-    final List<String> departmentOptions = [
-      "Maintenance",
-      "Produksi",
-      "Quality Control",
-      "Engineering",
-      "IT",
+    final List<String> mesinOptions = [
+      "Creeper 1",
+      "Creeper 2",
+      "Mixing Machine",
+      "Generator Set",
+      "Excavator",
     ];
-    String selectedDepartment = departmentOptions.first;
+    String selectedMesin = mesinOptions.first;
 
     showDialog(
       context: context,
@@ -682,20 +682,20 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                             SizedBox(
                               width: fieldWidth,
                               child: DropdownButtonFormField<String>(
-                                value: selectedDepartment,
+                                value: selectedMesin,
                                 decoration: _modalInputDecoration(
-                                  label: "Department",
-                                  icon: Icons.business_outlined,
+                                  label: "Mesin yang Dikerjakan",
+                                  icon: Icons.precision_manufacturing_outlined,
                                 ),
-                                items: departmentOptions
-                                    .map((dept) => DropdownMenuItem(
-                                          value: dept,
-                                          child: Text(dept),
+                                items: mesinOptions
+                                    .map((mesin) => DropdownMenuItem(
+                                          value: mesin,
+                                          child: Text(mesin),
                                         ))
                                     .toList(),
                                 onChanged: (value) {
                                   if (value == null) return;
-                                  setStateDialog(() => selectedDepartment = value);
+                                  setStateDialog(() => selectedMesin = value);
                                 },
                               ),
                             ),
@@ -757,29 +757,21 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                             ),
                             const SizedBox(width: 12),
                             ElevatedButton.icon(
-                              onPressed: () async {
+                              onPressed: () {
                                 if (!(formKey.currentState?.validate() ?? false)) {
                                   return;
                                 }
-                                // Hash password (in real app, use proper hashing)
-                                final passwordHash = passwordController.text.trim();
-                                
-                                await widget.karyawanController.addKaryawan(
-                                  KaryawanModel(
-                                    email: emailController.text.trim(),
-                                    passwordHash: passwordHash,
-                                    fullName: namaController.text.trim(),
-                                    phone: telpController.text.trim(),
-                                    department: selectedDepartment,
-                                    jabatan: "Teknisi",
-                                    isActive: true,
-                                  ),
-                                );
-                                
-                                if (mounted) {
-                                  setState(() {});
-                                }
-                                
+                                setState(() {
+                                  widget.karyawanController.addKaryawan(
+                                    KaryawanModel(
+                                      nama: namaController.text.trim(),
+                                      mesin: selectedMesin,
+                                      telp: telpController.text.trim(),
+                                      email: emailController.text.trim(),
+                                      password: passwordController.text.trim(),
+                                    ),
+                                  );
+                                });
                                 Navigator.of(dialogContext).pop();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -966,7 +958,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text("Edit: ${item.fullName ?? item.email}"),
+                  content: Text("Edit: ${item.nama}"),
                   backgroundColor: Color(0xFF0A9C5D),
                 ),
               );
@@ -976,17 +968,12 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
           _iconButton(
             icon: Icons.delete,
             color: Color(0xFFF44336),
-            onPressed: () async {
-              if (item.id != null) {
-                await widget.karyawanController.deleteKaryawan(item.id!);
-              } else {
-                await widget.karyawanController.deleteKaryawan(item.email);
-              }
-              if (mounted) {
-                setState(() {});
-              }
+            onPressed: () {
+              setState(() {
+                widget.karyawanController.deleteKaryawan(item.nama);
+              });
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Hapus: ${item.fullName ?? item.email}")),
+                SnackBar(content: Text("Hapus: ${item.nama}")),
               );
             },
           ),

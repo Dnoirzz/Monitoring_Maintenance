@@ -97,13 +97,13 @@ class _DataMesinPageState extends State<DataMesinPage> {
   }
 
   // Group by aset
-  Map<String, List<Map<String, dynamic>>> _groupByAset() {
+  Map<String, List<AssetModel>> _groupByAset() {
     List<AssetModel> data = _getFilteredAndSortedData();
     return widget.assetController.groupByAset(data);
   }
 
   // Group by bagian
-  Map<String, List<Map<String, dynamic>>> _groupByBagian(List<Map<String, dynamic>> items) {
+  Map<String, List<AssetModel>> _groupByBagian(List<AssetModel> items) {
     return widget.assetController.groupByBagian(items);
   }
 
@@ -126,6 +126,9 @@ class _DataMesinPageState extends State<DataMesinPage> {
         ],
       },
     ];
+
+    // Simpan reference ke setState widget state
+    final updateWidgetState = setState;
 
     showDialog(
       context: context,
@@ -730,7 +733,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                           ),
                           SizedBox(width: 12),
                           ElevatedButton(
-                            onPressed: () async {
+                            onPressed: () {
                               if (_formKey.currentState!.validate()) {
                                 // Validasi bagian aset dan komponen
                                 bool isValid = true;
@@ -776,55 +779,30 @@ class _DataMesinPageState extends State<DataMesinPage> {
                                   return;
                                 }
 
-                                // Show loading
-                                showDialog(
-                                  context: dialogContext,
-                                  barrierDismissible: false,
-                                  builder: (context) => Center(
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                );
-
                                 // Tambahkan data melalui controller
-                                String? gambarPath = _selectedImage?.path;
-                                final result = await widget.assetController.addAssetsFromForm(
-                                  namaAset: _namaAsetController.text,
-                                  jenisAset: _selectedJenisAset!,
-                                  bagianAsetList: bagianAsetList,
-                                  gambarPath: gambarPath,
-                                );
-                                
-                                // Close loading
-                                Navigator.of(dialogContext).pop();
-                                
-                                if (mounted) {
-                                  setState(() {});
-                                }
+                                updateWidgetState(() {
+                                  String? gambarPath = _selectedImage?.path;
+                                  widget.assetController.addAssetsFromForm(
+                                    namaAset: _namaAsetController.text,
+                                    jenisAset: _selectedJenisAset!,
+                                    bagianAsetList: bagianAsetList,
+                                    gambarPath: gambarPath,
+                                  );
+                                  setState(() {}); // Refresh UI
+                                });
 
                                 Navigator.of(dialogContext).pop();
                                 _namaAsetController.dispose();
                                 _selectedImage = null;
 
-                                if (result != null) {
-                                  // Show error
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(result),
-                                      backgroundColor: Colors.red,
-                                      duration: Duration(seconds: 4),
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Data aset berhasil ditambahkan',
                                     ),
-                                  );
-                                } else {
-                                  // Show success
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Data aset berhasil ditambahkan',
-                                      ),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-                                }
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -851,6 +829,25 @@ class _DataMesinPageState extends State<DataMesinPage> {
         );
       },
     );
+  }
+
+  // Helper method untuk mendapatkan nama bulan
+  String _getMonthName(int month) {
+    const months = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+    return months[month - 1];
   }
 
   @override
@@ -1232,7 +1229,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
     const double col8 = 120.0; // Gambar Aset
     const double col9 = 200.0; // Kolom AKSI
 
-    Map<String, List<Map<String, dynamic>>> grouped = _groupByAset();
+    Map<String, List<AssetModel>> grouped = _groupByAset();
 
     // Hitung total lebar kolom
     const double totalWidth =
@@ -1316,14 +1313,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
       bool isEvenRow = rowIndex % 2 == 0;
 
       // Ambil data dari item pertama untuk kolom yang di-merge
-      Map<String, dynamic> firstItem = items[0];
+      AssetModel firstItem = items[0];
 
       // Setup hover state
       String rowKey = namaAset;
       bool isHovered = _hoveredRowKey == rowKey;
 
       // Kelompokkan berdasarkan bagian
-      Map<String, List<Map<String, dynamic>>> groupedByBagian = _groupByBagian(items);
+      Map<String, List<AssetModel>> groupedByBagian = _groupByBagian(items);
       List<Widget> bagianRows = [];
       int bagianRowIndex = 0;
 
@@ -1353,13 +1350,13 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   children:
                       bagianItems.asMap().entries.map((entry) {
                         int itemIndex = entry.key;
-                        Map<String, dynamic> item = entry.value;
+                        AssetModel item = entry.value;
                         bool isItemEvenRow =
                             (rowIndex + bagianRowIndex + itemIndex) % 2 == 0;
                         return Row(
                           children: [
                             _cellCenter(
-                              item["komponen_aset"] ?? "",
+                              item.komponenAset,
                               col6,
                               rowHeight,
                               null,
@@ -1367,7 +1364,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                               isHovered: isHovered,
                             ),
                             _cellCenter(
-                              item["produk_yang_digunakan"] ?? "",
+                              item.produkYangDigunakan,
                               col7,
                               rowHeight,
                               null,
@@ -1383,7 +1380,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
           );
         } else {
           // Jika bagian hanya 1 komponen, tidak perlu merge
-          Map<String, dynamic> item = bagianItems[0];
+          AssetModel item = bagianItems[0];
           bagianRows.add(
             Row(
               children: [
@@ -1396,7 +1393,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   isHovered: isHovered,
                 ),
                 _cellCenter(
-                  item["komponen_aset"] ?? "",
+                  item.komponenAset,
                   col6,
                   rowHeight,
                   null,
@@ -1404,7 +1401,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   isHovered: isHovered,
                 ),
                 _cellCenter(
-                  item["produk_yang_digunakan"] ?? "",
+                  item.produkYangDigunakan,
                   col7,
                   rowHeight,
                   null,
@@ -1445,7 +1442,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
               // Kolom JENIS ASET - merged untuk semua baris
               _cellCenter(
-                firstItem["jenis_aset"] ?? "",
+                firstItem.jenisAset,
                 col2,
                 mergedHeight,
                 null,
@@ -1455,7 +1452,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
               // Kolom MAINTENANCE TERAKHIR - merged untuk semua baris
               _cellCenter(
-                firstItem["maintenance_terakhir"] ?? "",
+                firstItem.maintenanceTerakhir ?? "",
                 col3,
                 mergedHeight,
                 null,
@@ -1465,7 +1462,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
               // Kolom MAINTENANCE SELANJUTNYA - merged untuk semua baris
               _cellCenter(
-                firstItem["maintenance_selanjutnya"] ?? "",
+                firstItem.maintenanceSelanjutnya ?? "",
                 col4,
                 mergedHeight,
                 null,
@@ -1478,7 +1475,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
               // Kolom GAMBAR ASET - merged untuk semua baris dalam satu aset
               _imageCell(
-                firstItem["gambar_aset"],
+                firstItem.gambarAset,
                 col8,
                 mergedHeight,
                 isEvenRow: isEvenRow,
@@ -1721,7 +1718,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
   Widget _actionCell(
     BuildContext context,
-    Map<String, dynamic> item,
+    AssetModel item,
     double width,
     double height, {
     bool isEvenRow = true,
@@ -1756,7 +1753,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text("Edit: ${item["nama_aset"]}"),
+                  content: Text("Edit: ${item.namaAset}"),
                   backgroundColor: Color(0xFF0A9C5D),
                 ),
               );
@@ -1821,7 +1818,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
   // Method untuk menampilkan confirmation dialog sebelum hapus
   void _showDeleteConfirmation(
     BuildContext context,
-    Map<String, dynamic> item,
+    AssetModel item,
   ) {
     showDialog(
       context: context,
@@ -1853,10 +1850,10 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Nama Aset: ${item["nama_aset"]}',
+                      'Nama Aset: ${item.namaAset}',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Text('Jenis: ${item["jenis_aset"]}'),
+                    Text('Jenis: ${item.jenisAset}'),
                   ],
                 ),
               ),
@@ -1877,21 +1874,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
               child: Text('Batal', style: TextStyle(color: Colors.grey[700])),
             ),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: () {
                 Navigator.of(context).pop();
-                setState(() async {
-                  // Find asset by name and delete
-                  final assets = widget.assetController.getAllAssets();
-                  final asset = assets.firstWhere(
-                    (a) => a.namaAssets == item["nama_aset"],
-                    orElse: () => assets.first,
+                setState(() {
+                  widget.assetController.deleteAsset(
+                    namaAset: item.namaAset,
+                    bagianAset: item.bagianAset,
+                    komponenAset: item.komponenAset,
                   );
-                  if (asset.id != null) {
-                    await widget.assetController.deleteAsset(asset.id!);
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  }
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

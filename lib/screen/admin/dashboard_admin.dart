@@ -9,8 +9,6 @@ import 'package:monitoring_maintenance/screen/admin/pages/cek_sheet_schedule_pag
 import 'package:monitoring_maintenance/controller/admin_controller.dart';
 import 'package:monitoring_maintenance/controller/asset_controller.dart';
 import 'package:monitoring_maintenance/controller/karyawan_controller.dart';
-import 'package:monitoring_maintenance/controller/maintenance_controller.dart';
-import 'package:monitoring_maintenance/controller/cek_sheet_controller.dart';
 import 'package:monitoring_maintenance/controller/dashboard_controller.dart';
 
 class AdminApp extends StatelessWidget {
@@ -37,8 +35,6 @@ class _AdminTemplateState extends State<AdminTemplate>
   late AdminController _adminController;
   late AssetController _assetController;
   late KaryawanController _karyawanController;
-  late MaintenanceController _maintenanceController;
-  late CekSheetController _cekSheetController;
   late DashboardController _dashboardController;
   late AnimationController _animationController;
   late Animation<double> _animation;
@@ -48,14 +44,12 @@ class _AdminTemplateState extends State<AdminTemplate>
     super.initState();
     // Initialize controllers
     _assetController = AssetController();
+    _assetController.initializeSampleData();
     _karyawanController = KaryawanController();
-    _maintenanceController = MaintenanceController();
-    _cekSheetController = CekSheetController();
+    _karyawanController.initializeSampleData();
     _dashboardController = DashboardController(
       assetController: _assetController,
       karyawanController: _karyawanController,
-      maintenanceController: _maintenanceController,
-      cekSheetController: _cekSheetController,
     );
     _adminController = AdminController();
 
@@ -68,29 +62,6 @@ class _AdminTemplateState extends State<AdminTemplate>
       parent: _animationController,
       curve: Curves.easeInOut,
     );
-
-    // Load data from Supabase
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    try {
-      await _assetController.initialize();
-      await _karyawanController.initialize();
-      await _maintenanceController.initialize();
-      await _cekSheetController.initialize();
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      print('Error loading data: $e');
-      // Fallback to sample data if Supabase fails
-      _assetController.initializeSampleData();
-      _karyawanController.initializeSampleData();
-      if (mounted) {
-        setState(() {});
-      }
-    }
   }
 
   @override
@@ -191,10 +162,7 @@ class _AdminTemplateState extends State<AdminTemplate>
         if (_adminController.selectedScheduleSubMenu == 31) {
           return MaintenanceSchedulePage();
         } else if (_adminController.selectedScheduleSubMenu == 32) {
-          return CekSheetSchedulePage(
-            cekSheetController: _cekSheetController,
-            assetController: _assetController,
-          );
+          return CekSheetSchedulePage();
         } else {
           // Jika tidak ada sub menu dipilih, tampilkan halaman kosong
           return Container();
