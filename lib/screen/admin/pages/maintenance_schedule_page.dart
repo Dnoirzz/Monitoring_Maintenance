@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 import 'package:monitoring_maintenance/controller/maintenance_schedule_controller.dart';
 import 'package:monitoring_maintenance/model/maintenance_schedule_model.dart';
@@ -14,29 +15,41 @@ class MaintenanceSchedulePage extends StatefulWidget {
 }
 
 class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late TabController _tabController;
   late List<MaintenanceCategory> _categories;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  Timer? _debounceTimer;
 
   static const Color _planAccent = Color(0xFF2196F3);
   static const Color _actualAccent = Color(0xFFFF9800);
+
+  @override
+  bool get wantKeepAlive => true; // Keep state when switching tabs
 
   @override
   void initState() {
     super.initState();
     _categories = widget.controller.getAvailableCategories();
     _tabController = TabController(length: _categories.length, vsync: this);
+
+    // Debounced search
     _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
+      _debounceTimer?.cancel();
+      _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          setState(() {
+            _searchQuery = _searchController.text.toLowerCase();
+          });
+        }
       });
     });
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -44,6 +57,7 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
