@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:monitoring_maintenance/controller/dashboard_controller.dart';
+import 'package:monitoring_maintenance/model/dashboard_model.dart';
 
 class BerandaPage extends StatefulWidget {
+  final DashboardController dashboardController;
   final VoidCallback onNavigateToDataMesin;
   final VoidCallback onNavigateToKaryawan;
   final VoidCallback? onNavigateToMaintenanceSchedule;
@@ -8,6 +11,7 @@ class BerandaPage extends StatefulWidget {
 
   const BerandaPage({
     super.key,
+    required this.dashboardController,
     required this.onNavigateToDataMesin,
     required this.onNavigateToKaryawan,
     this.onNavigateToMaintenanceSchedule,
@@ -19,14 +23,9 @@ class BerandaPage extends StatefulWidget {
 }
 
 class _BerandaPageState extends State<BerandaPage> {
-  final List<bool> _isHovered = [false, false];
-  final int totalAssets = 45;
-  final int totalKaryawan = 28;
-  final int pendingRequests = 8;
-  final int activeMaintenance = 5;
-  final int overdueSchedule = 3;
-
   List<bool> _isMenuHovered = List.generate(4, (index) => false);
+
+  DashboardStats get _stats => widget.dashboardController.getStats();
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +46,7 @@ class _BerandaPageState extends State<BerandaPage> {
                 ),
               ),
               Text(
-                _getCurrentDate(),
+                widget.dashboardController.getCurrentDate(),
                 style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
               ),
             ],
@@ -84,25 +83,6 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
-  String _getCurrentDate() {
-    final now = DateTime.now();
-    final months = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-    return '${now.day} ${months[now.month - 1]} ${now.year}';
-  }
-
   Widget _buildStatsSection() {
     return Row(
       children: [
@@ -110,9 +90,9 @@ class _BerandaPageState extends State<BerandaPage> {
           child: _buildStatCard(
             icon: Icons.miscellaneous_services_outlined,
             title: "Total Assets",
-            value: totalAssets.toString(),
+            value: _stats.totalAssets.toString(),
             color: Color(0xFF0A9C5D),
-            subtitle: "Aktif: ${totalAssets - 2}",
+            subtitle: "Aktif: ${_stats.totalAssets}",
           ),
         ),
         SizedBox(width: 15),
@@ -120,9 +100,9 @@ class _BerandaPageState extends State<BerandaPage> {
           child: _buildStatCard(
             icon: Icons.group,
             title: "Total Karyawan",
-            value: totalKaryawan.toString(),
+            value: _stats.totalKaryawan.toString(),
             color: Color(0xFF2196F3),
-            subtitle: "Aktif: ${totalKaryawan}",
+            subtitle: "Aktif: ${_stats.totalKaryawan}",
           ),
         ),
         SizedBox(width: 15),
@@ -130,7 +110,7 @@ class _BerandaPageState extends State<BerandaPage> {
           child: _buildStatCard(
             icon: Icons.build,
             title: "Maintenance Aktif",
-            value: activeMaintenance.toString(),
+            value: _stats.activeMaintenance.toString(),
             color: Color(0xFF9C27B0),
             subtitle: "Sedang berjalan",
           ),
@@ -341,26 +321,18 @@ class _BerandaPageState extends State<BerandaPage> {
               ],
             ),
             SizedBox(height: 15),
-            _buildRequestItem(
-              "Breakdown - Mesin Produksi A",
-              "Disetujui",
-              Colors.green,
-              "2 hari lalu",
-            ),
-            SizedBox(height: 10),
-            _buildRequestItem(
-              "Cleaning - Alat Berat B",
-              "Disetujui",
-              Colors.green,
-              "5 hari lalu",
-            ),
-            SizedBox(height: 10),
-            _buildRequestItem(
-              "Upgrade - Listrik C",
-              "Ditolak",
-              Colors.red,
-              "1 minggu lalu",
-            ),
+            ...widget.dashboardController.getRequestHistory().map((request) {
+              Color statusColor = request.status == "Disetujui" ? Colors.green : Colors.red;
+              return Padding(
+                padding: EdgeInsets.only(bottom: 10),
+                child: _buildRequestItem(
+                  request.title,
+                  request.status,
+                  statusColor,
+                  request.date,
+                ),
+              );
+            }),
             SizedBox(height: 10),
             TextButton(
               onPressed: () {
@@ -470,7 +442,7 @@ class _BerandaPageState extends State<BerandaPage> {
               ],
             ),
             SizedBox(height: 15),
-            if (overdueSchedule > 0)
+            if (_stats.overdueSchedule > 0)
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -484,7 +456,7 @@ class _BerandaPageState extends State<BerandaPage> {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        "$overdueSchedule jadwal terlambat",
+                        "${_stats.overdueSchedule} jadwal terlambat",
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.red.shade700,
@@ -496,11 +468,12 @@ class _BerandaPageState extends State<BerandaPage> {
                 ),
               ),
             SizedBox(height: 15),
-            _buildScheduleItem("Maintenance - Mesin A", "Hari ini", false),
-            SizedBox(height: 10),
-            _buildScheduleItem("Cek Sheet - Komponen B", "Besok", false),
-            SizedBox(height: 10),
-            _buildScheduleItem("Maintenance - Mesin C", "2 hari lagi", true),
+            ...widget.dashboardController.getUpcomingSchedules().map((schedule) {
+              return Padding(
+                padding: EdgeInsets.only(bottom: 10),
+                child: _buildScheduleItem(schedule.title, schedule.date, schedule.isOverdue),
+              );
+            }),
             SizedBox(height: 10),
             TextButton(
               onPressed: () {

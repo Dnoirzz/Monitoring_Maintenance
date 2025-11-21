@@ -255,16 +255,16 @@ class _LoginPageState extends State<LoginPage> {
 
 class _LoginTextField extends StatelessWidget {
   const _LoginTextField({
+    required this.controller,
     required this.hintText,
-    this.controller,
     this.textInputType,
     this.obscureText = false,
     this.validator,
     this.suffixIcon,
   });
 
+  final TextEditingController controller;
   final String hintText;
-  final TextEditingController? controller;
   final TextInputType? textInputType;
   final bool obscureText;
   final String? Function(String?)? validator;

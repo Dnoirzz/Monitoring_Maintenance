@@ -40,6 +40,9 @@ class BagianMesin {
       if (asetId != null) 'aset_id': asetId,
       'nama_bagian': namaBagian,
       if (keterangan != null) 'keterangan': keterangan,
+      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
+      if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
     };
   }
 }
+

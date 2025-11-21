@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:monitoring_maintenance/model/check_sheet_model.dart';
 
 class KalenderPengecekanPage extends StatefulWidget {
-  final Map<String, dynamic> item;
+  final CheckSheetModel item;
 
-  const KalenderPengecekanPage({super.key, required this.item});
+  const KalenderPengecekanPage({
+    super.key,
+    required this.item,
+  });
 
   @override
   _KalenderPengecekanPageState createState() => _KalenderPengecekanPageState();
@@ -14,8 +18,7 @@ class _KalenderPengecekanPageState extends State<KalenderPengecekanPage> {
 
   @override
   Widget build(BuildContext context) {
-    Map<int, String> tanggalStatus =
-        widget.item["tanggal_status"] as Map<int, String>;
+    Map<int, String> tanggalStatus = widget.item.tanggalStatus;
 
     // Hitung jumlah hari dalam bulan
     int daysInMonth =
@@ -34,7 +37,7 @@ class _KalenderPengecekanPageState extends State<KalenderPengecekanPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Jadwal Pengecekan - ${widget.item["nama_infrastruktur"]}",
+          "Jadwal Pengecekan - ${widget.item.namaInfrastruktur}",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Color(0xFF0A9C5D),
@@ -63,7 +66,7 @@ class _KalenderPengecekanPageState extends State<KalenderPengecekanPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Bagian: ${widget.item["bagian"]}",
+                    "Bagian: ${widget.item.bagian}",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -72,7 +75,7 @@ class _KalenderPengecekanPageState extends State<KalenderPengecekanPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    "Jenis Pekerjaan: ${widget.item["jenis_pekerjaan"]}",
+                    "Jenis Pekerjaan: ${widget.item.jenisPekerjaan}",
                     style: TextStyle(fontSize: 13, color: Color(0xFF022415)),
                   ),
                   SizedBox(height: 6),

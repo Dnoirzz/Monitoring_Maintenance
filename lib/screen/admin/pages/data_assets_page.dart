@@ -1,11 +1,15 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
+
+import 'package:monitoring_maintenance/controller/asset_controller.dart';
 import '../widgets/mdl_tambah_asset.dart';
 import '../widgets/mdl_edit_asset.dart';
 
 class DataMesinPage extends StatefulWidget {
-  const DataMesinPage({super.key});
+  final AssetController assetController;
+  
+  const DataMesinPage({super.key, required this.assetController});
 
   @override
   _DataMesinPageState createState() => _DataMesinPageState();
@@ -299,13 +303,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
   }
 
   List<String> _getJenisAsetList() {
-    Set<String> jenisSet = {};
-    for (var item in _rawData) {
-      if (item["jenis_aset"] != null) {
-        jenisSet.add(item["jenis_aset"].toString());
-      }
-    }
-    return jenisSet.toList()..sort();
+    return widget.assetController.getJenisAsetList();
   }
 
   Map<String, List<Map<String, dynamic>>> _groupByAset() {
@@ -812,13 +810,13 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   children:
                       bagianItems.asMap().entries.map((entry) {
                         int itemIndex = entry.key;
-                        var item = entry.value;
+                        Map<String, dynamic> item = entry.value;
                         bool isItemEvenRow =
                             (rowIndex + bagianRowIndex + itemIndex) % 2 == 0;
                         return Row(
                           children: [
                             _cellCenter(
-                              item["komponen_aset"]!,
+                              item["komponen_aset"],
                               col6,
                               rowHeight,
                               null,
@@ -826,7 +824,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                               isHovered: isHovered,
                             ),
                             _cellCenter(
-                              item["produk_yang_digunakan"]!,
+                              item["produk_yang_digunakan"],
                               col7,
                               rowHeight,
                               null,
@@ -854,7 +852,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   isHovered: isHovered,
                 ),
                 _cellCenter(
-                  item["komponen_aset"]!,
+                  item["komponen_aset"],
                   col6,
                   rowHeight,
                   null,
@@ -862,7 +860,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   isHovered: isHovered,
                 ),
                 _cellCenter(
-                  item["produk_yang_digunakan"]!,
+                  item["produk_yang_digunakan"],
                   col7,
                   rowHeight,
                   null,
@@ -900,7 +898,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                firstItem["jenis_aset"]!,
+                firstItem["jenis_aset"],
                 col2,
                 mergedHeight,
                 null,
@@ -908,7 +906,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                firstItem["maintenance_terakhir"]!,
+                firstItem["maintenance_terakhir"] ?? "",
                 col3,
                 mergedHeight,
                 null,
@@ -916,7 +914,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                firstItem["maintenance_selanjutnya"]!,
+                firstItem["maintenance_selanjutnya"] ?? "",
                 col4,
                 mergedHeight,
                 null,
@@ -1301,8 +1299,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                       'Nama Aset: ${item["nama_aset"]}',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    if (item["jenis_aset"] != null)
-                      Text('Jenis: ${item["jenis_aset"]}'),
+                    Text('Jenis: ${item["jenis_aset"]}'),
                   ],
                 ),
               ),
@@ -1326,11 +1323,10 @@ class _DataMesinPageState extends State<DataMesinPage> {
               onPressed: () {
                 Navigator.of(context).pop();
                 setState(() {
-                  _rawData.removeWhere(
-                    (data) =>
-                        data["nama_aset"] == item["nama_aset"] &&
-                        data["bagian_aset"] == item["bagian_aset"] &&
-                        data["komponen_aset"] == item["komponen_aset"],
+                  widget.assetController.deleteAsset(
+                    namaAset: item["nama_aset"] ?? '',
+                    bagianAset: item["bagian_aset"] ?? '',
+                    komponenAset: item["komponen_aset"] ?? '',
                   );
                 });
                 ScaffoldMessenger.of(context).showSnackBar(

@@ -6,6 +6,12 @@ import 'package:monitoring_maintenance/screen/admin/pages/data_assets_page.dart'
 import 'package:monitoring_maintenance/screen/admin/pages/daftar_karyawan_page.dart';
 import 'package:monitoring_maintenance/screen/admin/pages/maintenance_schedule_page.dart';
 import 'package:monitoring_maintenance/screen/admin/pages/cek_sheet_schedule_page.dart';
+import 'package:monitoring_maintenance/controller/admin_controller.dart';
+import 'package:monitoring_maintenance/controller/asset_controller.dart';
+import 'package:monitoring_maintenance/controller/check_sheet_controller.dart';
+import 'package:monitoring_maintenance/controller/karyawan_controller.dart';
+import 'package:monitoring_maintenance/controller/dashboard_controller.dart';
+import 'package:monitoring_maintenance/controller/maintenance_schedule_controller.dart';
 
 class AdminApp extends StatelessWidget {
   const AdminApp({super.key});
@@ -28,16 +34,33 @@ class AdminTemplate extends StatefulWidget {
 
 class _AdminTemplateState extends State<AdminTemplate>
     with SingleTickerProviderStateMixin {
-  int selectedIndex = 0;
-  int? selectedScheduleSubMenu; // null, 31 (Maintenance), 32 (Cek Sheet)
-  bool _isSidebarOpen = false;
-  bool _isScheduleExpanded = false;
+  late AdminController _adminController;
+  late AssetController _assetController;
+  late CheckSheetController _checkSheetController;
+  late KaryawanController _karyawanController;
+  late DashboardController _dashboardController;
+  late MaintenanceScheduleController _maintenanceScheduleController;
   late AnimationController _animationController;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
+    // Initialize controllers
+    _assetController = AssetController();
+    _assetController.initializeSampleData();
+    _checkSheetController = CheckSheetController();
+    _checkSheetController.initializeSampleData();
+    _karyawanController = KaryawanController();
+    _karyawanController.initializeSampleData();
+    _dashboardController = DashboardController(
+      assetController: _assetController,
+      karyawanController: _karyawanController,
+    );
+    _adminController = AdminController();
+    _maintenanceScheduleController = MaintenanceScheduleController();
+
+    // Initialize animation
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 300),
@@ -56,8 +79,8 @@ class _AdminTemplateState extends State<AdminTemplate>
 
   void _toggleSidebar() {
     setState(() {
-      _isSidebarOpen = !_isSidebarOpen;
-      if (_isSidebarOpen) {
+      _adminController.toggleSidebar();
+      if (_adminController.isSidebarOpen) {
         _animationController.forward();
       } else {
         _animationController.reverse();
@@ -67,25 +90,23 @@ class _AdminTemplateState extends State<AdminTemplate>
 
   void _handleMenuSelected(int index) {
     setState(() {
-      selectedIndex = index;
-      if (index == 3) {
-        // Untuk Schedule, expand dropdown
-        _isScheduleExpanded = true;
-        selectedScheduleSubMenu = null;
-      } else if (index == 4) {
-        // Logout action
-        // Add your logout logic here
+      _adminController.handleMenuSelected(index);
+      if (_adminController.isSidebarOpen) {
+        _animationController.forward();
       } else {
-        _toggleSidebar();
+        _animationController.reverse();
       }
     });
   }
 
   void _handleSubMenuSelected(int index) {
     setState(() {
-      selectedIndex = 3;
-      selectedScheduleSubMenu = index;
-      _toggleSidebar();
+      _adminController.handleSubMenuSelected(index);
+      if (_adminController.isSidebarOpen) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
     });
   }
 
@@ -118,15 +139,15 @@ class _AdminTemplateState extends State<AdminTemplate>
 
           // ========================== SIDEBAR ==========================
           SidebarWidget(
-            isOpen: _isSidebarOpen,
+            isOpen: _adminController.isSidebarOpen,
             animation: _animation,
-            selectedIndex: selectedIndex,
-            selectedScheduleSubMenu: selectedScheduleSubMenu,
-            isScheduleExpanded: _isScheduleExpanded,
+            selectedIndex: _adminController.selectedIndex,
+            selectedScheduleSubMenu: _adminController.selectedScheduleSubMenu,
+            isScheduleExpanded: _adminController.isScheduleExpanded,
             onMenuSelected: _handleMenuSelected,
             onToggleSchedule: () {
               setState(() {
-                _isScheduleExpanded = !_isScheduleExpanded;
+                _adminController.toggleSchedule();
               });
             },
             onSubMenuSelected: _handleSubMenuSelected,
@@ -139,42 +160,45 @@ class _AdminTemplateState extends State<AdminTemplate>
 
   // Halaman yang dipilih
   Widget getSelectedPage() {
-    switch (selectedIndex) {
+    switch (_adminController.selectedIndex) {
       case 1:
-        return DataMesinPage();
+        return DataMesinPage(assetController: _assetController);
       case 2:
-        return DaftarKaryawanPage();
+        return DaftarKaryawanPage(karyawanController: _karyawanController);
       case 3:
-        if (selectedScheduleSubMenu == 31) {
-          return MaintenanceSchedulePage();
-        } else if (selectedScheduleSubMenu == 32) {
-          return CekSheetSchedulePage();
+        if (_adminController.selectedScheduleSubMenu == 31) {
+          return MaintenanceSchedulePage(
+            controller: _maintenanceScheduleController,
+          );
+        } else if (_adminController.selectedScheduleSubMenu == 32) {
+          return CekSheetSchedulePage(
+            checkSheetController: _checkSheetController,
+          );
         } else {
           // Jika tidak ada sub menu dipilih, tampilkan halaman kosong
           return Container();
         }
       default:
         return BerandaPage(
+          dashboardController: _dashboardController,
           onNavigateToDataMesin: () {
             setState(() {
-              selectedIndex = 1;
+              _adminController.navigateToDataMesin();
             });
           },
           onNavigateToKaryawan: () {
             setState(() {
-              selectedIndex = 2;
+              _adminController.navigateToKaryawan();
             });
           },
           onNavigateToMaintenanceSchedule: () {
             setState(() {
-              selectedIndex = 3;
-              selectedScheduleSubMenu = 31;
+              _adminController.navigateToMaintenanceSchedule();
             });
           },
           onNavigateToCekSheetSchedule: () {
             setState(() {
-              selectedIndex = 3;
-              selectedScheduleSubMenu = 32;
+              _adminController.navigateToCekSheetSchedule();
             });
           },
         );
