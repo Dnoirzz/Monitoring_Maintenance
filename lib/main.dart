@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:monitoring_maintenance/screen/admin/dashboard_admin.dart';
 import 'package:monitoring_maintenance/screen/login_page.dart';
-// import 'screen/splach_scr.dart';
+import 'package:monitoring_maintenance/services/supabase_service.dart';
+import 'package:monitoring_maintenance/screen/admin/dashboard_admin.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase
+  await SupabaseService.initialize();
+
   runApp(const MyApp());
 }
 
@@ -25,7 +30,8 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // home: SplashScreen(),
-      home: const LoginPage(),
+      // home: LoginPage(),
+      home: AdminTemplate(),
     );
   }
 }
