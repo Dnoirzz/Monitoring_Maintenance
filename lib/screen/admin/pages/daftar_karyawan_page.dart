@@ -1,8 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:monitoring_maintenance/controller/karyawan_controller.dart';
 
 class DaftarKaryawanPage extends StatefulWidget {
-  const DaftarKaryawanPage({super.key});
+  final KaryawanController karyawanController;
+  
+  const DaftarKaryawanPage({super.key, required this.karyawanController});
 
   @override
   State<DaftarKaryawanPage> createState() => _DaftarKaryawanPageState();
@@ -486,7 +489,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
 
     final filteredData = _getFilteredData();
 
-    if (_karyawan.isEmpty) {
+    if (widget.karyawanController.getAllKaryawan().isEmpty) {
       final screenWidth = MediaQuery.of(context).size.width;
       return Container(
         width: screenWidth,
@@ -1320,6 +1323,12 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
             icon: Icons.delete,
             color: const Color(0xFFF44336),
             onPressed: () {
+              setState(() {
+                final nama = item["nama"];
+                if (nama != null && nama.isNotEmpty) {
+                  widget.karyawanController.deleteKaryawan(nama);
+                }
+              });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text("Hapus: ${item["nama"]}"),

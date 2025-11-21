@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/asset.dart';
-import '../models/bagian_mesin.dart';
-import '../models/komponen_asset.dart';
+import '../model/asset.dart';
+import '../model/bagian_mesin.dart';
+import '../model/komponen_asset.dart';
 import '../services/supabase_service.dart';
 
 /// Asset Repository
