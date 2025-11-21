@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import '../../../models/asset.dart';
+import '../../../model/asset.dart';
 import '../../../repositories/asset_repository.dart';
 
 /// Add Asset Page

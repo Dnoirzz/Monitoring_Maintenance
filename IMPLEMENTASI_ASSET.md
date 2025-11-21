@@ -72,7 +72,7 @@ Lihat panduan detail di file **`QUICK_START_ADMIN.md`** untuk tutorial lengkap d
 - `lib/main.dart` - Entry point, inisialisasi Supabase
 - `lib/services/supabase_service.dart` - Singleton service untuk Supabase client
 - `lib/repositories/asset_repository.dart` - Repository untuk CRUD operations
-- `lib/models/` - Model data (Asset, BagianMesin, KomponenAsset)
+- `lib/model/` - Model data (Asset, BagianMesin, KomponenAsset)
 - `lib/screen/admin/pages/add_asset_page.dart` - Halaman form tambah asset
 - `lib/screen/admin/pages/data_assets_page.dart` - Halaman list data assets
 

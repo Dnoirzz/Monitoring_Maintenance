@@ -107,7 +107,7 @@ flutter run
 lib/
 ├── config/
 │   └── supabase_config.dart          # Konfigurasi Supabase URL & Key
-├── models/
+├── model/
 │   ├── asset.dart                     # Model untuk tabel assets
 │   ├── bagian_mesin.dart              # Model untuk tabel bg_mesin
 │   └── komponen_asset.dart            # Model untuk tabel komponen_assets
