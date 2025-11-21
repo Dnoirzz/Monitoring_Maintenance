@@ -1,9 +1,18 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+
+import 'package:monitoring_maintenance/controller/check_sheet_controller.dart';
+import 'package:monitoring_maintenance/model/check_sheet_model.dart';
+
 import 'kalender_pengecekan_page.dart';
 
 class CekSheetSchedulePage extends StatefulWidget {
-  const CekSheetSchedulePage({super.key});
+  final CheckSheetController checkSheetController;
+
+  const CekSheetSchedulePage({
+    super.key,
+    required this.checkSheetController,
+  });
 
   @override
   _CekSheetSchedulePageState createState() => _CekSheetSchedulePageState();
@@ -65,86 +74,20 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
     }
   }
 
-  final List<Map<String, dynamic>> _rawData = [
-    {
-      "no": 1,
-      "nama_infrastruktur": "SCREW BREAKER",
-      "bagian": "Pisau Duduk",
-      "periode": "Per 1 Minggu",
-      "jenis_pekerjaan": "Cek hasil potongan remahan",
-      "standar_perawatan": "Ukuran output remahan < 15cm",
-      "alat_bahan": "Kunci 33,48,28,19,41,24",
-      "tanggal_status": Map<int, String>.from({}),
-    },
-    {
-      "no": 2,
-      "nama_infrastruktur": "SCREW BREAKER",
-      "bagian": "Pisau Duduk",
-      "periode": "Per 2 Minggu",
-      "jenis_pekerjaan": "Las tambah daging + pengasahan",
-      "standar_perawatan": "Ujung pisau max 3mm dari screen",
-      "alat_bahan": "Kunci 33,48,28,19,41,24",
-      "tanggal_status": Map<int, String>.from({}),
-    },
-    {
-      "no": 3,
-      "nama_infrastruktur": "SCREW BREAKER",
-      "bagian": "V-Belt",
-      "periode": "Per 3 Hari",
-      "jenis_pekerjaan": "Cek",
-      "standar_perawatan": "Tidak ada slip, retak, getar",
-      "alat_bahan": "Kunci 33,48,28,19,41,24",
-      "tanggal_status": Map<int, String>.from({}),
-    },
-    {
-      "no": 4,
-      "nama_infrastruktur": "SCREW BREAKER",
-      "bagian": "Gearbox",
-      "periode": "Per 12 Bulan",
-      "jenis_pekerjaan": "Ganti Oli",
-      "standar_perawatan": "Volume oli sesuai standard",
-      "alat_bahan": "Kunci 33,48,28,19,41,24",
-      "tanggal_status": Map<int, String>.from({}),
-    },
-  ];
-
-  Map<String, List<Map<String, dynamic>>> _groupByInfrastruktur() {
-    Map<String, List<Map<String, dynamic>>> grouped = {};
-
-    List<Map<String, dynamic>> filteredData = _rawData.where((item) {
-      if (_searchQuery.isEmpty) return true;
-
-      String query = _searchQuery.toLowerCase();
-      return item["nama_infrastruktur"]?.toString().toLowerCase().contains(query) == true ||
-          item["bagian"]?.toString().toLowerCase().contains(query) == true ||
-          item["periode"]?.toString().toLowerCase().contains(query) == true ||
-          item["jenis_pekerjaan"]?.toString().toLowerCase().contains(query) == true ||
-          item["standar_perawatan"]?.toString().toLowerCase().contains(query) == true ||
-          item["alat_bahan"]?.toString().toLowerCase().contains(query) == true;
-    }).toList();
-
-    for (var item in filteredData) {
-      String nama = item["nama_infrastruktur"];
-      if (!grouped.containsKey(nama)) {
-        grouped[nama] = [];
-      }
-      grouped[nama]!.add(item);
-    }
-    return grouped;
+  List<CheckSheetModel> _getFilteredSchedules() {
+    return widget.checkSheetController
+        .filterSchedules(searchQuery: _searchQuery);
   }
 
-  Map<String, List<Map<String, dynamic>>> _groupByBagian(
-    List<Map<String, dynamic>> items,
+  Map<String, List<CheckSheetModel>> _groupByInfrastruktur() {
+    return widget.checkSheetController
+        .groupByInfrastruktur(_getFilteredSchedules());
+  }
+
+  Map<String, List<CheckSheetModel>> _groupByBagian(
+    List<CheckSheetModel> items,
   ) {
-    Map<String, List<Map<String, dynamic>>> grouped = {};
-    for (var item in items) {
-      String bagian = item["bagian"];
-      if (!grouped.containsKey(bagian)) {
-        grouped[bagian] = [];
-      }
-      grouped[bagian]!.add(item);
-    }
-    return grouped;
+    return widget.checkSheetController.groupByBagian(items);
   }
 
   @override
@@ -387,7 +330,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
     const double col3 = 120.0;
     const double col7 = 200.0;
 
-    Map<String, List<Map<String, dynamic>>> grouped = _groupByInfrastruktur();
+    Map<String, List<CheckSheetModel>> grouped = _groupByInfrastruktur();
 
     if (grouped.isEmpty) {
       final screenWidth = MediaQuery.of(context).size.width;
@@ -460,7 +403,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
       String rowKey = "${namaInfrastruktur}_$rowIndex";
       bool isHovered = _hoveredRowKey == rowKey;
 
-      Map<String, List<Map<String, dynamic>>> groupedByBagian = _groupByBagian(items);
+      Map<String, List<CheckSheetModel>> groupedByBagian = _groupByBagian(items);
       List<Widget> bagianRows = [];
 
       groupedByBagian.forEach((bagian, bagianItems) {
@@ -488,7 +431,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                         child: Row(
                           children: [
                             _cellCenter(
-                              item["periode"],
+                              item.periode,
                               col3,
                               rowHeight,
                               null,
@@ -496,7 +439,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                               isHovered: isHovered,
                             ),
                             _cellCenter(
-                              item["jenis_pekerjaan"],
+                              item.jenisPekerjaan,
                               col4,
                               rowHeight,
                               null,
@@ -504,7 +447,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                               isHovered: isHovered,
                             ),
                             _cellCenter(
-                              item["standar_perawatan"],
+                              item.standarPerawatan,
                               col5,
                               rowHeight,
                               null,
@@ -512,7 +455,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                               isHovered: isHovered,
                             ),
                             _cellCenter(
-                              item["alat_bahan"],
+                              item.alatBahan,
                               col6,
                               rowHeight,
                               null,
@@ -552,7 +495,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                     isHovered: isHovered,
                   ),
                   _cellCenter(
-                    item["periode"],
+                    item.periode,
                     col3,
                     rowHeight,
                     null,
@@ -560,7 +503,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                     isHovered: isHovered,
                   ),
                   _cellCenter(
-                    item["jenis_pekerjaan"],
+                    item.jenisPekerjaan,
                     col4,
                     rowHeight,
                     null,
@@ -568,7 +511,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                     isHovered: isHovered,
                   ),
                   _cellCenter(
-                    item["standar_perawatan"],
+                    item.standarPerawatan,
                     col5,
                     rowHeight,
                     null,
@@ -576,7 +519,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                     isHovered: isHovered,
                   ),
                   _cellCenter(
-                    item["alat_bahan"],
+                    item.alatBahan,
                     col6,
                     rowHeight,
                     null,
@@ -703,7 +646,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
 
   Widget _actionCell(
     BuildContext context,
-    Map<String, dynamic> item,
+    CheckSheetModel item,
     double width,
     double height, {
     bool isEvenRow = true,
@@ -749,9 +692,9 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                    "Edit: ${item["nama_infrastruktur"]} - ${item["bagian"]}",
-                  ),
+            content: Text(
+              "Edit: ${item.namaInfrastruktur} - ${item.bagian}",
+            ),
                   backgroundColor: Color(0xFF0A9C5D),
                 ),
               );
@@ -764,9 +707,9 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                    "Hapus: ${item["nama_infrastruktur"]} - ${item["bagian"]}",
-                  ),
+            content: Text(
+              "Hapus: ${item.namaInfrastruktur} - ${item.bagian}",
+            ),
                 ),
               );
             },
@@ -1091,54 +1034,58 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton.icon(
-                            onPressed: () {
-                              if (!(formKey.currentState?.validate() ?? false)) {
-                                return;
+                          onPressed: () {
+                            if (!(formKey.currentState?.validate() ?? false)) {
+                              return;
+                            }
+
+                            List<CheckSheetSectionInput> sections =
+                                bagianList.map((bagian) {
+                              String intervalUnit = "";
+                              switch (bagian.selectedPeriode) {
+                                case "Harian":
+                                  intervalUnit = "Hari";
+                                  break;
+                                case "Mingguan":
+                                  intervalUnit = "Minggu";
+                                  break;
+                                case "Bulanan":
+                                  intervalUnit = "Bulan";
+                                  break;
                               }
-
-                              setState(() {
-                                for (var bagian in bagianList) {
-                                  String intervalUnit = "";
-                                  switch (bagian.selectedPeriode) {
-                                    case "Harian":
-                                      intervalUnit = "Hari";
-                                      break;
-                                    case "Mingguan":
-                                      intervalUnit = "Minggu";
-                                      break;
-                                    case "Bulanan":
-                                      intervalUnit = "Bulan";
-                                      break;
-                                  }
-                                  String periodeText =
-                                      "Per ${bagian.intervalController.text.trim()} $intervalUnit";
-                                  _rawData.add({
-                                    "no": _rawData.length + 1,
-                                    "nama_infrastruktur":
-                                        namaInfrastrukturController.text.trim(),
-                                    "bagian": bagian.bagianController.text.trim(),
-                                    "periode": periodeText,
-                                    "jenis_pekerjaan":
-                                        bagian.jenisPekerjaanController.text.trim(),
-                                    "standar_perawatan":
-                                        bagian.standarPerawatanController.text.trim(),
-                                    "alat_bahan":
-                                        bagian.alatBahanController.text.trim(),
-                                    "tanggal_status": Map<int, String>.from({}),
-                                  });
-                                }
-                              });
-
-                              Navigator.of(dialogContext).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    "Schedule ${namaInfrastrukturController.text.trim()} ditambahkan dengan ${bagianList.length} bagian",
-                                  ),
-                                  backgroundColor: Color(0xFF0A9C5D),
-                                ),
+                              String periodeText =
+                                  "Per ${bagian.intervalController.text.trim()} $intervalUnit";
+                              return CheckSheetSectionInput(
+                                bagian: bagian.bagianController.text.trim(),
+                                periode: periodeText,
+                                jenisPekerjaan:
+                                    bagian.jenisPekerjaanController.text.trim(),
+                                standarPerawatan: bagian
+                                    .standarPerawatanController.text
+                                    .trim(),
+                                alatBahan:
+                                    bagian.alatBahanController.text.trim(),
                               );
-                            },
+                            }).toList();
+
+                            setState(() {
+                              widget.checkSheetController.addSchedulesFromForm(
+                                namaInfrastruktur:
+                                    namaInfrastrukturController.text.trim(),
+                                bagianItems: sections,
+                              );
+                            });
+
+                            Navigator.of(dialogContext).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "Schedule ${namaInfrastrukturController.text.trim()} ditambahkan dengan ${bagianList.length} bagian",
+                                ),
+                                backgroundColor: Color(0xFF0A9C5D),
+                              ),
+                            );
+                          },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF0A9C5D),
                               foregroundColor: Colors.white,

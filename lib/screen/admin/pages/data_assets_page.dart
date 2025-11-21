@@ -831,25 +831,6 @@ class _DataMesinPageState extends State<DataMesinPage> {
     );
   }
 
-  // Helper method untuk mendapatkan nama bulan
-  String _getMonthName(int month) {
-    const months = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-    return months[month - 1];
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(

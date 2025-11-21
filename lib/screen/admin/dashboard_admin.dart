@@ -8,6 +8,7 @@ import 'package:monitoring_maintenance/screen/admin/pages/maintenance_schedule_p
 import 'package:monitoring_maintenance/screen/admin/pages/cek_sheet_schedule_page.dart';
 import 'package:monitoring_maintenance/controller/admin_controller.dart';
 import 'package:monitoring_maintenance/controller/asset_controller.dart';
+import 'package:monitoring_maintenance/controller/check_sheet_controller.dart';
 import 'package:monitoring_maintenance/controller/karyawan_controller.dart';
 import 'package:monitoring_maintenance/controller/dashboard_controller.dart';
 
@@ -34,6 +35,7 @@ class _AdminTemplateState extends State<AdminTemplate>
     with SingleTickerProviderStateMixin {
   late AdminController _adminController;
   late AssetController _assetController;
+  late CheckSheetController _checkSheetController;
   late KaryawanController _karyawanController;
   late DashboardController _dashboardController;
   late AnimationController _animationController;
@@ -45,6 +47,8 @@ class _AdminTemplateState extends State<AdminTemplate>
     // Initialize controllers
     _assetController = AssetController();
     _assetController.initializeSampleData();
+    _checkSheetController = CheckSheetController();
+    _checkSheetController.initializeSampleData();
     _karyawanController = KaryawanController();
     _karyawanController.initializeSampleData();
     _dashboardController = DashboardController(
@@ -162,7 +166,9 @@ class _AdminTemplateState extends State<AdminTemplate>
         if (_adminController.selectedScheduleSubMenu == 31) {
           return MaintenanceSchedulePage();
         } else if (_adminController.selectedScheduleSubMenu == 32) {
-          return CekSheetSchedulePage();
+          return CekSheetSchedulePage(
+            checkSheetController: _checkSheetController,
+          );
         } else {
           // Jika tidak ada sub menu dipilih, tampilkan halaman kosong
           return Container();
