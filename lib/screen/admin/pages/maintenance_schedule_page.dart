@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:monitoring_maintenance/controller/maintenance_schedule_controller.dart';
 import 'package:monitoring_maintenance/model/maintenance_schedule_model.dart';
+import 'package:monitoring_maintenance/screen/admin/widgets/maintenance_info_model.dart';
 
 /// Maintenance Schedule dalam format kalender
 class MaintenanceSchedulePage extends StatefulWidget {
@@ -577,18 +578,4 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
           ),
     );
   }
-}
-
-class MaintenanceInfo {
-  final String machine;
-  final String part;
-  final String type; // 'Plan' or 'Actual'
-  final Color color;
-
-  MaintenanceInfo({
-    required this.machine,
-    required this.part,
-    required this.type,
-    required this.color,
-  });
 }
