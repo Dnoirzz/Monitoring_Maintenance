@@ -1,8 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'add_asset_page.dart';
+import '../widgets/mdl_tambah_asset.dart';
+import '../widgets/mdl_edit_asset.dart';
 
 class DataMesinPage extends StatefulWidget {
   const DataMesinPage({super.key});
@@ -473,18 +473,8 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 ),
                 SizedBox(width: 12),
                 ElevatedButton.icon(
-                  onPressed: () async {
-                    // Navigate to AddAssetPage
-                    final result = await Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const AddAssetPage()),
-                    );
-
-                    // Reload data if asset was added successfully
-                    if (result == true) {
-                      setState(() {
-                        // TODO: Load data from Supabase
-                      });
-                    }
+                  onPressed: () {
+                    _showAddAssetForm(context);
                   },
                   icon: Icon(Icons.add),
                   label: Text("Tambah"),
@@ -890,7 +880,6 @@ class _DataMesinPageState extends State<DataMesinPage> {
         MouseRegion(
           onEnter: null,
           onExit: null,
-
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1201,421 +1190,34 @@ class _DataMesinPageState extends State<DataMesinPage> {
     );
   }
 
+  // ---------- MODAL TAMBAH ----------
+
+  void _showAddAssetForm(BuildContext context) {
+    ModalTambahAsset.show(
+      context,
+      onSave: (newData) {
+        setState(() {
+          _rawData.addAll(newData);
+        });
+      },
+    );
+  }
+
   // ---------- MODAL EDIT ASET ----------
 
   void _showEditAssetForm(BuildContext context, String namaAset) {
     List<Map<String, dynamic>> asetRows =
         _rawData.where((e) => e["nama_aset"] == namaAset).toList();
-    if (asetRows.isEmpty) return;
-
-    final _formKey = GlobalKey<FormState>();
-
-    String _namaAset = asetRows.first["nama_aset"];
-    String _jenisAset = asetRows.first["jenis_aset"];
-    String? _gambarAset = asetRows.first["gambar_aset"];
-
-    Map<String, List<Map<String, dynamic>>> grouped = _groupByBagian(asetRows);
-    List<Map<String, dynamic>> bagianList =
-        grouped.entries.map((entry) {
-          return {
-            "namaBagian": entry.key,
-            "komponen":
-                entry.value
-                    .map(
-                      (item) => {
-                        "namaKomponen": item["komponen_aset"],
-                        "spesifikasi": item["produk_yang_digunakan"],
-                      },
-                    )
-                    .toList(),
-          };
-        }).toList();
-
-    final ImagePicker picker = ImagePicker();
-    XFile? newImage;
-
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return Dialog(
-              insetPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.7,
-                constraints: BoxConstraints(maxWidth: 800),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF0A9C5D),
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(8),
-                          topRight: Radius.circular(8),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, color: Colors.white, size: 28),
-                          SizedBox(width: 12),
-                          Text(
-                            'Edit Data Aset',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Spacer(),
-                          IconButton(
-                            icon: Icon(Icons.close, color: Colors.white),
-                            onPressed: () => Navigator.pop(ctx),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.all(24),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              TextFormField(
-                                initialValue: _namaAset,
-                                decoration: InputDecoration(
-                                  labelText: 'Nama Aset *',
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.business),
-                                ),
-                                onChanged: (v) => _namaAset = v,
-                                validator:
-                                    (v) =>
-                                        v == null || v.isEmpty
-                                            ? "Wajib diisi"
-                                            : null,
-                              ),
-                              SizedBox(height: 16),
-                              DropdownButtonFormField<String>(
-                                value: _jenisAset,
-                                decoration: InputDecoration(
-                                  labelText: "Jenis Aset *",
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.category),
-                                ),
-                                items:
-                                    [
-                                          "Mesin Produksi",
-                                          "Alat Berat",
-                                          "Listrik",
-                                          "Kendaraan",
-                                          "Lainnya",
-                                        ]
-                                        .map(
-                                          (e) => DropdownMenuItem(
-                                            value: e,
-                                            child: Text(e),
-                                          ),
-                                        )
-                                        .toList(),
-                                onChanged: (v) => _jenisAset = v!,
-                              ),
-                              SizedBox(height: 20),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  "Bagian & Komponen",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 12),
-                              ...bagianList.asMap().entries.map((entry) {
-                                int i = entry.key;
-                                Map<String, dynamic> bagian = entry.value;
-
-                                return Container(
-                                  margin: EdgeInsets.only(bottom: 20),
-                                  padding: EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[50],
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: TextFormField(
-                                              initialValue:
-                                                  bagian["namaBagian"],
-                                              decoration: InputDecoration(
-                                                labelText: "Nama Bagian *",
-                                                border: OutlineInputBorder(),
-                                              ),
-                                              onChanged:
-                                                  (v) =>
-                                                      bagian["namaBagian"] = v,
-                                            ),
-                                          ),
-                                          if (bagianList.length > 1)
-                                            IconButton(
-                                              icon: Icon(
-                                                Icons.delete,
-                                                color: Colors.red,
-                                              ),
-                                              onPressed: () {
-                                                setDialogState(() {
-                                                  bagianList.removeAt(i);
-                                                });
-                                              },
-                                            ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 16),
-                                      ...bagian["komponen"].asMap().entries.map((
-                                        compEntry,
-                                      ) {
-                                        int j = compEntry.key;
-                                        Map<String, dynamic> komponen =
-                                            compEntry.value;
-
-                                        return Container(
-                                          margin: EdgeInsets.only(bottom: 12),
-                                          padding: EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.grey[300]!,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Expanded(
-                                                child: TextFormField(
-                                                  initialValue:
-                                                      komponen["namaKomponen"],
-                                                  decoration: InputDecoration(
-                                                    labelText: "Komponen *",
-                                                    border:
-                                                        OutlineInputBorder(),
-                                                  ),
-                                                  onChanged:
-                                                      (v) =>
-                                                          komponen["namaKomponen"] =
-                                                              v,
-                                                ),
-                                              ),
-                                              SizedBox(width: 8),
-                                              Expanded(
-                                                child: TextFormField(
-                                                  initialValue:
-                                                      komponen["spesifikasi"],
-                                                  decoration: InputDecoration(
-                                                    labelText: "Spesifikasi *",
-                                                    border:
-                                                        OutlineInputBorder(),
-                                                  ),
-                                                  onChanged:
-                                                      (v) =>
-                                                          komponen["spesifikasi"] =
-                                                              v,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                icon: Icon(
-                                                  Icons.delete,
-                                                  color: Colors.red,
-                                                ),
-                                                onPressed: () {
-                                                  setDialogState(() {
-                                                    (bagian["komponen"] as List)
-                                                        .removeAt(j);
-                                                  });
-                                                },
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }).toList(),
-                                      OutlinedButton.icon(
-                                        icon: Icon(Icons.add),
-                                        label: Text("Tambah Komponen"),
-                                        onPressed: () {
-                                          setDialogState(() {
-                                            (bagian["komponen"] as List).add({
-                                              "namaKomponen": "",
-                                              "spesifikasi": "",
-                                            });
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: ElevatedButton.icon(
-                                  icon: Icon(Icons.add_circle),
-                                  label: Text("Tambah Bagian"),
-                                  onPressed: () {
-                                    setDialogState(() {
-                                      bagianList.add({
-                                        "namaBagian": "",
-                                        "komponen": [
-                                          {
-                                            "namaKomponen": "",
-                                            "spesifikasi": "",
-                                          },
-                                        ],
-                                      });
-                                    });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Color(0xFF0A9C5D),
-                                    foregroundColor: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 20),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  "Gambar Aset",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 12),
-                              if (_gambarAset != null || newImage != null)
-                                Container(
-                                  width: double.infinity,
-                                  height: 180,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: Colors.grey[300]!,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child:
-                                        newImage != null
-                                            ? Image.file(
-                                              File(newImage!.path),
-                                              fit: BoxFit.cover,
-                                            )
-                                            : Image.file(
-                                              File(_gambarAset!),
-                                              fit: BoxFit.cover,
-                                            ),
-                                  ),
-                                ),
-                              SizedBox(height: 12),
-                              OutlinedButton.icon(
-                                icon: Icon(Icons.upload_file),
-                                label: Text("Ganti Foto"),
-                                onPressed: () async {
-                                  final picked = await picker.pickImage(
-                                    source: ImageSource.gallery,
-                                    imageQuality: 85,
-                                  );
-                                  if (picked != null) {
-                                    setDialogState(() {
-                                      newImage = picked;
-                                    });
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          TextButton(
-                            child: Text("Batal"),
-                            onPressed: () => Navigator.pop(ctx),
-                          ),
-                          SizedBox(width: 10),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF0A9C5D),
-                              foregroundColor: Colors.white,
-                            ),
-                            child: Text("Simpan Perubahan"),
-                            onPressed: () {
-                              if (!_formKey.currentState!.validate()) return;
-
-                              setState(() {
-                                _rawData.removeWhere(
-                                  (e) => e["nama_aset"] == namaAset,
-                                );
-
-                                for (var bagian in bagianList) {
-                                  for (var komponen in bagian["komponen"]) {
-                                    _rawData.add({
-                                      "nama_aset": _namaAset,
-                                      "jenis_aset": _jenisAset,
-                                      "maintenance_terakhir":
-                                          asetRows
-                                              .first["maintenance_terakhir"],
-                                      "maintenance_selanjutnya":
-                                          asetRows
-                                              .first["maintenance_selanjutnya"],
-                                      "bagian_aset": bagian["namaBagian"],
-                                      "komponen_aset": komponen["namaKomponen"],
-                                      "produk_yang_digunakan":
-                                          komponen["spesifikasi"],
-                                      "gambar_aset":
-                                          newImage != null
-                                              ? newImage!.path
-                                              : _gambarAset,
-                                    });
-                                  }
-                                }
-                              });
-
-                              Navigator.pop(ctx);
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    "Data aset berhasil diperbarui",
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+    
+    ModalEditAsset.show(
+      context,
+      namaAset: namaAset,
+      asetRows: asetRows,
+      onSave: (newData, oldData) {
+        setState(() {
+          _rawData.removeWhere((e) => e["nama_aset"] == oldData["nama_aset"]);
+          _rawData.addAll(newData);
+        });
       },
     );
   }
