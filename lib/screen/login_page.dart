@@ -257,7 +257,6 @@ class _LoginTextField extends StatelessWidget {
   const _LoginTextField({
     required this.controller,
     required this.hintText,
-    this.controller,
     this.textInputType,
     this.obscureText = false,
     this.validator,
@@ -266,7 +265,6 @@ class _LoginTextField extends StatelessWidget {
 
   final TextEditingController controller;
   final String hintText;
-  final TextEditingController? controller;
   final TextInputType? textInputType;
   final bool obscureText;
   final String? Function(String?)? validator;

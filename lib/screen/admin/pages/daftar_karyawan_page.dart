@@ -1,7 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:monitoring_maintenance/controller/karyawan_controller.dart';
-import 'package:monitoring_maintenance/model/karyawan_model.dart';
 
 class DaftarKaryawanPage extends StatefulWidget {
   final KaryawanController karyawanController;
@@ -1283,7 +1282,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
 
   Widget _actionCell(
     BuildContext context,
-    KaryawanModel item,
+    Map<String, String> item,
     double width,
     double height, {
     bool isEvenRow = true,
@@ -1325,7 +1324,10 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
             color: const Color(0xFFF44336),
             onPressed: () {
               setState(() {
-                widget.karyawanController.deleteKaryawan(item.nama);
+                final nama = item["nama"];
+                if (nama != null && nama.isNotEmpty) {
+                  widget.karyawanController.deleteKaryawan(nama);
+                }
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

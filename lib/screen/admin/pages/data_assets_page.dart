@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:monitoring_maintenance/controller/asset_controller.dart';
 import 'add_asset_page.dart';
 
 class DataMesinPage extends StatefulWidget {
@@ -705,7 +706,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
     const double col8 = 120.0;
     const double col9 = 200.0;
 
-    Map<String, List<AssetModel>> grouped = _groupByAset();
+    Map<String, List<Map<String, dynamic>>> grouped = _groupByAset();
 
     const double totalWidth =
         colNo + col1 + col2 + col3 + col4 + col5 + col6 + col7 + col8 + col9;
@@ -818,13 +819,13 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   children:
                       bagianItems.asMap().entries.map((entry) {
                         int itemIndex = entry.key;
-                        AssetModel item = entry.value;
+                        Map<String, dynamic> item = entry.value;
                         bool isItemEvenRow =
                             (rowIndex + bagianRowIndex + itemIndex) % 2 == 0;
                         return Row(
                           children: [
                             _cellCenter(
-                              item.komponenAset,
+                              item["komponen_aset"],
                               col6,
                               rowHeight,
                               null,
@@ -832,7 +833,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                               isHovered: isHovered,
                             ),
                             _cellCenter(
-                              item.produkYangDigunakan,
+                              item["produk_yang_digunakan"],
                               col7,
                               rowHeight,
                               null,
@@ -860,7 +861,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   isHovered: isHovered,
                 ),
                 _cellCenter(
-                  item.komponenAset,
+                  item["komponen_aset"],
                   col6,
                   rowHeight,
                   null,
@@ -868,7 +869,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   isHovered: isHovered,
                 ),
                 _cellCenter(
-                  item.produkYangDigunakan,
+                  item["produk_yang_digunakan"],
                   col7,
                   rowHeight,
                   null,
@@ -907,7 +908,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                firstItem.jenisAset,
+                firstItem["jenis_aset"],
                 col2,
                 mergedHeight,
                 null,
@@ -915,7 +916,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                firstItem.maintenanceTerakhir ?? "",
+                firstItem["maintenance_terakhir"] ?? "",
                 col3,
                 mergedHeight,
                 null,
@@ -923,7 +924,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
-                firstItem.maintenanceSelanjutnya ?? "",
+                firstItem["maintenance_selanjutnya"] ?? "",
                 col4,
                 mergedHeight,
                 null,
@@ -932,7 +933,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
               ),
               Column(children: bagianRows),
               _imageCell(
-                firstItem.gambarAset,
+                firstItem["gambar_aset"],
                 col8,
                 mergedHeight,
                 isEvenRow: isEvenRow,
@@ -1149,7 +1150,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
   Widget _actionCell(
     BuildContext context,
-    AssetModel item,
+    Map<String, dynamic> item,
     double width,
     double height, {
     bool isEvenRow = true,
@@ -1660,7 +1661,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
   void _showDeleteConfirmation(
     BuildContext context,
-    AssetModel item,
+    Map<String, dynamic> item,
   ) {
     showDialog(
       context: context,
@@ -1692,10 +1693,10 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Nama Aset: ${item.namaAset}',
+                      'Nama Aset: ${item["nama_aset"]}',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Text('Jenis: ${item.jenisAset}'),
+                    Text('Jenis: ${item["jenis_aset"]}'),
                   ],
                 ),
               ),
@@ -1720,9 +1721,9 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 Navigator.of(context).pop();
                 setState(() {
                   widget.assetController.deleteAsset(
-                    namaAset: item.namaAset,
-                    bagianAset: item.bagianAset,
-                    komponenAset: item.komponenAset,
+                    namaAset: item["nama_aset"] ?? '',
+                    bagianAset: item["bagian_aset"] ?? '',
+                    komponenAset: item["komponen_aset"] ?? '',
                   );
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
