@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:monitoring_maintenance/screen/login_page.dart';
 import 'package:monitoring_maintenance/services/supabase_service.dart';
+import 'package:monitoring_maintenance/screen/admin/dashboard_admin.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +31,8 @@ class MyApp extends StatelessWidget {
       ),
 
       // home: SplashScreen(),
-      home: LoginPage(),
+      // home: LoginPage(),
+      home: AdminTemplate(),
     );
   }
 }
