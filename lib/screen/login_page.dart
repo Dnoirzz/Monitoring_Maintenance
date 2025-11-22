@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:monitoring_maintenance/services/supabase_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:monitoring_maintenance/providers/auth_provider.dart';
 import 'package:monitoring_maintenance/screen/admin/dashboard_admin.dart';
+import 'package:monitoring_maintenance/services/auth_service.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
   bool _obscurePassword = true;
 
   @override
@@ -28,42 +29,45 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      final response = await SupabaseService.instance.signInWithEmail(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
-
-      if (response.user != null) {
-        // Login berhasil
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const AdminTemplate()),
+      await ref
+          .read(authProvider.notifier)
+          .login(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
           );
-        }
+
+      // Login berhasil - navigasi ke dashboard
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AdminTemplate()),
+        );
+      }
+    } on AuthException catch (e) {
+      // Tampilkan error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(e.message, style: const TextStyle(fontSize: 14)),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Tampilkan error message
-      String errorMessage = 'Login gagal. Silakan coba lagi.';
-
-      if (e.toString().contains('Invalid login credentials')) {
-        errorMessage = 'Email atau password salah. Silakan periksa kembali.';
-      } else if (e.toString().contains('Email not confirmed')) {
-        errorMessage = 'Email belum diverifikasi. Silakan cek inbox Anda.';
-      } else if (e.toString().contains('User not found')) {
-        errorMessage = 'Akun tidak ditemukan. Silakan daftar terlebih dahulu.';
-      } else if (e.toString().contains('network')) {
-        errorMessage = 'Tidak ada koneksi internet. Silakan cek koneksi Anda.';
-      }
-
+      // Error umum
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -73,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    errorMessage,
+                    'Login gagal. Silakan coba lagi.',
                     style: const TextStyle(fontSize: 14),
                   ),
                 ),
@@ -93,6 +97,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -219,9 +226,9 @@ class _LoginPageState extends State<LoginPage> {
                                 shape: const StadiumBorder(),
                                 elevation: 0,
                               ),
-                              onPressed: _isLoading ? null : _handleLogin,
+                              onPressed: isLoading ? null : _handleLogin,
                               child:
-                                  _isLoading
+                                  isLoading
                                       ? const SizedBox(
                                         height: 20,
                                         width: 20,

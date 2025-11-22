@@ -1,14 +1,16 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart'; // Added for kIsWeb
 
 import 'package:monitoring_maintenance/controller/asset_controller.dart';
+import '../../../repositories/asset_supabase_repository.dart'; // Import Repository
 import '../widgets/mdl_tambah_asset.dart';
 import '../widgets/mdl_edit_asset.dart';
 
 class DataMesinPage extends StatefulWidget {
   final AssetController assetController;
-  
+
   const DataMesinPage({super.key, required this.assetController});
 
   @override
@@ -21,15 +23,25 @@ class _DataMesinPageState extends State<DataMesinPage> {
   final ScrollController _headerScrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   bool _isSyncing = false;
+  bool _isLoading = true; // Tambahkan status loading
   String _searchQuery = '';
   String? _sortColumn;
   bool _sortAscending = true;
   String? _filterJenisAset;
   String? _hoveredRowKey;
 
+  // Data aset (awalnya kosong, diisi dari Supabase)
+  List<Map<String, dynamic>> _rawData = [];
+
   @override
   void initState() {
     super.initState();
+    _setupScrollControllers();
+    _setupSearchController();
+    _fetchData(); // Ambil data saat init
+  }
+
+  void _setupScrollControllers() {
     _horizontalScrollController.addListener(() {
       if (!_isSyncing && _headerScrollController.hasClients) {
         _isSyncing = true;
@@ -44,11 +56,107 @@ class _DataMesinPageState extends State<DataMesinPage> {
         Future.microtask(() => _isSyncing = false);
       }
     });
+  }
+
+  void _setupSearchController() {
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
       });
     });
+  }
+
+  Future<void> _fetchData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final repository = AssetSupabaseRepository();
+      final rawAssets = await repository.getAllAssets();
+
+      // Transformasi data Nested (Supabase) ke Flat (UI Table)
+      List<Map<String, dynamic>> flatData = [];
+
+      for (var asset in rawAssets) {
+        String namaAset = asset['nama_assets'] ?? '-';
+        String jenisAset = asset['jenis_assets'] ?? '-';
+        String? foto = asset['foto'];
+
+        // Data bagian mesin
+        List<dynamic> bagianList = asset['bg_mesin'] ?? [];
+
+        if (bagianList.isEmpty) {
+          // Jika tidak ada bagian/komponen, tetap tampilkan assetnya
+          flatData.add({
+            "nama_aset": namaAset,
+            "jenis_aset": jenisAset,
+            "maintenance_terakhir": "-", // Belum ada data maintenance
+            "maintenance_selanjutnya": "-",
+            "bagian_aset": "-",
+            "komponen_aset": "-",
+            "produk_yang_digunakan": "-",
+            "gambar_aset": foto,
+          });
+        } else {
+          for (var bagian in bagianList) {
+            String namaBagian = bagian['nama_bagian'] ?? '-';
+            List<dynamic> komponenList = bagian['komponen_assets'] ?? [];
+
+            if (komponenList.isEmpty) {
+              flatData.add({
+                "nama_aset": namaAset,
+                "jenis_aset": jenisAset,
+                "maintenance_terakhir": "-",
+                "maintenance_selanjutnya": "-",
+                "bagian_aset": namaBagian,
+                "komponen_aset": "-",
+                "produk_yang_digunakan": "-",
+                "gambar_aset": foto,
+              });
+            } else {
+              for (var komponen in komponenList) {
+                String namaKomponen =
+                    komponen['nama_bagian'] ??
+                    '-'; // Di tabel komponen nama kolomnya nama_bagian
+                String spesifikasi = komponen['spesifikasi'] ?? '-';
+
+                flatData.add({
+                  "nama_aset": namaAset,
+                  "jenis_aset": jenisAset,
+                  "maintenance_terakhir":
+                      "-", // TODO: Ambil dari tabel maintenance
+                  "maintenance_selanjutnya": "-",
+                  "bagian_aset": namaBagian,
+                  "komponen_aset": namaKomponen,
+                  "produk_yang_digunakan": spesifikasi,
+                  "gambar_aset": foto,
+                });
+              }
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _rawData = flatData;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memuat data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -74,175 +182,6 @@ class _DataMesinPageState extends State<DataMesinPage> {
       _verticalScrollController.jumpTo(targetOffset);
     }
   }
-
-  // Data mentah
-  List<Map<String, dynamic>> _rawData = [
-    // Creeper 1 - Roll Atas (3 komponen)
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Atas",
-      "komponen_aset": "Bearing",
-      "produk_yang_digunakan": "SKF 6205",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Atas",
-      "komponen_aset": "Seal",
-      "produk_yang_digunakan": "Oil Seal 25x40x7",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Atas",
-      "komponen_aset": "Shaft",
-      "produk_yang_digunakan": "Shaft Steel 40mm",
-      "gambar_aset": null,
-    },
-    // Creeper 1 - Roll Bawah (4 komponen)
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Bawah",
-      "komponen_aset": "Bearing",
-      "produk_yang_digunakan": "SKF 6206",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Bawah",
-      "komponen_aset": "Seal",
-      "produk_yang_digunakan": "Oil Seal 30x45x7",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Bawah",
-      "komponen_aset": "Shaft",
-      "produk_yang_digunakan": "Shaft Steel 45mm",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Creeper 1",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "15 Januari 2024",
-      "maintenance_selanjutnya": "18 Januari 2024",
-      "bagian_aset": "Roll Bawah",
-      "komponen_aset": "Pulley",
-      "produk_yang_digunakan": "Pulley V-Belt 8PK",
-      "gambar_aset": null,
-    },
-    // Excavator
-    {
-      "nama_aset": "Excavator",
-      "jenis_aset": "Alat Berat",
-      "maintenance_terakhir": "10 Januari 2024",
-      "maintenance_selanjutnya": "10 Februari 2024",
-      "bagian_aset": "Hydraulic System",
-      "komponen_aset": "Hydraulic Pump",
-      "produk_yang_digunakan": "Hydraulic Oil AW46",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Excavator",
-      "jenis_aset": "Alat Berat",
-      "maintenance_terakhir": "10 Januari 2024",
-      "maintenance_selanjutnya": "10 Februari 2024",
-      "bagian_aset": "Hydraulic System",
-      "komponen_aset": "Cylinder",
-      "produk_yang_digunakan": "Seal Kit Cylinder",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Excavator",
-      "jenis_aset": "Alat Berat",
-      "maintenance_terakhir": "10 Januari 2024",
-      "maintenance_selanjutnya": "10 Februari 2024",
-      "bagian_aset": "Hydraulic System",
-      "komponen_aset": "Hose",
-      "produk_yang_digunakan": "Hydraulic Hose 1/2 inch",
-      "gambar_aset": null,
-    },
-    // Generator Set
-    {
-      "nama_aset": "Generator Set",
-      "jenis_aset": "Listrik",
-      "maintenance_terakhir": "5 Januari 2024",
-      "maintenance_selanjutnya": "5 Februari 2024",
-      "bagian_aset": "Engine",
-      "komponen_aset": "Alternator",
-      "produk_yang_digunakan": "Alternator 12V 100A",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Generator Set",
-      "jenis_aset": "Listrik",
-      "maintenance_terakhir": "5 Januari 2024",
-      "maintenance_selanjutnya": "5 Februari 2024",
-      "bagian_aset": "Engine",
-      "komponen_aset": "Battery",
-      "produk_yang_digunakan": "Battery Dry 12V 100Ah",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Generator Set",
-      "jenis_aset": "Listrik",
-      "maintenance_terakhir": "5 Januari 2024",
-      "maintenance_selanjutnya": "5 Februari 2024",
-      "bagian_aset": "Engine",
-      "komponen_aset": "Fuel System",
-      "produk_yang_digunakan": "Fuel Filter Element",
-      "gambar_aset": null,
-    },
-    // Mixing Machine
-    {
-      "nama_aset": "Mixing Machine",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "20 Januari 2024",
-      "maintenance_selanjutnya": "20 Februari 2024",
-      "bagian_aset": "Gearbox",
-      "komponen_aset": "Gear",
-      "produk_yang_digunakan": "Gear Oil EP90",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Mixing Machine",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "20 Januari 2024",
-      "maintenance_selanjutnya": "20 Februari 2024",
-      "bagian_aset": "Gearbox",
-      "komponen_aset": "Oli",
-      "produk_yang_digunakan": "Gear Oil EP90 5L",
-      "gambar_aset": null,
-    },
-    {
-      "nama_aset": "Mixing Machine",
-      "jenis_aset": "Mesin Produksi",
-      "maintenance_terakhir": "20 Januari 2024",
-      "maintenance_selanjutnya": "20 Februari 2024",
-      "bagian_aset": "Gearbox",
-      "komponen_aset": "Seal",
-      "produk_yang_digunakan": "Oil Seal 50x70x8",
-      "gambar_aset": null,
-    },
-  ];
 
   List<Map<String, dynamic>> _getFilteredAndSortedData() {
     List<Map<String, dynamic>> filtered = _rawData;
@@ -303,7 +242,8 @@ class _DataMesinPageState extends State<DataMesinPage> {
   }
 
   List<String> _getJenisAsetList() {
-    return widget.assetController.getJenisAsetList();
+    // Ambil unik jenis aset dari data yang ada
+    return _rawData.map((e) => e['jenis_aset'] as String).toSet().toList();
   }
 
   Map<String, List<Map<String, dynamic>>> _groupByAset() {
@@ -340,13 +280,24 @@ class _DataMesinPageState extends State<DataMesinPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Data Aset",
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF022415),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Data Aset",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF022415),
+              ),
+            ),
+            // Tombol Refresh
+            IconButton(
+              icon: Icon(Icons.refresh, color: Color(0xFF0A9C5D)),
+              tooltip: 'Refresh Data',
+              onPressed: _fetchData,
+            ),
+          ],
         ),
         SizedBox(height: 20),
         Column(
@@ -528,7 +479,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 ),
               ],
             ),
-            child: _buildTableWithStickyHeader(context),
+            child:
+                _isLoading
+                    ? Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF0A9C5D),
+                      ),
+                    )
+                    : _buildTableWithStickyHeader(context),
           ),
         ),
       ],
@@ -1078,6 +1036,11 @@ class _DataMesinPageState extends State<DataMesinPage> {
       backgroundColor = Colors.white;
     }
 
+    bool isUrl(String? path) {
+      if (path == null) return false;
+      return path.startsWith('http') || path.startsWith('https');
+    }
+
     return GestureDetector(
       onTap:
           imagePath != null && context != null
@@ -1104,26 +1067,59 @@ class _DataMesinPageState extends State<DataMesinPage> {
               imagePath != null
                   ? ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: Image.file(
-                      File(imagePath),
-                      width: width - 12,
-                      height: height - 12,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Icon(
-                            Icons.image_not_supported,
-                            size: 24,
-                            color: Colors.grey[600],
-                          ),
-                        );
-                      },
-                    ),
+                    child:
+                        isUrl(imagePath)
+                            ? Image.network(
+                              imagePath,
+                              width: width - 12,
+                              height: height - 12,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Icon(
+                                    Icons.image_not_supported,
+                                    size: 24,
+                                    color: Colors.grey[600],
+                                  ),
+                                );
+                              },
+                            )
+                            : (kIsWeb
+                                ? Container(
+                                  width: width - 12,
+                                  height: height - 12,
+                                  color: Colors.grey[200],
+                                  child: Icon(
+                                    Icons.image,
+                                    size: 24,
+                                    color: Colors.grey[600],
+                                  ),
+                                )
+                                : Image.file(
+                                  File(imagePath),
+                                  width: width - 12,
+                                  height: height - 12,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      padding: EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        size: 24,
+                                        color: Colors.grey[600],
+                                      ),
+                                    );
+                                  },
+                                )),
                   )
                   : Container(
                     padding: EdgeInsets.all(8),
@@ -1194,9 +1190,8 @@ class _DataMesinPageState extends State<DataMesinPage> {
     ModalTambahAsset.show(
       context,
       onSave: (newData) {
-        setState(() {
-          _rawData.addAll(newData);
-        });
+        // Panggil ulang fetch data dari DB
+        _fetchData();
       },
     );
   }
@@ -1206,16 +1201,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
   void _showEditAssetForm(BuildContext context, String namaAset) {
     List<Map<String, dynamic>> asetRows =
         _rawData.where((e) => e["nama_aset"] == namaAset).toList();
-    
+
     ModalEditAsset.show(
       context,
       namaAset: namaAset,
       asetRows: asetRows,
       onSave: (newData, oldData) {
-        setState(() {
-          _rawData.removeWhere((e) => e["nama_aset"] == oldData["nama_aset"]);
-          _rawData.addAll(newData);
-        });
+        // Refresh dari DB lebih aman
+        _fetchData();
       },
     );
   }
@@ -1223,6 +1216,11 @@ class _DataMesinPageState extends State<DataMesinPage> {
   // ---------- PREVIEW GAMBAR ----------
 
   void _showImagePreview(BuildContext context, String imagePath) {
+    bool isUrl(String? path) {
+      if (path == null) return false;
+      return path.startsWith('http') || path.startsWith('https');
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1238,7 +1236,21 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.file(File(imagePath), fit: BoxFit.contain),
+                  child:
+                      isUrl(imagePath)
+                          ? Image.network(imagePath, fit: BoxFit.contain)
+                          : (kIsWeb
+                              ? Center(
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  color: Colors.white,
+                                  size: 50,
+                                ),
+                              )
+                              : Image.file(
+                                File(imagePath),
+                                fit: BoxFit.contain,
+                              )),
                 ),
               ),
               Positioned(
@@ -1322,17 +1334,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                setState(() {
-                  widget.assetController.deleteAsset(
-                    namaAset: item["nama_aset"] ?? '',
-                    bagianAset: item["bagian_aset"] ?? '',
-                    komponenAset: item["komponen_aset"] ?? '',
-                  );
-                });
+                // TODO: Implementasi Hapus dari Supabase Repository
+                // widget.assetController.deleteAsset(...) -> ini pakai controller lama
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Data aset berhasil dihapus'),
-                    backgroundColor: Colors.green,
+                    content: Text(
+                      'Hapus belum diimplementasikan di Supabase Repo',
+                    ),
+                    backgroundColor: Colors.orange,
                   ),
                 );
               },
