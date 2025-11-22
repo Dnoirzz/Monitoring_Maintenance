@@ -24,8 +24,19 @@ class BerandaPage extends StatefulWidget {
 
 class _BerandaPageState extends State<BerandaPage> {
   List<bool> _isMenuHovered = List.generate(4, (index) => false);
+  late Future<DashboardStats> _statsFuture;
 
-  DashboardStats get _stats => widget.dashboardController.getStats();
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  void _loadStats() {
+    setState(() {
+      _statsFuture = widget.dashboardController.getStats();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +56,19 @@ class _BerandaPageState extends State<BerandaPage> {
                   color: Color(0xFF022415),
                 ),
               ),
-              Text(
-                widget.dashboardController.getCurrentDate(),
-                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.refresh, color: Color(0xFF0A9C5D)),
+                    onPressed: _loadStats,
+                    tooltip: 'Refresh Data',
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    widget.dashboardController.getCurrentDate(),
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                  ),
+                ],
               ),
             ],
           ),
@@ -84,38 +105,90 @@ class _BerandaPageState extends State<BerandaPage> {
   }
 
   Widget _buildStatsSection() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            icon: Icons.miscellaneous_services_outlined,
-            title: "Total Assets",
-            value: _stats.totalAssets.toString(),
-            color: Color(0xFF0A9C5D),
-            subtitle: "Aktif: ${_stats.totalAssets}",
+    return FutureBuilder<DashboardStats>(
+      future: _statsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Row(
+            children: [
+              Expanded(child: _buildLoadingStatCard()),
+              SizedBox(width: 15),
+              Expanded(child: _buildLoadingStatCard()),
+              SizedBox(width: 15),
+              Expanded(child: _buildLoadingStatCard()),
+            ],
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Error loading stats: ${snapshot.error}',
+              style: TextStyle(color: Colors.red),
+            ),
+          );
+        }
+
+        final stats =
+            snapshot.data ??
+            DashboardStats(
+              totalAssets: 0,
+              totalKaryawan: 0,
+              pendingRequests: 0,
+              activeMaintenance: 0,
+              overdueSchedule: 0,
+            );
+
+        return Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.miscellaneous_services_outlined,
+                title: "Total Assets",
+                value: stats.totalAssets.toString(),
+                color: Color(0xFF0A9C5D),
+                subtitle: "Terdaftar di sistem",
+              ),
+            ),
+            SizedBox(width: 15),
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.group,
+                title: "Total Karyawan",
+                value: stats.totalKaryawan.toString(),
+                color: Color(0xFF2196F3),
+                subtitle: "Aktif: ${stats.totalKaryawan}",
+              ),
+            ),
+            SizedBox(width: 15),
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.build,
+                title: "Maintenance Aktif",
+                value: stats.activeMaintenance.toString(),
+                color: Color(0xFF9C27B0),
+                subtitle: "Sedang berjalan",
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadingStatCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        padding: EdgeInsets.all(20),
+        height: 120,
+        child: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0A9C5D)),
           ),
         ),
-        SizedBox(width: 15),
-        Expanded(
-          child: _buildStatCard(
-            icon: Icons.group,
-            title: "Total Karyawan",
-            value: _stats.totalKaryawan.toString(),
-            color: Color(0xFF2196F3),
-            subtitle: "Aktif: ${_stats.totalKaryawan}",
-          ),
-        ),
-        SizedBox(width: 15),
-        Expanded(
-          child: _buildStatCard(
-            icon: Icons.build,
-            title: "Maintenance Aktif",
-            value: _stats.activeMaintenance.toString(),
-            color: Color(0xFF9C27B0),
-            subtitle: "Sedang berjalan",
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -322,7 +395,8 @@ class _BerandaPageState extends State<BerandaPage> {
             ),
             SizedBox(height: 15),
             ...widget.dashboardController.getRequestHistory().map((request) {
-              Color statusColor = request.status == "Disetujui" ? Colors.green : Colors.red;
+              Color statusColor =
+                  request.status == "Disetujui" ? Colors.green : Colors.red;
               return Padding(
                 padding: EdgeInsets.only(bottom: 10),
                 child: _buildRequestItem(
@@ -442,36 +516,17 @@ class _BerandaPageState extends State<BerandaPage> {
               ],
             ),
             SizedBox(height: 15),
-            if (_stats.overdueSchedule > 0)
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning, color: Colors.red, size: 20),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        "${_stats.overdueSchedule} jadwal terlambat",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.red.shade700,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             SizedBox(height: 15),
-            ...widget.dashboardController.getUpcomingSchedules().map((schedule) {
+            ...widget.dashboardController.getUpcomingSchedules().map((
+              schedule,
+            ) {
               return Padding(
                 padding: EdgeInsets.only(bottom: 10),
-                child: _buildScheduleItem(schedule.title, schedule.date, schedule.isOverdue),
+                child: _buildScheduleItem(
+                  schedule.title,
+                  schedule.date,
+                  schedule.isOverdue,
+                ),
               );
             }),
             SizedBox(height: 10),

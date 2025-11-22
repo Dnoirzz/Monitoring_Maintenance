@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -18,19 +19,21 @@ class ModalEditAsset {
     String? _gambarAset = asetRows.first["gambar_aset"];
 
     Map<String, List<Map<String, dynamic>>> grouped = _groupByBagian(asetRows);
-    List<Map<String, dynamic>> bagianList = grouped.entries.map((entry) {
-      return {
-        "namaBagian": entry.key,
-        "komponen": entry.value
-            .map(
-              (item) => {
-                "namaKomponen": item["komponen_aset"],
-                "spesifikasi": item["produk_yang_digunakan"],
-              },
-            )
-            .toList(),
-      };
-    }).toList();
+    List<Map<String, dynamic>> bagianList =
+        grouped.entries.map((entry) {
+          return {
+            "namaBagian": entry.key,
+            "komponen":
+                entry.value
+                    .map(
+                      (item) => {
+                        "namaKomponen": item["komponen_aset"],
+                        "spesifikasi": item["produk_yang_digunakan"],
+                      },
+                    )
+                    .toList(),
+          };
+        }).toList();
 
     final ImagePicker picker = ImagePicker();
     XFile? newImage;
@@ -56,9 +59,15 @@ class ModalEditAsset {
                           key: _formKey,
                           child: Column(
                             children: [
-                              _buildNamaAsetField(_namaAset, (v) => _namaAset = v),
+                              _buildNamaAsetField(
+                                _namaAset,
+                                (v) => _namaAset = v,
+                              ),
                               SizedBox(height: 16),
-                              _buildJenisAsetField(_jenisAset, (v) => _jenisAset = v!),
+                              _buildJenisAsetField(
+                                _jenisAset,
+                                (v) => _jenisAset = v!,
+                              ),
                               SizedBox(height: 20),
                               _buildBagianKomponenSection(
                                 bagianList,
@@ -173,20 +182,14 @@ class ModalEditAsset {
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.category),
       ),
-      items: [
-        "Mesin Produksi",
-        "Alat Berat",
-        "Listrik",
-        "Kendaraan",
-        "Lainnya",
-      ]
-          .map(
-            (e) => DropdownMenuItem(
-              value: e,
-              child: Text(e),
-            ),
-          )
-          .toList(),
+      items:
+          [
+            "Mesin Produksi",
+            "Alat Berat",
+            "Listrik",
+            "Kendaraan",
+            "Lainnya",
+          ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
       onChanged: onChanged,
     );
   }
@@ -202,10 +205,7 @@ class ModalEditAsset {
           alignment: Alignment.centerLeft,
           child: Text(
             "Bagian & Komponen",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
         SizedBox(height: 12),
@@ -213,12 +213,7 @@ class ModalEditAsset {
           int i = entry.key;
           Map<String, dynamic> bagian = entry.value;
 
-          return _buildBagianCard(
-            i,
-            bagian,
-            bagianList,
-            setDialogState,
-          );
+          return _buildBagianCard(i, bagian, bagianList, setDialogState);
         }).toList(),
         Align(
           alignment: Alignment.centerLeft,
@@ -290,12 +285,7 @@ class ModalEditAsset {
             int j = compEntry.key;
             Map<String, dynamic> komponen = compEntry.value;
 
-            return _buildKomponenCard(
-              j,
-              komponen,
-              bagian,
-              setDialogState,
-            );
+            return _buildKomponenCard(j, komponen, bagian, setDialogState);
           }).toList(),
           OutlinedButton.icon(
             icon: Icon(Icons.add),
@@ -378,10 +368,7 @@ class ModalEditAsset {
           alignment: Alignment.centerLeft,
           child: Text(
             "Gambar Aset",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
         SizedBox(height: 12),
@@ -395,9 +382,14 @@ class ModalEditAsset {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: newImage != null
-                  ? Image.file(File(newImage.path), fit: BoxFit.cover)
-                  : Image.file(File(gambarAset!), fit: BoxFit.cover),
+              child:
+                  newImage != null
+                      ? (kIsWeb
+                          ? Image.network(newImage.path, fit: BoxFit.cover)
+                          : Image.file(File(newImage.path), fit: BoxFit.cover))
+                      : (kIsWeb
+                          ? Image.network(gambarAset!, fit: BoxFit.cover)
+                          : Image.file(File(gambarAset!), fit: BoxFit.cover)),
             ),
           ),
         SizedBox(height: 12),
@@ -438,10 +430,7 @@ class ModalEditAsset {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          TextButton(
-            child: Text("Batal"),
-            onPressed: () => Navigator.pop(ctx),
-          ),
+          TextButton(child: Text("Batal"), onPressed: () => Navigator.pop(ctx)),
           SizedBox(width: 10),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -458,13 +447,15 @@ class ModalEditAsset {
                   newData.add({
                     "nama_aset": namaAset,
                     "jenis_aset": jenisAset,
-                    "maintenance_terakhir": asetRows.first["maintenance_terakhir"],
+                    "maintenance_terakhir":
+                        asetRows.first["maintenance_terakhir"],
                     "maintenance_selanjutnya":
                         asetRows.first["maintenance_selanjutnya"],
                     "bagian_aset": bagian["namaBagian"],
                     "komponen_aset": komponen["namaKomponen"],
                     "produk_yang_digunakan": komponen["spesifikasi"],
-                    "gambar_aset": newImage != null ? newImage.path : gambarAset,
+                    "gambar_aset":
+                        newImage != null ? newImage.path : gambarAset,
                   });
                 }
               }

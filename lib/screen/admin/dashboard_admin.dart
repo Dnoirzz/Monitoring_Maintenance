@@ -53,10 +53,7 @@ class _AdminTemplateState extends State<AdminTemplate>
     _checkSheetController.initializeSampleData();
     _karyawanController = KaryawanController();
     _karyawanController.initializeSampleData();
-    _dashboardController = DashboardController(
-      assetController: _assetController,
-      karyawanController: _karyawanController,
-    );
+    _dashboardController = DashboardController();
     _adminController = AdminController();
     _maintenanceScheduleController = MaintenanceScheduleController();
 

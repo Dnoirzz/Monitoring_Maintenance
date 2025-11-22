@@ -1,6 +1,5 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:flutter/foundation.dart'; // Added for kIsWeb
 
 import 'package:monitoring_maintenance/controller/asset_controller.dart';
@@ -1089,37 +1088,29 @@ class _DataMesinPageState extends State<DataMesinPage> {
                                 );
                               },
                             )
-                            : (kIsWeb
-                                ? Container(
-                                  width: width - 12,
-                                  height: height - 12,
-                                  color: Colors.grey[200],
-                                  child: Icon(
-                                    Icons.image,
+                            : Container(
+                              width: width - 12,
+                              height: height - 12,
+                              color: Colors.grey[200],
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.broken_image,
                                     size: 24,
                                     color: Colors.grey[600],
                                   ),
-                                )
-                                : Image.file(
-                                  File(imagePath),
-                                  width: width - 12,
-                                  height: height - 12,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      padding: EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[200],
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Icon(
-                                        Icons.image_not_supported,
-                                        size: 24,
-                                        color: Colors.grey[600],
-                                      ),
-                                    );
-                                  },
-                                )),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Local File',
+                                    style: TextStyle(
+                                      fontSize: 8,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                   )
                   : Container(
                     padding: EdgeInsets.all(8),
@@ -1206,11 +1197,100 @@ class _DataMesinPageState extends State<DataMesinPage> {
       context,
       namaAset: namaAset,
       asetRows: asetRows,
-      onSave: (newData, oldData) {
-        // Refresh dari DB lebih aman
-        _fetchData();
+      onSave: (newData, oldData) async {
+        await _updateAsset(oldData["nama_aset"], newData);
       },
     );
+  }
+
+  // ---------- IMPLEMENTASI UPDATE ----------
+
+  Future<void> _updateAsset(
+    String namaAssetLama,
+    List<Map<String, dynamic>> newData,
+  ) async {
+    if (newData.isEmpty) return;
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      // Ambil data dari newData pertama
+      final firstRow = newData.first;
+      final String namaAssetBaru = firstRow["nama_aset"];
+      final String jenisAsset = firstRow["jenis_aset"];
+      final String? foto = firstRow["gambar_aset"];
+
+      // Group data by bagian
+      Map<String, List<Map<String, dynamic>>> groupedByBagian = {};
+      for (var row in newData) {
+        String bagian = row["bagian_aset"];
+        if (!groupedByBagian.containsKey(bagian)) {
+          groupedByBagian[bagian] = [];
+        }
+        groupedByBagian[bagian]!.add(row);
+      }
+
+      // Transform ke format bagianList
+      List<Map<String, dynamic>> bagianList = [];
+      groupedByBagian.forEach((namaBagian, komponenRows) {
+        List<Map<String, dynamic>> komponenList =
+            komponenRows.map((row) {
+              return {
+                "namaKomponen": row["komponen_aset"],
+                "spesifikasi": row["produk_yang_digunakan"],
+              };
+            }).toList();
+
+        bagianList.add({"namaBagian": namaBagian, "komponen": komponenList});
+      });
+
+      // Panggil repository update
+      final repository = AssetSupabaseRepository();
+      await repository.updateCompleteAsset(
+        namaAssetLama: namaAssetLama,
+        namaAssetBaru: namaAssetBaru,
+        jenisAsset: jenisAsset,
+        foto: foto,
+        bagianList: bagianList,
+      );
+
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Asset "$namaAssetBaru" berhasil diupdate'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Refresh data
+      await _fetchData();
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengupdate asset: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      print('Error updating asset: $e');
+    }
   }
 
   // ---------- PREVIEW GAMBAR ----------
@@ -1239,18 +1319,23 @@ class _DataMesinPageState extends State<DataMesinPage> {
                   child:
                       isUrl(imagePath)
                           ? Image.network(imagePath, fit: BoxFit.contain)
-                          : (kIsWeb
-                              ? Center(
-                                child: Icon(
+                          : Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
                                   Icons.image_not_supported,
                                   color: Colors.white,
                                   size: 50,
                                 ),
-                              )
-                              : Image.file(
-                                File(imagePath),
-                                fit: BoxFit.contain,
-                              )),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Preview tidak tersedia untuk file lokal',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ),
                 ),
               ),
               Positioned(
@@ -1332,18 +1417,9 @@ class _DataMesinPageState extends State<DataMesinPage> {
               child: Text('Batal', style: TextStyle(color: Colors.grey[700])),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop();
-                // TODO: Implementasi Hapus dari Supabase Repository
-                // widget.assetController.deleteAsset(...) -> ini pakai controller lama
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Hapus belum diimplementasikan di Supabase Repo',
-                    ),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
+                await _deleteAsset(item["nama_aset"]);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -1355,6 +1431,54 @@ class _DataMesinPageState extends State<DataMesinPage> {
         );
       },
     );
+  }
+
+  // ---------- IMPLEMENTASI DELETE ----------
+
+  Future<void> _deleteAsset(String namaAsset) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final repository = AssetSupabaseRepository();
+      await repository.deleteAssetByName(namaAsset);
+
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Asset "$namaAsset" berhasil dihapus'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Refresh data
+      await _fetchData();
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menghapus asset: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      print('Error deleting asset: $e');
+    }
   }
 
   Widget _iconButton({
