@@ -8,6 +8,9 @@ class MtTemplate {
   final DateTime? startDate;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  
+  // Joined data (optional, loaded separately)
+  final Map<String, dynamic>? bgMesin; // bg_mesin table data
 
   MtTemplate({
     this.id,
@@ -17,6 +20,7 @@ class MtTemplate {
     this.startDate,
     this.createdAt,
     this.updatedAt,
+    this.bgMesin,
   });
 
   /// Create MtTemplate from JSON (from Supabase)
@@ -35,6 +39,7 @@ class MtTemplate {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
+      bgMesin: json['bg_mesin'] as Map<String, dynamic>?,
     );
   }
 
@@ -57,6 +62,7 @@ class MtTemplate {
     DateTime? startDate,
     DateTime? createdAt,
     DateTime? updatedAt,
+    Map<String, dynamic>? bgMesin,
   }) {
     return MtTemplate(
       id: id ?? this.id,
@@ -66,11 +72,17 @@ class MtTemplate {
       startDate: startDate ?? this.startDate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      bgMesin: bgMesin ?? this.bgMesin,
     );
   }
 
   /// Get display name for template (using bg_mesin name if available)
   String get displayName {
     return periode != null ? 'Periode: $periode' : 'Template';
+  }
+
+  /// Get bagian mesin name from joined data
+  String? get bagianMesinName {
+    return bgMesin?['nama_bagian'] as String?;
   }
 }

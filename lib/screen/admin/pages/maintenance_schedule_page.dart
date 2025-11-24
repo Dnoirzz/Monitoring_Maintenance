@@ -150,7 +150,7 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                     });
                   },
                   decoration: InputDecoration(
-                    hintText: "Cari asset, template, status, petugas...",
+                    hintText: "Cari asset, bagian mesin, periode, status, catatan...",
                     hintStyle: TextStyle(color: Colors.grey[400]),
                     prefixIcon: Icon(Icons.search, color: Color(0xFF0A9C5D)),
                     suffixIcon: _searchQuery.isNotEmpty
@@ -243,15 +243,19 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
     const double horizontalScrollbarThickness = 12.0;
     const double horizontalScrollbarPadding = horizontalScrollbarThickness + 8.0;
 
-    const double colNo = 60.0;
-    const double col1 = 200.0; // NAMA ASSET
-    const double col2 = 180.0; // TEMPLATE
-    const double col3 = 180.0; // TANGGAL MAINTENANCE
-    const double col4 = 120.0; // STATUS
-    const double col5 = 150.0; // PETUGAS
-    const double col6 = 200.0; // AKSI
+    const double colNo = 50.0;
+    const double col1 = 150.0; // NAMA ASSET
+    const double col2 = 130.0; // BAGIAN MESIN
+    const double col3 = 100.0; // PERIODE
+    const double col4 = 80.0; // INTERVAL
+    const double col5 = 120.0; // TGL MULAI
+    const double col6 = 120.0; // TGL JADWAL
+    const double col7 = 120.0; // TGL SELESAI
+    const double col8 = 120.0; // STATUS
+    const double col9 = 150.0; // CATATAN
+    const double col10 = 150.0; // AKSI
 
-    const double fixedColumnsWidth = colNo + col1 + col2 + col3 + col4 + col5 + col6;
+    const double fixedColumnsWidth = colNo + col1 + col2 + col3 + col4 + col5 + col6 + col7 + col8 + col9 + col10;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -262,11 +266,15 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
           children: [
             _headerCell("NO", colNo, rowHeight, headerStyle),
             _headerCell("NAMA ASSET", col1, rowHeight, headerStyle),
-            _headerCell("TEMPLATE", col2, rowHeight, headerStyle),
-            _headerCell("TANGGAL MAINTENANCE", col3, rowHeight, headerStyle),
-            _headerCell("STATUS", col4, rowHeight, headerStyle),
-            _headerCell("PETUGAS", col5, rowHeight, headerStyle),
-            _headerCell("AKSI", col6, rowHeight, headerStyle),
+            _headerCell("BAGIAN MESIN", col2, rowHeight, headerStyle),
+            _headerCell("PERIODE", col3, rowHeight, headerStyle),
+            _headerCell("INTERVAL", col4, rowHeight, headerStyle),
+            _headerCell("TGL MULAI", col5, rowHeight, headerStyle),
+            _headerCell("TGL JADWAL", col6, rowHeight, headerStyle),
+            _headerCell("TGL SELESAI", col7, rowHeight, headerStyle),
+            _headerCell("STATUS", col8, rowHeight, headerStyle),
+            _headerCell("CATATAN", col9, rowHeight, headerStyle),
+            _headerCell("AKSI", col10, rowHeight, headerStyle),
           ],
         );
 
@@ -349,13 +357,17 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
   Widget _buildTableBody(BuildContext context) {
     const double rowHeight = 65.0;
 
-    const double colNo = 60.0;
-    const double col1 = 200.0;
-    const double col2 = 180.0;
-    const double col3 = 180.0;
-    const double col4 = 120.0;
-    const double col5 = 150.0;
-    const double col6 = 200.0;
+    const double colNo = 50.0;
+    const double col1 = 150.0;
+    const double col2 = 130.0;
+    const double col3 = 100.0;
+    const double col4 = 80.0;
+    const double col5 = 120.0;
+    const double col6 = 120.0;
+    const double col7 = 120.0;
+    const double col8 = 120.0;
+    const double col9 = 150.0;
+    const double col10 = 150.0;
 
     Map<String, List<MtSchedule>> grouped = _groupByAsset();
 
@@ -439,8 +451,35 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
             child: Row(
               children: [
                 _cellCenter(
-                  schedule.template?.displayName ?? '-',
+                  schedule.template?.bagianMesinName ?? '-',
                   col2,
+                  rowHeight,
+                  null,
+                  isEvenRow: isEvenRow,
+                  isHovered: isHovered,
+                ),
+                _cellCenter(
+                  schedule.template?.periode ?? '-',
+                  col3,
+                  rowHeight,
+                  null,
+                  isEvenRow: isEvenRow,
+                  isHovered: isHovered,
+                ),
+                _cellCenter(
+                  schedule.template?.intervalPeriode?.toString() ?? '-',
+                  col4,
+                  rowHeight,
+                  null,
+                  isEvenRow: isEvenRow,
+                  isHovered: isHovered,
+                ),
+                _cellCenter(
+                  schedule.template?.startDate != null
+                      ? DateFormat('dd MMM yyyy', 'id_ID')
+                          .format(schedule.template!.startDate!)
+                      : '-',
+                  col5,
                   rowHeight,
                   null,
                   isEvenRow: isEvenRow,
@@ -451,7 +490,18 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                       ? DateFormat('dd MMM yyyy', 'id_ID')
                           .format(schedule.tglJadwal!)
                       : '-',
-                  col3,
+                  col6,
+                  rowHeight,
+                  null,
+                  isEvenRow: isEvenRow,
+                  isHovered: isHovered,
+                ),
+                _cellCenter(
+                  schedule.tglSelesai != null
+                      ? DateFormat('dd MMM yyyy', 'id_ID')
+                          .format(schedule.tglSelesai!)
+                      : '-',
+                  col7,
                   rowHeight,
                   null,
                   isEvenRow: isEvenRow,
@@ -459,15 +509,15 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                 ),
                 _cellCenter(
                   _getStatusBadge(schedule.status),
-                  col4,
+                  col8,
                   rowHeight,
                   null,
                   isEvenRow: isEvenRow,
                   isHovered: isHovered,
                 ),
                 _cellCenter(
-                  schedule.completedBy ?? '-',
-                  col5,
+                  schedule.catatan ?? '-',
+                  col9,
                   rowHeight,
                   null,
                   isEvenRow: isEvenRow,
@@ -476,7 +526,7 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                 _actionCell(
                   context,
                   schedule,
-                  col6,
+                  col10,
                   rowHeight,
                   isEvenRow: isEvenRow,
                   isHovered: isHovered,

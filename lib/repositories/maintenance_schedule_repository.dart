@@ -80,12 +80,12 @@ class MaintenanceScheduleRepository {
 
   // ==================== MT_SCHEDULE OPERATIONS ====================
 
-  /// Get all schedules with joined template and asset data
+  /// Get all schedules with joined template, asset, and bg_mesin data
   Future<List<MtSchedule>> getAllSchedules() async {
     try {
       final response = await _client
           .from('mt_schedule')
-          .select('*, mt_template(*), assets(*)')
+          .select('*, mt_template(*, bg_mesin(*)), assets(*)')
           .order('tgl_jadwal', ascending: false);
 
       return (response as List)
@@ -101,7 +101,7 @@ class MaintenanceScheduleRepository {
     try {
       final response = await _client
           .from('mt_schedule')
-          .select('*, mt_template(*), assets(*)')
+          .select('*, mt_template(*, bg_mesin(*)), assets(*)')
           .eq('id', id)
           .single();
 
@@ -116,7 +116,7 @@ class MaintenanceScheduleRepository {
     try {
       final response = await _client
           .from('mt_schedule')
-          .select('*, mt_template(*), assets(*)')
+          .select('*, mt_template(*, bg_mesin(*)), assets(*)')
           .eq('assets_id', assetId)
           .order('tgl_jadwal', ascending: false);
 
