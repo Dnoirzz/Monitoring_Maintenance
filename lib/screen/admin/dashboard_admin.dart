@@ -48,7 +48,6 @@ class _AdminTemplateState extends State<AdminTemplate>
     super.initState();
     // Initialize controllers
     _assetController = AssetController();
-    _assetController.initializeSampleData();
     _checkSheetController = CheckSheetController();
     _checkSheetController.initializeSampleData();
     _karyawanController = KaryawanController();
