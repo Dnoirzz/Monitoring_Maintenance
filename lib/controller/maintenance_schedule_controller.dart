@@ -1,157 +1,15 @@
 import '../model/maintenance_schedule_model.dart';
+import '../model/mt_schedule_model.dart';
+import '../repositories/maintenance_schedule_repository.dart';
 
 class MaintenanceScheduleController {
-  final List<MaintenanceScheduleEntry> _entries = [
-    // CREEPER CATEGORY
-    // CREEPER 01 - Roll Atas
-    MaintenanceScheduleEntry(
-      category: MaintenanceCategory.creeper,
-      machine: 'CREEPER 01',
-      part: 'Roll Atas',
-      liftTime: '1 bulan / 364 jam',
-      monthlySchedule: buildMonthlyScheduleFromDates(
-        planDates: {
-          'Jan': 4,
-          'Feb': 4,
-          'Mar': 4,
-          'Apr': 4,
-          'May': 4,
-          'Jun': 4,
-          'Jul': 4,
-          'Aug': 4,
-          'Sep': 4,
-          'Oct': 4,
-          'Nov': 4,
-          'Dec': 4,
-        },
-        actualDates: {
-          'Jan': 4,
-          'Feb': 18,
-          'Mar': 13,
-          'Apr': 14,
-          'May': 20,
-          'Jun': 23,
-          'Jul': 11,
-          'Aug': 21,
-          'Sep': 26,
-          'Oct': 26,
-          'Nov': 26,
-          'Dec': 26,
-        },
-      ),
-    ),
-    // CREEPER 01 - Roll Bawah
-    MaintenanceScheduleEntry(
-      category: MaintenanceCategory.creeper,
-      machine: 'CREEPER 01',
-      part: 'Roll Bawah',
-      liftTime: '1 bulan / 364 jam',
-      monthlySchedule: buildMonthlyScheduleFromDates(
-        planDates: {
-          'Jan': 4,
-          'Feb': 4,
-          'Mar': 4,
-          'Apr': 4,
-          'May': 4,
-          'Jun': 4,
-          'Jul': 4,
-          'Aug': 4,
-          'Sep': 4,
-          'Oct': 4,
-          'Nov': 4,
-          'Dec': 4,
-        },
-        actualDates: {
-          'Jan': 4,
-          'Feb': 18,
-          'Mar': 18,
-          'Apr': 25,
-          'May': 25,
-          'Jun': 25,
-          'Jul': 8,
-          'Aug': 25,
-          'Sep': 25,
-          'Oct': 25,
-          'Nov': 25,
-          'Dec': 25,
-        },
-      ),
-    ),
-    // CREEPER 02 - Roll Atas
-    MaintenanceScheduleEntry(
-      category: MaintenanceCategory.creeper,
-      machine: 'CREEPER 02',
-      part: 'Roll Atas',
-      liftTime: '2 bulan / 728 jam',
-      monthlySchedule: buildMonthlyScheduleFromDates(
-        planDates: {
-          'Jan': 14,
-          'Feb': 14,
-          'Mar': 14,
-          'Apr': 14,
-          'May': 14,
-          'Jun': 14,
-          'Jul': 14,
-          'Aug': 14,
-          'Sep': 14,
-          'Oct': 14,
-          'Nov': 14,
-          'Dec': 14,
-        },
-        actualDates: {
-          'Jan': 14,
-          'Feb': 14,
-          'Mar': 14,
-          'Apr': 14,
-          'May': 14,
-          'Jun': 14,
-          'Jul': 14,
-          'Aug': 14,
-          'Sep': 14,
-          'Oct': 14,
-          'Nov': 14,
-          'Dec': 14,
-        },
-      ),
-    ),
-    // CREEPER MANAGEMENT - Skim
-    MaintenanceScheduleEntry(
-      category: MaintenanceCategory.creeper,
-      machine: 'CREEPER MANAGEMENT',
-      part: 'Skim',
-      liftTime: '2 bulan / 728 jam',
-      monthlySchedule: buildMonthlyScheduleFromDates(
-        planDates: {
-          'Jan': 29,
-          'Feb': 29,
-          'Mar': 29,
-          'Apr': 29,
-          'May': 29,
-          'Jun': 29,
-          'Jul': 29,
-          'Aug': 29,
-          'Sep': 29,
-          'Oct': 29,
-          'Nov': 29,
-          'Dec': 29,
-        },
-        actualDates: {
-          'Jan': 29,
-          'Feb': 29,
-          'Mar': 29,
-          'Apr': 29,
-          'May': 29,
-          'Jun': 29,
-          'Jul': 29,
-          'Aug': 29,
-          'Sep': 29,
-          'Oct': 29,
-          'Nov': 29,
-          'Dec': 29,
-        },
-      ),
-    ),
-  ];
+  final MaintenanceScheduleRepository _repository =
+      MaintenanceScheduleRepository();
+  List<MtSchedule> _schedules = [];
+  bool _isLoading = false;
+
+  // Legacy support for calendar view
+  final List<MaintenanceScheduleEntry> _entries = [];
 
   List<MaintenanceScheduleEntry> getEntries() {
     return List.unmodifiable(_entries);
@@ -165,5 +23,89 @@ class MaintenanceScheduleController {
 
   List<MaintenanceCategory> getAvailableCategories() {
     return MaintenanceCategory.values;
+  }
+
+  // New methods for database operations
+  bool get isLoading => _isLoading;
+
+  List<MtSchedule> getAllSchedules() {
+    return List.unmodifiable(_schedules);
+  }
+
+  Future<void> loadSchedules() async {
+    _isLoading = true;
+    try {
+      _schedules = await _repository.getAllSchedules();
+    } catch (e) {
+      throw Exception('Failed to load schedules: $e');
+    } finally {
+      _isLoading = false;
+    }
+  }
+
+  List<MtSchedule> filterSchedules({String? searchQuery}) {
+    List<MtSchedule> filtered = List.from(_schedules);
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase();
+      filtered = filtered.where((schedule) {
+        final assetName = schedule.assetName?.toLowerCase() ?? '';
+        final templateName = schedule.template?.displayName.toLowerCase() ?? '';
+        final status = schedule.status.toLowerCase();
+        final catatan = schedule.catatan?.toLowerCase() ?? '';
+        final completedBy = schedule.completedBy?.toLowerCase() ?? '';
+
+        return assetName.contains(query) ||
+            templateName.contains(query) ||
+            status.contains(query) ||
+            catatan.contains(query) ||
+            completedBy.contains(query);
+      }).toList();
+    }
+    return filtered;
+  }
+
+  Map<String, List<MtSchedule>> groupByAsset(
+    List<MtSchedule> schedules,
+  ) {
+    final Map<String, List<MtSchedule>> grouped = {};
+    for (var schedule in schedules) {
+      final assetName = schedule.assetName ?? 'Unknown';
+      grouped.putIfAbsent(assetName, () => []);
+      grouped[assetName]!.add(schedule);
+    }
+    return grouped;
+  }
+
+  Future<void> createSchedule(MtSchedule schedule) async {
+    try {
+      final created = await _repository.createSchedule(schedule);
+      _schedules.add(created);
+    } catch (e) {
+      throw Exception('Failed to create schedule: $e');
+    }
+  }
+
+  Future<void> updateSchedule(MtSchedule schedule) async {
+    try {
+      if (schedule.id == null) {
+        throw Exception('Schedule ID is required for update');
+      }
+      final updated = await _repository.updateSchedule(schedule.id!, schedule);
+      final index = _schedules.indexWhere((s) => s.id == schedule.id);
+      if (index != -1) {
+        _schedules[index] = updated;
+      }
+    } catch (e) {
+      throw Exception('Failed to update schedule: $e');
+    }
+  }
+
+  Future<void> deleteSchedule(String id) async {
+    try {
+      await _repository.deleteSchedule(id);
+      _schedules.removeWhere((s) => s.id == id);
+    } catch (e) {
+      throw Exception('Failed to delete schedule: $e');
+    }
   }
 }
