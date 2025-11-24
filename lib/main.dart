@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:monitoring_maintenance/screen/login_page.dart';
 import 'package:monitoring_maintenance/services/supabase_service.dart';
@@ -24,6 +25,17 @@ class MyApp extends ConsumerWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Aplikasi Monitoring Maintenance Mesin',
+      // Konfigurasi locale untuk mendukung MaterialLocalizations
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('id', 'ID'), // Bahasa Indonesia
+        Locale('en', 'US'), // Bahasa Inggris (fallback)
+      ],
+      locale: const Locale('id', 'ID'),
       theme: ThemeData(
         fontFamily: 'Arial',
         scaffoldBackgroundColor: Colors.white,
