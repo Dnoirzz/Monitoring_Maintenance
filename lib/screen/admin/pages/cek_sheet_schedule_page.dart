@@ -60,7 +60,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
     } catch (e) {
       print('Error loading data: $e');
       // Fallback ke sample data jika error
-      widget.checkSheetController.initializeSampleData();
+      // Sample data removed - data will be loaded from Supabase
     } finally {
       if (mounted) {
         setState(() {
@@ -123,10 +123,6 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
           children: [
             CircularProgressIndicator(color: Color(0xFF0A9C5D)),
             SizedBox(height: 16),
-            Text(
-              'Memuat data dari Supabase...',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
           ],
         ),
       );

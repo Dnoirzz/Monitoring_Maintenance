@@ -44,52 +44,10 @@ class CheckSheetController {
     } catch (e, stackTrace) {
       print('❌ Error loading from Supabase: $e');
       print('Stack trace: $stackTrace');
-      // Jika error, gunakan sample data sebagai fallback
-      initializeSampleData();
+      // Jika error, kosongkan list (tidak menggunakan sample data)
+      _schedules.clear();
+      _noToTemplateIdMap.clear();
     }
-  }
-
-  void initializeSampleData() {
-    _schedules.clear();
-    _noToTemplateIdMap.clear();
-    _schedules.addAll([
-      CheckSheetModel(
-        no: 1,
-        namaInfrastruktur: "SCREW BREAKER",
-        bagian: "Pisau Duduk",
-        periode: "Per 1 Minggu",
-        jenisPekerjaan: "Cek hasil potongan remahan",
-        standarPerawatan: "Ukuran output remahan < 15cm",
-        alatBahan: "Kunci 33,48,28,19,41,24",
-      ),
-      CheckSheetModel(
-        no: 2,
-        namaInfrastruktur: "SCREW BREAKER",
-        bagian: "Pisau Duduk",
-        periode: "Per 2 Minggu",
-        jenisPekerjaan: "Las tambah daging + pengasahan",
-        standarPerawatan: "Ujung pisau max 3mm dari screen",
-        alatBahan: "Kunci 33,48,28,19,41,24",
-      ),
-      CheckSheetModel(
-        no: 3,
-        namaInfrastruktur: "SCREW BREAKER",
-        bagian: "V-Belt",
-        periode: "Per 3 Hari",
-        jenisPekerjaan: "Cek",
-        standarPerawatan: "Tidak ada slip, retak, getar",
-        alatBahan: "Kunci 33,48,28,19,41,24",
-      ),
-      CheckSheetModel(
-        no: 4,
-        namaInfrastruktur: "SCREW BREAKER",
-        bagian: "Gearbox",
-        periode: "Per 12 Bulan",
-        jenisPekerjaan: "Ganti Oli",
-        standarPerawatan: "Volume oli sesuai standard",
-        alatBahan: "Kunci 33,48,28,19,41,24",
-      ),
-    ]);
   }
 
   List<CheckSheetModel> getAllSchedules() {
