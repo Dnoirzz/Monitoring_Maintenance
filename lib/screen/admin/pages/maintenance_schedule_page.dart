@@ -459,7 +459,7 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
               return Column(
                 children: [
                   _monthHeaderCell(
-                    months[monthIndex],
+                    '${months[monthIndex]}\n$_selectedYear',
                     cellWidth * 4,
                     rowHeight,
                   ),
@@ -559,42 +559,19 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
     final grouped = _groupSchedules();
 
     if (grouped.isEmpty) {
-      final double totalMonthsWidth = 12 * 4 * cellWidth;
-      final double totalWidth = colName + colBagian + colPeriode + colAction + colPlanActual + totalMonthsWidth;
-      return Container(
-        width: totalWidth,
-        height: 400,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.grey[300]!, width: 1),
-        ),
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 60, horizontal: 40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.calendar_today_outlined, size: 80, color: Colors.grey[400]),
-                SizedBox(height: 16),
-                Text(
-                  'Tidak ada jadwal untuk tahun $_selectedYear',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  _searchQuery.isNotEmpty || _filterJenisAset != null
-                      ? 'Coba ubah kata kunci pencarian atau filter'
-                      : 'Mulai dengan menambahkan jadwal maintenance baru',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(60),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.calendar_today_outlined, size: 80, color: Colors.grey[400]),
+              SizedBox(height: 16),
+              Text(
+                "Tidak ada jadwal untuk tahun $_selectedYear",
+                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+              ),
+            ],
           ),
         ),
       );
@@ -716,36 +693,14 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
       });
     });
 
-      final double totalMonthsWidth = 12 * 4 * cellWidth;
-      final double tableWidth = colName + colBagian + colPeriode + colAction + colPlanActual + totalMonthsWidth;
-      return Stack(
-        children: [
-          Container(
-            width: tableWidth,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Column(children: rows),
-          ),
-          Positioned.fill(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.calendar_today_outlined, size: 80, color: Colors.grey[400]),
-                  SizedBox(height: 16),
-                  Text(
-                    "Tidak ada jadwal untuk tahun $_selectedYear",
-                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-    }
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(children: rows),
+    );
+  }
 
   Widget _dataCell(String text, double width, double height, bool isEvenRow, bool isHovered, {int rowSpan = 1}) {
     Color backgroundColor;
@@ -799,47 +754,85 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
           bottom: BorderSide(color: Colors.grey[400]!, width: 0.5),
         ),
       ),
-      alignment: Alignment.center,
-      child: IconButton(
-        tooltip: 'Hapus semua jadwal baris ini',
-        icon: Icon(Icons.delete, color: Colors.red[600], size: 18),
-        onPressed: () async {
-          final confirmed = await showDialog<bool>(
-            context: context,
-            builder: (_) => AlertDialog(
-              title: Text('Konfirmasi Hapus'),
-              content: Text('Hapus semua jadwal untuk baris ini di tahun $_selectedYear?'),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Batal')),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red[600], foregroundColor: Colors.white),
-                  child: Text('Hapus'),
-                ),
-              ],
-            ),
-          );
-          if (confirmed != true) return;
-          try {
-            for (final s in schedules) {
-              if (s.id != null) {
-                await _repository.deleteSchedule(s.id!);
+      padding: EdgeInsets.all(8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _iconButton(
+            icon: Icons.edit,
+            color: Color(0xFF2196F3),
+            onPressed: () {
+              if (schedules.isNotEmpty) {
+                _showEditScheduleModal(context, schedules.first);
               }
-            }
-            await _loadSchedules();
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Jadwal berhasil dihapus')), 
+            },
+          ),
+          SizedBox(width: 8),
+          _iconButton(
+            icon: Icons.delete,
+            color: Color(0xFFF44336),
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: Text('Konfirmasi Hapus'),
+                  content: Text('Hapus semua jadwal untuk baris ini di tahun $_selectedYear?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Batal')),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red[600], foregroundColor: Colors.white),
+                      child: Text('Hapus'),
+                    ),
+                  ],
+                ),
               );
-            }
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Gagal menghapus: $e'), backgroundColor: Colors.red),
-              );
-            }
-          }
-        },
+              if (confirmed != true) return;
+              try {
+                for (final s in schedules) {
+                  if (s.id != null) {
+                    await _repository.deleteSchedule(s.id!);
+                  }
+                }
+                await _loadSchedules();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Jadwal berhasil dihapus')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal menghapus: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _iconButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Material(
+      color: color,
+      borderRadius: BorderRadius.circular(8),
+      elevation: 2,
+      shadowColor: color.withOpacity(0.5),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          child: Icon(icon, color: Colors.white, size: 16),
+        ),
       ),
     );
   }
