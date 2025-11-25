@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Untuk kIsWeb
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../../../repositories/asset_supabase_repository.dart';
+import '../../../model/asset_supabase_models.dart';
+import '../../../services/supabase_storage_service.dart';
 
 class ModalTambahAsset {
   static void show(
@@ -154,9 +158,7 @@ class ModalTambahAsset {
       controller: controller,
       decoration: InputDecoration(
         labelText: 'Nama Aset *',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         prefixIcon: Icon(Icons.business),
       ),
       validator: (value) {
@@ -177,23 +179,19 @@ class ModalTambahAsset {
       value: selectedJenisAset,
       decoration: InputDecoration(
         labelText: 'Jenis Aset *',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         prefixIcon: Icon(Icons.category),
       ),
-      items: [
-        'Mesin Produksi',
-        'Alat Berat',
-        'Listrik',
-        'Kendaraan',
-        'Lainnya',
-      ].map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
+      items:
+          [
+            'Mesin Produksi',
+            'Alat Berat',
+            'Listrik',
+            'Kendaraan',
+            'Lainnya',
+          ].map((String value) {
+            return DropdownMenuItem<String>(value: value, child: Text(value));
+          }).toList(),
       onChanged: (value) {
         setDialogState(() {
           onChanged(value);
@@ -242,8 +240,9 @@ class ModalTambahAsset {
         ElevatedButton.icon(
           onPressed: () {
             setDialogState(() {
-              List<Map<String, dynamic>> newBagianList =
-                  List.from(bagianAsetList);
+              List<Map<String, dynamic>> newBagianList = List.from(
+                bagianAsetList,
+              );
               newBagianList.add({
                 'namaBagian': '',
                 'komponen': [
@@ -260,10 +259,7 @@ class ModalTambahAsset {
             backgroundColor: Color(0xFF0A9C5D),
             iconColor: Colors.white,
             foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 12,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
         ),
       ],
@@ -317,8 +313,9 @@ class ModalTambahAsset {
                   icon: Icon(Icons.delete, color: Colors.red),
                   onPressed: () {
                     setDialogState(() {
-                      List<Map<String, dynamic>> newBagianList =
-                          List.from(bagianAsetList);
+                      List<Map<String, dynamic>> newBagianList = List.from(
+                        bagianAsetList,
+                      );
                       newBagianList.removeAt(bagianIndex);
                       bagianAsetList.clear();
                       bagianAsetList.addAll(newBagianList);
@@ -356,16 +353,15 @@ class ModalTambahAsset {
           OutlinedButton.icon(
             onPressed: () {
               setDialogState(() {
-                List<Map<String, dynamic>> newKomponenList =
-                    List.from(komponenList);
-                newKomponenList.add({
-                  'namaKomponen': '',
-                  'spesifikasi': '',
-                });
+                List<Map<String, dynamic>> newKomponenList = List.from(
+                  komponenList,
+                );
+                newKomponenList.add({'namaKomponen': '', 'spesifikasi': ''});
                 Map<String, dynamic> newBagian = Map.from(bagian);
                 newBagian['komponen'] = newKomponenList;
-                List<Map<String, dynamic>> newBagianList =
-                    List.from(bagianAsetList);
+                List<Map<String, dynamic>> newBagianList = List.from(
+                  bagianAsetList,
+                );
                 newBagianList[bagianIndex] = newBagian;
                 bagianAsetList.clear();
                 bagianAsetList.addAll(newBagianList);
@@ -456,13 +452,15 @@ class ModalTambahAsset {
                   icon: Icon(Icons.delete_outline, color: Colors.red, size: 20),
                   onPressed: () {
                     setDialogState(() {
-                      List<Map<String, dynamic>> newKomponenList =
-                          List.from(komponenList);
+                      List<Map<String, dynamic>> newKomponenList = List.from(
+                        komponenList,
+                      );
                       newKomponenList.removeAt(komponenIndex);
                       Map<String, dynamic> newBagian = Map.from(bagian);
                       newBagian['komponen'] = newKomponenList;
-                      List<Map<String, dynamic>> newBagianList =
-                          List.from(bagianAsetList);
+                      List<Map<String, dynamic>> newBagianList = List.from(
+                        bagianAsetList,
+                      );
                       newBagianList[bagianIndex] = newBagian;
                       bagianAsetList.clear();
                       bagianAsetList.addAll(newBagianList);
@@ -517,10 +515,16 @@ class ModalTambahAsset {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      File(selectedImage.path),
-                      fit: BoxFit.cover,
-                    ),
+                    child:
+                        kIsWeb
+                            ? Image.network(
+                              selectedImage.path,
+                              fit: BoxFit.cover,
+                            )
+                            : Image.file(
+                              File(selectedImage.path),
+                              fit: BoxFit.cover,
+                            ),
                   ),
                 ),
               SizedBox(
@@ -540,7 +544,9 @@ class ModalTambahAsset {
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Gagal memilih gambar: ${e.toString()}'),
+                          content: Text(
+                            'Gagal memilih gambar: ${e.toString()}',
+                          ),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -566,9 +572,7 @@ class ModalTambahAsset {
                     },
                     icon: Icon(Icons.delete_outline),
                     label: Text('Hapus Gambar'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.red,
-                    ),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
                   ),
                 ),
             ],
@@ -614,11 +618,12 @@ class ModalTambahAsset {
           ),
           SizedBox(width: 12),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (formKey.currentState!.validate()) {
                 bool isValid = true;
                 String errorMessage = '';
 
+                // Validasi bagian dan komponen
                 for (var bagian in bagianAsetList) {
                   String namaBagian = bagian['namaBagian'] as String;
                   if (namaBagian.isEmpty) {
@@ -653,38 +658,94 @@ class ModalTambahAsset {
                   return;
                 }
 
-                List<Map<String, dynamic>> newData = [];
-                String? gambarPath = selectedImage?.path;
+                // LOGIKA SIMPAN KE DATABASE
+                try {
+                  // Tampilkan Loading
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Menyimpan data ke database...'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
 
-                for (var bagian in bagianAsetList) {
-                  String namaBagian = bagian['namaBagian'] as String;
-                  List<Map<String, dynamic>> komponenList =
-                      bagian['komponen'] as List<Map<String, dynamic>>;
-                  for (var komponen in komponenList) {
-                    newData.add({
-                      "nama_aset": namaAsetController.text,
-                      "jenis_aset": selectedJenisAset!,
-                      "maintenance_terakhir": null,
-                      "maintenance_selanjutnya": null,
-                      "bagian_aset": namaBagian,
-                      "komponen_aset": komponen['namaKomponen'] as String,
-                      "produk_yang_digunakan": komponen['spesifikasi'] as String,
-                      "gambar_aset": gambarPath,
-                    });
+                  // 1. Upload Gambar (Jika Ada)
+                  String? imageUrl;
+                  if (selectedImage != null) {
+                    try {
+                      // Panggil Service Upload
+                      final storageService = SupabaseStorageService();
+                      // Pass XFile langsung (Support Web & Mobile)
+                      imageUrl = await storageService.uploadAssetImage(
+                        selectedImage,
+                      );
+                    } catch (uploadError) {
+                      throw Exception(
+                        'Gagal upload gambar: $uploadError. Pastikan bucket "asset-images" sudah dibuat & Public.',
+                      );
+                    }
                   }
+
+                  // 2. Buat Model Asset
+                  final assetModel = AssetModelSupabase(
+                    namaAssets: namaAsetController.text,
+                    jenisAssets: selectedJenisAset,
+                    foto: imageUrl, // Simpan URL publik dari Supabase Storage
+                    status: 'Aktif',
+                  );
+
+                  // 3. Panggil Repository
+                  await AssetSupabaseRepository().insertCompleteAsset(
+                    asset: assetModel,
+                    bagianList: bagianAsetList,
+                  );
+
+                  // 4. Update UI (Optimistic Update untuk list view di parent)
+                  List<Map<String, dynamic>> flatData = [];
+
+                  for (var bagian in bagianAsetList) {
+                    String namaBagian = bagian['namaBagian'] as String;
+                    List<Map<String, dynamic>> komponenList =
+                        bagian['komponen'] as List<Map<String, dynamic>>;
+                    for (var komponen in komponenList) {
+                      flatData.add({
+                        "nama_aset": namaAsetController.text,
+                        "jenis_aset": selectedJenisAset!,
+                        "maintenance_terakhir": "-",
+                        "maintenance_selanjutnya": "-",
+                        "bagian_aset": namaBagian,
+                        "komponen_aset": komponen['namaKomponen'] as String,
+                        "produk_yang_digunakan":
+                            komponen['spesifikasi'] as String,
+                        "gambar_aset":
+                            imageUrl ??
+                            selectedImage?.path, // Gunakan URL atau path lokal
+                      });
+                    }
+                  }
+
+                  onSave(flatData); // Update tampilan di list
+
+                  // Tutup Dialog
+                  Navigator.of(dialogContext).pop();
+                  namaAsetController.dispose();
+                  onClose();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Data aset berhasil ditambahkan ke Database!',
+                      ),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Gagal menyimpan: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
                 }
-
-                onSave(newData);
-                Navigator.of(dialogContext).pop();
-                namaAsetController.dispose();
-                onClose();
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Data aset berhasil ditambahkan'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
               }
             },
             style: ElevatedButton.styleFrom(

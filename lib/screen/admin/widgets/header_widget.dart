@@ -24,27 +24,51 @@ class HeaderWidget extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          IconButton(
-            icon: Icon(Icons.menu, color: Colors.white),
-            onPressed: onMenuPressed,
-          ),
-          SizedBox(width: 10),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          // Left side - Menu and Title
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.menu, color: Colors.white),
+                  onPressed: onMenuPressed,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
-          Spacer(),
-          trailing ??
-              CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: Color(0xFF0A9C5D)),
-              ),
+          // Center - Company Name
+          Text(
+            "PT. NEW KALBAR PROCESSORS",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+          // Right side - Avatar
+          Align(
+            alignment: Alignment.centerRight,
+            child:
+                trailing ??
+                CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.person, color: Color(0xFF0A9C5D)),
+                ),
+          ),
         ],
       ),
     );

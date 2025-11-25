@@ -26,7 +26,7 @@ class AssetRepository {
   }
 
   /// Get asset by ID
-  Future<Asset?> getAssetById(int id) async {
+  Future<Asset?> getAssetById(String id) async {
     try {
       final response =
           await _client.from('assets').select().eq('id', id).single();
@@ -50,7 +50,7 @@ class AssetRepository {
   }
 
   /// Update existing asset
-  Future<Asset> updateAsset(int id, Asset asset) async {
+  Future<Asset> updateAsset(String id, Asset asset) async {
     try {
       final response =
           await _client
@@ -67,7 +67,7 @@ class AssetRepository {
   }
 
   /// Delete asset
-  Future<void> deleteAsset(int id) async {
+  Future<void> deleteAsset(String id) async {
     try {
       await _client.from('assets').delete().eq('id', id);
     } catch (e) {
@@ -78,13 +78,13 @@ class AssetRepository {
   // ==================== BAGIAN MESIN OPERATIONS ====================
 
   /// Get all bagian mesin for a specific asset
-  Future<List<BagianMesin>> getBagianByAssetId(int assetId) async {
+  Future<List<BagianMesin>> getBagianByAssetId(String assetId) async {
     try {
       final response = await _client
           .from('bg_mesin')
           .select()
-          .eq('aset_id', assetId)
-          .order('created_at', ascending: true);
+          .eq('assets_id', assetId)
+          .order('nama_bagian', ascending: true);
 
       return (response as List)
           .map((json) => BagianMesin.fromJson(json))
@@ -111,7 +111,7 @@ class AssetRepository {
   }
 
   /// Update bagian mesin
-  Future<BagianMesin> updateBagianMesin(int id, BagianMesin bagian) async {
+  Future<BagianMesin> updateBagianMesin(String id, BagianMesin bagian) async {
     try {
       final response =
           await _client
@@ -128,7 +128,7 @@ class AssetRepository {
   }
 
   /// Delete bagian mesin
-  Future<void> deleteBagianMesin(int id) async {
+  Future<void> deleteBagianMesin(String id) async {
     try {
       await _client.from('bg_mesin').delete().eq('id', id);
     } catch (e) {
@@ -139,12 +139,12 @@ class AssetRepository {
   // ==================== KOMPONEN ASSETS OPERATIONS ====================
 
   /// Get all komponen for a specific bagian
-  Future<List<KomponenAsset>> getKomponenByBagianId(int bagianId) async {
+  Future<List<KomponenAsset>> getKomponenByBagianId(String bagianId) async {
     try {
       final response = await _client
           .from('komponen_assets')
           .select()
-          .eq('bagian_id', bagianId)
+          .eq('bg_mesin_id', bagianId)
           .order('created_at', ascending: true);
 
       return (response as List)
@@ -173,7 +173,7 @@ class AssetRepository {
 
   /// Update komponen asset
   Future<KomponenAsset> updateKomponenAsset(
-    int id,
+    String id,
     KomponenAsset komponen,
   ) async {
     try {
@@ -192,7 +192,7 @@ class AssetRepository {
   }
 
   /// Delete komponen asset
-  Future<void> deleteKomponenAsset(int id) async {
+  Future<void> deleteKomponenAsset(String id) async {
     try {
       await _client.from('komponen_assets').delete().eq('id', id);
     } catch (e) {
@@ -214,7 +214,7 @@ class AssetRepository {
       final assetId = createdAsset.id!;
 
       List<BagianMesin> createdBagianList = [];
-      Map<int, List<KomponenAsset>> komponenMap = {};
+      Map<String, List<KomponenAsset>> komponenMap = {};
 
       // Step 2: Create bagian mesin for this asset
       for (var bagianData in bagianList) {
@@ -256,7 +256,7 @@ class AssetRepository {
   }
 
   /// Get asset with all bagian and komponen (nested structure)
-  Future<Map<String, dynamic>> getAssetComplete(int assetId) async {
+  Future<Map<String, dynamic>> getAssetComplete(String assetId) async {
     try {
       final asset = await getAssetById(assetId);
       if (asset == null) {
@@ -265,7 +265,7 @@ class AssetRepository {
 
       final bagianList = await getBagianByAssetId(assetId);
 
-      Map<int, List<KomponenAsset>> komponenMap = {};
+      Map<String, List<KomponenAsset>> komponenMap = {};
       for (var bagian in bagianList) {
         final komponenList = await getKomponenByBagianId(bagian.id!);
         komponenMap[bagian.id!] = komponenList;

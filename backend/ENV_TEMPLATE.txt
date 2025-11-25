@@ -1,0 +1,13 @@
+# Copy file ini dan rename menjadi .env
+# Atau create file baru bernama .env dengan isi berikut:
+
+# Supabase Configuration
+SUPABASE_URL=https://dxzkxvczjdviuvmgwsft.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4emt4dmN6amR2aXV2bWd3c2Z0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1OTYyMzYsImV4cCI6MjA3OTE3MjIzNn0.cXYHeOepjMX8coJWqTaiz5GlEgAGhm35VMwIqvQhTTw
+
+# JWT Secret (ganti dengan string random yang aman untuk production)
+JWT_SECRET=monitoring_maintenance_secret_key_2024
+
+# Server Port
+PORT=3000
+

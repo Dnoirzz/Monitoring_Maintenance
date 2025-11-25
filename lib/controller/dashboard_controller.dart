@@ -1,30 +1,34 @@
 import '../model/dashboard_model.dart';
-import 'asset_controller.dart';
-import 'karyawan_controller.dart';
+import '../repositories/asset_supabase_repository.dart';
 
 class DashboardController {
-  final AssetController assetController;
-  final KaryawanController karyawanController;
+  final AssetSupabaseRepository _assetRepository = AssetSupabaseRepository();
 
-  DashboardController({
-    required this.assetController,
-    required this.karyawanController,
-  });
+  Future<DashboardStats> getStats() async {
+    try {
+      // Ambil data dari Supabase
+      final assets = await _assetRepository.getAllAssets();
 
-  DashboardStats getStats() {
-    final assets = assetController.getAllAssets();
-    final karyawan = karyawanController.getAllKaryawan();
+      // Count unique assets berdasarkan nama_assets
+      final uniqueAssets = assets.map((a) => a['nama_assets']).toSet().length;
 
-    // Count unique assets
-    final uniqueAssets = assets.map((a) => a.namaAset).toSet().length;
-
-    return DashboardStats(
-      totalAssets: uniqueAssets,
-      totalKaryawan: karyawan.length,
-      pendingRequests: 8, // This could be calculated from actual data
-      activeMaintenance: 5, // This could be calculated from actual data
-      overdueSchedule: 3, // This could be calculated from actual data
-    );
+      return DashboardStats(
+        totalAssets: uniqueAssets,
+        totalKaryawan: 0, // TODO: Implement when karyawan uses Supabase
+        pendingRequests: 0, // TODO: Calculate from actual data
+        activeMaintenance: 0, // TODO: Calculate from actual data
+        overdueSchedule: 0, // TODO: Calculate from actual data
+      );
+    } catch (e) {
+      print('Error getting dashboard stats: $e');
+      return DashboardStats(
+        totalAssets: 0,
+        totalKaryawan: 0,
+        pendingRequests: 0,
+        activeMaintenance: 0,
+        overdueSchedule: 0,
+      );
+    }
   }
 
   List<RequestHistory> getRequestHistory() {
@@ -86,4 +90,3 @@ class DashboardController {
     return '${now.day} ${months[now.month - 1]} ${now.year}';
   }
 }
-
