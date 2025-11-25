@@ -337,6 +337,7 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
     const double colName = 120.0; // Nama Mesin
     const double colBagian = 100.0; // Bagian Mesin
     const double colPeriode = 130.0; // Periode (diperlebar agar tidak terpotong)
+    const double colAction = 60.0; // Tombol aksi
     const double colPlanActual = 60.0; // Kolom PLAN/ACTUAL
     const double cellWidth = 35.0; // Width per week
 
@@ -367,9 +368,9 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                           controller: _pageController.horizontalScrollController,
                           scrollDirection: Axis.horizontal,
                           child: _buildTableBody(
-                            colName, colBagian, colPeriode, colPlanActual, cellWidth, rowHeight,
+                            colName, colBagian, colPeriode, colAction, colPlanActual, cellWidth, rowHeight,
                           ),
-                        ),
+                          ),
                       ),
                     ),
                   ),
@@ -399,9 +400,9 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                       controller: _pageController.headerScrollController,
                       scrollDirection: Axis.horizontal,
                       child: _buildHeader(
-                        months, colName, colBagian, colPeriode, colPlanActual, cellWidth, rowHeight,
+                        months, colName, colBagian, colPeriode, colAction, colPlanActual, cellWidth, rowHeight,
                       ),
-                    ),
+                      ),
                   ),
                 ),
               ),
@@ -413,7 +414,7 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
   }
 
   Widget _buildHeader(List<String> months, double colName, double colBagian,
-      double colPeriode, double colPlanActual, double cellWidth, double rowHeight) {
+      double colPeriode, double colAction, double colPlanActual, double cellWidth, double rowHeight) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -444,6 +445,11 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
             ),
             Column(
               children: [
+                _fixedHeaderCell('AKSI', colAction, rowHeight * 2, rowSpan: 2),
+              ],
+            ),
+            Column(
+              children: [
                 _fixedHeaderCell('PVL', colPlanActual, rowHeight * 2, rowSpan: 2),
               ],
             ),
@@ -453,7 +459,7 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
               return Column(
                 children: [
                   _monthHeaderCell(
-                    '${months[monthIndex]}\n$_selectedYear',
+                    months[monthIndex],
                     cellWidth * 4,
                     rowHeight,
                   ),
@@ -549,23 +555,46 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
   }
 
   Widget _buildTableBody(double colName, double colBagian, double colPeriode,
-      double colPlanActual, double cellWidth, double rowHeight) {
+      double colAction, double colPlanActual, double cellWidth, double rowHeight) {
     final grouped = _groupSchedules();
 
     if (grouped.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(60),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.calendar_today_outlined, size: 80, color: Colors.grey[400]),
-              SizedBox(height: 16),
-              Text(
-                "Tidak ada jadwal untuk tahun $_selectedYear",
-                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-              ),
-            ],
+      final double totalMonthsWidth = 12 * 4 * cellWidth;
+      final double totalWidth = colName + colBagian + colPeriode + colAction + colPlanActual + totalMonthsWidth;
+      return Container(
+        width: totalWidth,
+        height: 400,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.grey[300]!, width: 1),
+        ),
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 60, horizontal: 40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.calendar_today_outlined, size: 80, color: Colors.grey[400]),
+                SizedBox(height: 16),
+                Text(
+                  'Tidak ada jadwal untuk tahun $_selectedYear',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  _searchQuery.isNotEmpty || _filterJenisAset != null
+                      ? 'Coba ubah kata kunci pencarian atau filter'
+                      : 'Mulai dengan menambahkan jadwal maintenance baru',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -601,6 +630,7 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                   isHovered,
                   rowSpan: 2,
                 ), // Merge 2 rows
+                _actionCell(colAction, rowHeight * 2, isEvenRow, isHovered, schedules),
                 Column(
                   children: [
                     _dataCell('PLAN', colPlanActual, rowHeight, isEvenRow, isHovered),
@@ -686,14 +716,36 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
       });
     });
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(children: rows),
-    );
-  }
+      final double totalMonthsWidth = 12 * 4 * cellWidth;
+      final double tableWidth = colName + colBagian + colPeriode + colAction + colPlanActual + totalMonthsWidth;
+      return Stack(
+        children: [
+          Container(
+            width: tableWidth,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Column(children: rows),
+          ),
+          Positioned.fill(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.calendar_today_outlined, size: 80, color: Colors.grey[400]),
+                  SizedBox(height: 16),
+                  Text(
+                    "Tidak ada jadwal untuk tahun $_selectedYear",
+                    style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
 
   Widget _dataCell(String text, double width, double height, bool isEvenRow, bool isHovered, {int rowSpan = 1}) {
     Color backgroundColor;
@@ -729,6 +781,69 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
     );
   }
 
+  Widget _actionCell(double width, double height, bool isEvenRow, bool isHovered, List<MtSchedule> schedules) {
+    Color backgroundColor;
+    if (isHovered) {
+      backgroundColor = Color(0xFF0A9C5D).withOpacity(0.1);
+    } else {
+      backgroundColor = isEvenRow ? Colors.white : Colors.grey[50]!;
+    }
+
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        border: Border(
+          right: BorderSide(color: Colors.grey[400]!, width: 0.5),
+          bottom: BorderSide(color: Colors.grey[400]!, width: 0.5),
+        ),
+      ),
+      alignment: Alignment.center,
+      child: IconButton(
+        tooltip: 'Hapus semua jadwal baris ini',
+        icon: Icon(Icons.delete, color: Colors.red[600], size: 18),
+        onPressed: () async {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: Text('Konfirmasi Hapus'),
+              content: Text('Hapus semua jadwal untuk baris ini di tahun $_selectedYear?'),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Batal')),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red[600], foregroundColor: Colors.white),
+                  child: Text('Hapus'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed != true) return;
+          try {
+            for (final s in schedules) {
+              if (s.id != null) {
+                await _repository.deleteSchedule(s.id!);
+              }
+            }
+            await _loadSchedules();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Jadwal berhasil dihapus')), 
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Gagal menghapus: $e'), backgroundColor: Colors.red),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
   Widget _calendarCell(double width, double height, bool isEvenRow,
       bool isHovered, MtSchedule? schedule, DateTime cellDate, {bool isPlan = true}) {
     Color backgroundColor;
@@ -741,15 +856,15 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
         switch (schedule.status.toLowerCase()) {
           case 'perlu maintenance':
             backgroundColor = Colors.yellow[600]!;
-            text = '${schedule.template?.intervalPeriode ?? ''}';
+            text = '${schedule.tglJadwal?.day ?? ''}';
             break;
           case 'sedang maintenance':
             backgroundColor = Colors.orange[600]!;
-            text = '${schedule.template?.intervalPeriode ?? ''}';
+            text = '${schedule.tglJadwal?.day ?? ''}';
             break;
           case 'selesai':
             backgroundColor = Colors.yellow[600]!;
-            text = '${schedule.template?.intervalPeriode ?? ''}';
+            text = '${schedule.tglJadwal?.day ?? ''}';
             break;
           case 'dibatalkan':
             backgroundColor = Colors.red[600]!;
@@ -757,13 +872,13 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
             break;
           default:
             backgroundColor = Colors.grey[400]!;
-            text = '${schedule.template?.intervalPeriode ?? ''}';
+            text = '${schedule.tglJadwal?.day ?? ''}';
         }
       } else {
         // ACTUAL row - show completed maintenance (green)
         if (schedule.status.toLowerCase() == 'selesai') {
           backgroundColor = Colors.green[600]!;
-          text = '${schedule.template?.intervalPeriode ?? ''}';
+          text = '${schedule.tglSelesai?.day ?? ''}';
         } else {
           // Not completed yet
           backgroundColor = isEvenRow ? Colors.grey[100]! : Colors.white;
@@ -776,14 +891,19 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
 
     return InkWell(
       onTap: schedule != null
-          ? () => ModalDetailMaintenanceSchedule.show(
+          ? () {
+              final DateTime displayDate = isPlan
+                  ? (schedule.tglJadwal ?? cellDate)
+                  : (schedule.tglSelesai ?? schedule.tglJadwal ?? cellDate);
+              ModalDetailMaintenanceSchedule.show(
                 context,
                 schedule: schedule,
-                date: cellDate,
+                date: displayDate,
                 onEdit: () {
                   _showEditScheduleModal(context, schedule);
                 },
-              )
+              );
+            }
           : null,
       child: Container(
         width: width,

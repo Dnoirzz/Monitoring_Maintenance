@@ -20,7 +20,6 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
     String? selectedPeriode;
     DateTime? startDate;
     DateTime? selectedTglJadwal;
-    DateTime? selectedTglSelesai;
     String selectedStatus = 'Perlu Maintenance';
     final catatanController = TextEditingController();
     final intervalController = TextEditingController();
@@ -165,7 +164,7 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                     // Asset Dropdown
                                     _modalDropdownField(
                                       context: context,
-                                      label: "Asset",
+                                      label: "Nama Mesin",
                                       icon: Icons.precision_manufacturing,
                                       value: selectedAssetId,
                                       items: assetsList.map<DropdownMenuItem<String>>((asset) {
@@ -247,196 +246,124 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                                 ),
                                       const SizedBox(height: 20),
 
-                                      // Periode Dropdown
-                                      // Sesuai schema: mt_template.periode (USER-DEFINED enum)
-                                      _modalDropdownField(
-                                        context: context,
-                                        label: "Periode",
-                                        icon: Icons.calendar_today,
-                                        value: selectedPeriode,
-                                        items: [
-                                          DropdownMenuItem(
-                                            value: 'Hari',
-                                            child: Text('Harian'),
-                                          ),
-                                          DropdownMenuItem(
-                                            value: 'Minggu',
-                                            child: Text('Mingguan'),
-                                          ),
-                                          DropdownMenuItem(
-                                            value: 'Bulan',
-                                            child: Text('Bulanan'),
-                                          ),
-                                        ],
-                                        onChanged: (value) {
-                                          setModalState(() {
-                                            selectedPeriode = value;
-                                            final iv = int.tryParse(intervalController.text);
-                                            if (startDate != null && iv != null && iv > 0 && selectedPeriode != null) {
-                                              final next = pageController.computeNextOccurrenceInYear(
-                                                startDate: startDate!,
-                                                interval: iv,
-                                                periode: selectedPeriode!,
-                                                targetYear: selectedYear,
-                                              );
-                                              selectedTglJadwal = next ?? startDate;
-                                            }
-                                          });
-                                        },
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return "Periode wajib dipilih";
-                                          }
-                                          return null;
-                                        },
+                                      Padding(
+                                        padding: EdgeInsets.zero,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "LIFT TIME MESIN / HARI",
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.grey[800],
+                                              ),
+                                            ),
+                                            SizedBox(height: 10),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: _modalTextField(
+                                                    context: context,
+                                                    controller: intervalController,
+                                                    label: "Interval",
+                                                    icon: Icons.repeat,
+                                                    keyboardType: TextInputType.number,
+                                                    onChanged: (value) {
+                                                      final iv = int.tryParse(value);
+                                                      if (startDate != null && iv != null && iv > 0 && selectedPeriode != null) {
+                                                        final next = pageController.computeNextOccurrenceInYear(
+                                                          startDate: startDate!,
+                                                          interval: iv,
+                                                          periode: selectedPeriode!,
+                                                          targetYear: selectedYear,
+                                                        );
+                                                        setModalState(() {
+                                                          selectedTglJadwal = next ?? startDate;
+                                                        });
+                                                      }
+                                                    },
+                                                    validator: (value) {
+                                                      if (value == null || value.trim().isEmpty) {
+                                                        return "Interval wajib diisi";
+                                                      }
+                                                      final intValue = int.tryParse(value);
+                                                      if (intValue == null || intValue <= 0) {
+                                                        return "Harus angka positif";
+                                                      }
+                                                      return null;
+                                                    },
+                                                  ),
+                                                ),
+                                                SizedBox(width: 12),
+                                                Expanded(
+                                                  child: _modalDropdownField(
+                                                    context: context,
+                                                    label: "Periode",
+                                                    icon: Icons.calendar_today,
+                                                    value: selectedPeriode,
+                                                    items: [
+                                                      DropdownMenuItem(value: 'Hari', child: Text('Harian')),
+                                                      DropdownMenuItem(value: 'Minggu', child: Text('Mingguan')),
+                                                      DropdownMenuItem(value: 'Bulan', child: Text('Bulanan')),
+                                                    ],
+                                                    onChanged: (value) {
+                                                      setModalState(() {
+                                                        selectedPeriode = value;
+                                                        final iv = int.tryParse(intervalController.text);
+                                                        if (startDate != null && iv != null && iv > 0 && selectedPeriode != null) {
+                                                          final next = pageController.computeNextOccurrenceInYear(
+                                                            startDate: startDate!,
+                                                            interval: iv,
+                                                            periode: selectedPeriode!,
+                                                            targetYear: selectedYear,
+                                                          );
+                                                          selectedTglJadwal = next ?? startDate;
+                                                        }
+                                                      });
+                                                    },
+                                                    validator: (value) {
+                                                      if (value == null || value.isEmpty) {
+                                                        return "Periode wajib dipilih";
+                                                      }
+                                                      return null;
+                                                    },
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                       const SizedBox(height: 20),
 
-                                      // Interval Periode
-                                      // Sesuai schema: mt_template.interval_periode (integer)
-                                    _modalTextField(
-                                      context: context,
-                                      controller: intervalController,
-                                      label: "Interval Periode",
-                                      icon: Icons.repeat,
-                                      keyboardType: TextInputType.number,
-                                      onChanged: (value) {
-                                        final iv = int.tryParse(value);
-                                        if (startDate != null && iv != null && iv > 0 && selectedPeriode != null) {
-                                          final next = pageController.computeNextOccurrenceInYear(
-                                            startDate: startDate!,
-                                            interval: iv,
-                                            periode: selectedPeriode!,
-                                            targetYear: selectedYear,
-                                          );
-                                          setModalState(() {
-                                            selectedTglJadwal = next ?? startDate;
-                                          });
-                                        }
-                                      },
-                                      validator: (value) {
-                                        if (value == null || value.trim().isEmpty) {
-                                          return "Interval periode wajib diisi";
-                                        }
-                                        final intValue = int.tryParse(value);
-                                        if (intValue == null || intValue <= 0) {
-                                          return "Interval harus berupa angka positif";
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                      const SizedBox(height: 20),
-
-                                      // Start Date
-                                      // Sesuai schema: mt_template.start_date (date)
+                                      // Tanggal (gabungan start_date template dan tgl_jadwal schedule)
                                       _modalDateField(
                                         context: dialogContext,
                                         dialogContext: dialogContext,
-                                        label: "Tanggal Mulai Template",
+                                        label: "Tanggal",
                                         icon: Icons.event,
-                                        selectedDate: startDate,
+                                        selectedDate: selectedTglJadwal,
                                         onDateSelected: (date) {
-                                          final iv = int.tryParse(intervalController.text);
                                           setModalState(() {
+                                            selectedTglJadwal = date;
                                             startDate = date;
-                                            if (iv != null && iv > 0 && selectedPeriode != null) {
-                                              final next = pageController.computeNextOccurrenceInYear(
-                                                startDate: date,
-                                                interval: iv,
-                                                periode: selectedPeriode!,
-                                                targetYear: selectedYear,
-                                              );
-                                              selectedTglJadwal = next ?? date;
-                                            } else {
-                                              if (selectedTglJadwal == null) {
-                                                selectedTglJadwal = date;
-                                              }
-                                            }
                                           });
                                         },
                                         validator: (value) {
-                                          if (startDate == null) {
-                                            return "Tanggal mulai wajib dipilih";
+                                          if (selectedTglJadwal == null) {
+                                            return "Tanggal wajib dipilih";
+                                          }
+                                          if (selectedTglJadwal!.year != selectedYear) {
+                                            return "Tanggal harus di tahun $selectedYear";
                                           }
                                           return null;
                                         },
                                       ),
                                       const SizedBox(height: 20),
-                                      Divider(),
-                                      const SizedBox(height: 20),
                                     ],
 
-                                    // Tanggal Jadwal
-                                    // Sesuai schema: mt_schedule.tgl_jadwal (date)
-                                    _modalDateField(
-                                      context: dialogContext,
-                                      dialogContext: dialogContext,
-                                      label: "Tanggal Jadwal",
-                                      icon: Icons.calendar_today,
-                                      selectedDate: selectedTglJadwal,
-                                      onDateSelected: (date) {
-                                        setModalState(() {
-                                          selectedTglJadwal = date;
-                                          // Validasi: tgl_jadwal tidak boleh lebih kecil dari start_date template
-                                          if (startDate != null && date.isBefore(startDate!)) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                content: Text('Tanggal jadwal tidak boleh lebih kecil dari tanggal mulai template'),
-                                                backgroundColor: Colors.orange,
-                                              ),
-                                            );
-                                          }
-                                        });
-                                      },
-                                      validator: (value) {
-                                        if (selectedTglJadwal == null) {
-                                          return "Tanggal jadwal wajib dipilih";
-                                        }
-                                        if (selectedTglJadwal!.year != selectedYear) {
-                                          return "Tanggal jadwal harus di tahun $selectedYear";
-                                        }
-                                        if (startDate != null && selectedTglJadwal!.isBefore(startDate!)) {
-                                          return "Tanggal jadwal tidak boleh lebih kecil dari tanggal mulai template";
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    const SizedBox(height: 20),
-
-                                    // Tanggal Selesai (optional)
-                                    // Sesuai schema: mt_schedule.tgl_selesai (date, nullable)
-                                    _modalDateField(
-                                      context: dialogContext,
-                                      dialogContext: dialogContext,
-                                      label: "Tanggal Selesai (Opsional)",
-                                      icon: Icons.event_available,
-                                      selectedDate: selectedTglSelesai,
-                                      onDateSelected: (date) {
-                                        setModalState(() {
-                                          selectedTglSelesai = date;
-                                          // Validasi: tgl_selesai tidak boleh lebih kecil dari tgl_jadwal
-                                          if (selectedTglJadwal != null && date.isBefore(selectedTglJadwal!)) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                content: Text('Tanggal selesai tidak boleh lebih kecil dari tanggal jadwal'),
-                                                backgroundColor: Colors.orange,
-                                              ),
-                                            );
-                                          }
-                                        });
-                                      },
-                                      validator: (value) {
-                                        // Validasi: tgl_selesai tidak boleh lebih kecil dari tgl_jadwal
-                                        if (selectedTglSelesai != null && 
-                                            selectedTglJadwal != null && 
-                                            selectedTglSelesai!.isBefore(selectedTglJadwal!)) {
-                                          return "Tanggal selesai tidak boleh lebih kecil dari tanggal jadwal";
-                                        }
-                                        return null;
-                                      },
-                                      isOptional: true,
-                                    ),
-                                    const SizedBox(height: 20),
+                                    // (Tanggal selesai dihapus dari form tambah)
 
                                     // Status Dropdown
                                     // Sesuai schema: mt_schedule.status (USER-DEFINED enum: 'Perlu Maintenance', 'Sedang Maintenance', 'Selesai', 'Dibatalkan')
@@ -516,13 +443,13 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                   return;
                                 }
 
-                                // Validasi: Pastikan semua field template sudah diisi
+                                // Validasi: Pastikan field template dan tanggal sudah diisi
                                 if (selectedBgMesinId == null || 
                                     selectedPeriode == null || 
-                                    startDate == null) {
+                                    selectedTglJadwal == null) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Semua field template wajib diisi'),
+                                      content: Text('Semua field wajib diisi'),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
@@ -535,7 +462,7 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                   bgMesinId: selectedBgMesinId,
                                   periode: selectedPeriode,
                                   intervalPeriode: interval,
-                                  startDate: startDate,
+                                  startDate: selectedTglJadwal,
                                 );
 
                                 final createdTemplate = await pageController.createTemplate(newTemplate);
@@ -545,29 +472,39 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                   throw Exception('Gagal membuat template: ID tidak tersedia');
                                 }
 
-                                // Buat schedule dengan template yang baru dibuat
-                                // Sesuai schema mt_schedule:
-                                // - template_id (FK ke mt_template)
-                                // - assets_id (FK ke assets)
-                                // - tgl_jadwal (date)
-                                // - tgl_selesai (date, nullable)
-                                // - status (enum: 'Perlu Maintenance', 'Sedang Maintenance', 'Selesai', 'Dibatalkan')
-                                // - catatan (text, nullable)
-                                // - created_by (FK ke karyawan)
-                                // Note: foto_sblm, foto_sesudah, completed_by bisa diisi nanti saat maintenance dilakukan
-                                final newSchedule = MtSchedule(
-                                  templateId: createdTemplate.id,
-                                  assetsId: selectedAssetId,
-                                  tglJadwal: selectedTglJadwal,
-                                  tglSelesai: selectedTglSelesai,
-                                  status: selectedStatus,
-                                  catatan: catatanController.text.trim().isEmpty
-                                      ? null
-                                      : catatanController.text.trim(),
-                                  createdBy: currentUser?.id,
-                                );
+                                // Generate dan insert jadwal berulang sesuai interval & periode untuk tahun terpilih
+                                List<DateTime> occurrenceDates = [];
+                                DateTime cursor = selectedTglJadwal!;
+                                while (cursor.year == selectedYear) {
+                                  occurrenceDates.add(cursor);
+                                  switch (selectedPeriode) {
+                                    case 'Hari':
+                                      cursor = cursor.add(Duration(days: interval));
+                                      break;
+                                    case 'Minggu':
+                                      cursor = cursor.add(Duration(days: interval * 7));
+                                      break;
+                                    case 'Bulan':
+                                      cursor = DateTime(cursor.year, cursor.month + interval, cursor.day);
+                                      break;
+                                    default:
+                                      throw Exception('Periode tidak valid: $selectedPeriode');
+                                  }
+                                }
 
-                                await pageController.createSchedule(newSchedule);
+                                for (final date in occurrenceDates) {
+                                  final schedule = MtSchedule(
+                                    templateId: createdTemplate.id,
+                                    assetsId: selectedAssetId,
+                                    tglJadwal: date,
+                                    status: selectedStatus,
+                                    catatan: catatanController.text.trim().isEmpty
+                                        ? null
+                                        : catatanController.text.trim(),
+                                    createdBy: currentUser?.id,
+                                  );
+                                  await pageController.createSchedule(schedule);
+                                }
 
                                 if (context.mounted) {
                                   Navigator.of(dialogContext).pop();
