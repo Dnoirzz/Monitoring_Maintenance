@@ -127,4 +127,8 @@ class MtSchedule {
   String? get assetName {
     return asset?['nama_assets'] as String?;
   }
+
+  String? get assetJenisAset {
+    return asset?['jenis_assets'] as String?;
+  }
 }

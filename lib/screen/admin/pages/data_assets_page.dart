@@ -240,11 +240,6 @@ class _DataMesinPageState extends State<DataMesinPage> {
     return filtered;
   }
 
-  List<String> _getJenisAsetList() {
-    // Ambil unik jenis aset dari data yang ada
-    return _rawData.map((e) => e['jenis_aset'] as String).toSet().toList();
-  }
-
   Map<String, List<Map<String, dynamic>>> _groupByAset() {
     List<Map<String, dynamic>> data = _getFilteredAndSortedData();
     Map<String, List<Map<String, dynamic>>> grouped = {};
@@ -397,17 +392,11 @@ class _DataMesinPageState extends State<DataMesinPage> {
                         ],
                       ),
                     ),
-                    items: [
-                      DropdownMenuItem<String>(
-                        value: null,
-                        child: Text('Semua Jenis'),
-                      ),
-                      ..._getJenisAsetList().map((jenis) {
-                        return DropdownMenuItem<String>(
-                          value: jenis,
-                          child: Text(jenis),
-                        );
-                      }),
+                    items: const [
+                      DropdownMenuItem<String>(value: null, child: Text('Semua Jenis')),
+                      DropdownMenuItem<String>(value: 'Mesin Produksi', child: Text('Mesin Produksi')),
+                      DropdownMenuItem<String>(value: 'Alat Berat', child: Text('Alat Berat')),
+                      DropdownMenuItem<String>(value: 'Listrik', child: Text('Listrik')),
                     ],
                     onChanged: (value) {
                       setState(() {

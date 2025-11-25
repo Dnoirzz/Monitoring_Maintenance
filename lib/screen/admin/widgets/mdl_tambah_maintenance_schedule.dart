@@ -2,20 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../model/mt_schedule_model.dart';
 import '../../../model/mt_template_model.dart';
-import '../../../repositories/asset_repository.dart';
-import '../../../repositories/maintenance_schedule_repository.dart';
 import '../../../services/supabase_service.dart';
-import '../../../controller/maintenance_schedule_controller.dart';
+import '../../../controller/maintenance_schedule_page_controller.dart';
 
-class ModalTambahMaintenanceSchedule {
+  class ModalTambahMaintenanceSchedule {
   static void show(
     BuildContext context, {
-    required MaintenanceScheduleController controller,
-    required VoidCallback onSuccess,
+      required MaintenanceSchedulePageController pageController,
+      required int selectedYear,
+      required VoidCallback onSuccess,
   }) {
     final formKey = GlobalKey<FormState>();
-    final assetRepository = AssetRepository();
-    final maintenanceRepository = MaintenanceScheduleRepository();
     final currentUser = SupabaseService.instance.currentUser;
 
     String? selectedAssetId;
@@ -41,13 +38,10 @@ class ModalTambahMaintenanceSchedule {
             // Load assets
             Future<void> loadData() async {
               try {
-                final assets = await assetRepository.getAllAssets();
+                final assetsOptions = await pageController.getAssetsOptions();
 
                 setModalState(() {
-                  assetsList = assets.map((asset) => {
-                    'id': asset.id ?? '',
-                    'nama': asset.namaAset,
-                  }).toList();
+                  assetsList = assetsOptions;
                   isLoadingData = false;
                 });
               } catch (e) {
@@ -71,13 +65,10 @@ class ModalTambahMaintenanceSchedule {
                   bgMesinList = [];
                 });
 
-                final bagianList = await assetRepository.getBagianByAssetId(assetId);
+                final bagianOptions = await pageController.getBagianMesinOptions(assetId);
 
                 setModalState(() {
-                  bgMesinList = bagianList.map((bagian) => {
-                    'id': bagian.id ?? '',
-                    'nama': bagian.namaBagian,
-                  }).toList();
+                  bgMesinList = bagianOptions;
                   isLoadingBgMesin = false;
                 });
               } catch (e) {
@@ -280,6 +271,16 @@ class ModalTambahMaintenanceSchedule {
                                         onChanged: (value) {
                                           setModalState(() {
                                             selectedPeriode = value;
+                                            final iv = int.tryParse(intervalController.text);
+                                            if (startDate != null && iv != null && iv > 0 && selectedPeriode != null) {
+                                              final next = pageController.computeNextOccurrenceInYear(
+                                                startDate: startDate!,
+                                                interval: iv,
+                                                periode: selectedPeriode!,
+                                                targetYear: selectedYear,
+                                              );
+                                              selectedTglJadwal = next ?? startDate;
+                                            }
                                           });
                                         },
                                         validator: (value) {
@@ -293,23 +294,37 @@ class ModalTambahMaintenanceSchedule {
 
                                       // Interval Periode
                                       // Sesuai schema: mt_template.interval_periode (integer)
-                                      _modalTextField(
-                                        context: context,
-                                        controller: intervalController,
-                                        label: "Interval Periode",
-                                        icon: Icons.repeat,
-                                        keyboardType: TextInputType.number,
-                                        validator: (value) {
-                                          if (value == null || value.trim().isEmpty) {
-                                            return "Interval periode wajib diisi";
-                                          }
-                                          final intValue = int.tryParse(value);
-                                          if (intValue == null || intValue <= 0) {
-                                            return "Interval harus berupa angka positif";
-                                          }
-                                          return null;
-                                        },
-                                      ),
+                                    _modalTextField(
+                                      context: context,
+                                      controller: intervalController,
+                                      label: "Interval Periode",
+                                      icon: Icons.repeat,
+                                      keyboardType: TextInputType.number,
+                                      onChanged: (value) {
+                                        final iv = int.tryParse(value);
+                                        if (startDate != null && iv != null && iv > 0 && selectedPeriode != null) {
+                                          final next = pageController.computeNextOccurrenceInYear(
+                                            startDate: startDate!,
+                                            interval: iv,
+                                            periode: selectedPeriode!,
+                                            targetYear: selectedYear,
+                                          );
+                                          setModalState(() {
+                                            selectedTglJadwal = next ?? startDate;
+                                          });
+                                        }
+                                      },
+                                      validator: (value) {
+                                        if (value == null || value.trim().isEmpty) {
+                                          return "Interval periode wajib diisi";
+                                        }
+                                        final intValue = int.tryParse(value);
+                                        if (intValue == null || intValue <= 0) {
+                                          return "Interval harus berupa angka positif";
+                                        }
+                                        return null;
+                                      },
+                                    ),
                                       const SizedBox(height: 20),
 
                                       // Start Date
@@ -321,8 +336,22 @@ class ModalTambahMaintenanceSchedule {
                                         icon: Icons.event,
                                         selectedDate: startDate,
                                         onDateSelected: (date) {
+                                          final iv = int.tryParse(intervalController.text);
                                           setModalState(() {
                                             startDate = date;
+                                            if (iv != null && iv > 0 && selectedPeriode != null) {
+                                              final next = pageController.computeNextOccurrenceInYear(
+                                                startDate: date,
+                                                interval: iv,
+                                                periode: selectedPeriode!,
+                                                targetYear: selectedYear,
+                                              );
+                                              selectedTglJadwal = next ?? date;
+                                            } else {
+                                              if (selectedTglJadwal == null) {
+                                                selectedTglJadwal = date;
+                                              }
+                                            }
                                           });
                                         },
                                         validator: (value) {
@@ -363,7 +392,9 @@ class ModalTambahMaintenanceSchedule {
                                         if (selectedTglJadwal == null) {
                                           return "Tanggal jadwal wajib dipilih";
                                         }
-                                        // Validasi: tgl_jadwal tidak boleh lebih kecil dari start_date
+                                        if (selectedTglJadwal!.year != selectedYear) {
+                                          return "Tanggal jadwal harus di tahun $selectedYear";
+                                        }
                                         if (startDate != null && selectedTglJadwal!.isBefore(startDate!)) {
                                           return "Tanggal jadwal tidak boleh lebih kecil dari tanggal mulai template";
                                         }
@@ -507,7 +538,7 @@ class ModalTambahMaintenanceSchedule {
                                   startDate: startDate,
                                 );
 
-                                final createdTemplate = await maintenanceRepository.createTemplate(newTemplate);
+                                final createdTemplate = await pageController.createTemplate(newTemplate);
 
                                 // Validasi: Pastikan template berhasil dibuat
                                 if (createdTemplate.id == null) {
@@ -536,8 +567,7 @@ class ModalTambahMaintenanceSchedule {
                                   createdBy: currentUser?.id,
                                 );
 
-                                await controller.createSchedule(newSchedule);
-                                await controller.loadSchedules();
+                                await pageController.createSchedule(newSchedule);
 
                                 if (context.mounted) {
                                   Navigator.of(dialogContext).pop();
@@ -586,8 +616,9 @@ class ModalTambahMaintenanceSchedule {
       intervalController.dispose();
     });
   }
+}
 
-  static Widget _modalDropdownField({
+  Widget _modalDropdownField({
     required BuildContext context,
     required String label,
     required IconData icon,
@@ -605,7 +636,7 @@ class ModalTambahMaintenanceSchedule {
     );
   }
 
-  static Widget _modalDateField({
+  Widget _modalDateField({
     required BuildContext context,
     required BuildContext dialogContext,
     required String label,
@@ -665,7 +696,7 @@ class ModalTambahMaintenanceSchedule {
     );
   }
 
-  static Widget _modalTextField({
+  Widget _modalTextField({
     required BuildContext context,
     required TextEditingController controller,
     required String label,
@@ -673,17 +704,19 @@ class ModalTambahMaintenanceSchedule {
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
+    void Function(String)? onChanged,
   }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
+      onChanged: onChanged,
       validator: validator,
       decoration: _modalInputDecoration(context: context, label: label, icon: icon),
     );
   }
 
-  static InputDecoration _modalInputDecoration({
+  InputDecoration _modalInputDecoration({
     required BuildContext context,
     required String label,
     required IconData icon,
@@ -718,5 +751,4 @@ class ModalTambahMaintenanceSchedule {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
-}
 

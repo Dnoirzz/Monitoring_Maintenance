@@ -6,7 +6,7 @@ import 'package:monitoring_maintenance/model/check_sheet_model.dart';
 import 'package:monitoring_maintenance/screen/admin/widgets/mdl_tambah_cek_sheet_schedule.dart';
 
 import 'kalender_pengecekan_page.dart';
-import 'mdl_edit_checksheet.dart';
+import '../widgets/mdl_edit_cek_sheet_schedule.dart';
 
 class CekSheetSchedulePage extends StatefulWidget {
   final CheckSheetController checkSheetController;
@@ -28,6 +28,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
   String? _hoveredRowKey;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String? _filterJenisAset;
 
   @override
   void initState() {
@@ -77,8 +78,12 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
   }
 
   List<CheckSheetModel> _getFilteredSchedules() {
-    return widget.checkSheetController
+    var list = widget.checkSheetController
         .filterSchedules(searchQuery: _searchQuery);
+    if (_filterJenisAset != null && _filterJenisAset!.isNotEmpty) {
+      list = list.where((s) => s.kategori == _filterJenisAset).toList();
+    }
+    return list;
   }
 
   Map<String, List<CheckSheetModel>> _groupByInfrastruktur() {
@@ -106,6 +111,24 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
           ),
         ),
         SizedBox(height: 20),
+        if (_filterJenisAset != null) ...[
+          Row(
+            children: [
+              Chip(
+                label: Text('Kategori: ${_filterJenisAset}'),
+                onDeleted: () {
+                  setState(() {
+                    _filterJenisAset = null;
+                  });
+                },
+                deleteIcon: Icon(Icons.close, size: 18),
+                backgroundColor: Color(0xFF0A9C5D).withOpacity(0.1),
+                labelStyle: TextStyle(color: Color(0xFF0A9C5D)),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+        ],
 
         Row(
           children: [
@@ -163,6 +186,48 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
               ),
             ),
             SizedBox(width: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 5,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: DropdownButton<String?> (
+                value: _filterJenisAset,
+                hint: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.filter_list, color: Color(0xFF0A9C5D), size: 20),
+                      SizedBox(width: 8),
+                      Text('Filter Kategori'),
+                    ],
+                  ),
+                ),
+                items: const [
+                  DropdownMenuItem<String?> (value: null, child: Text('Semua Kategori')),
+                  DropdownMenuItem<String?> (value: 'Mesin Produksi', child: Text('Mesin Produksi')),
+                  DropdownMenuItem<String?> (value: 'Alat Berat', child: Text('Alat Berat')),
+                  DropdownMenuItem<String?> (value: 'Listrik', child: Text('Listrik')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _filterJenisAset = value;
+                  });
+                },
+                underline: SizedBox(),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                icon: Icon(Icons.arrow_drop_down, color: Color(0xFF0A9C5D)),
+              ),
+            ),
             ElevatedButton.icon(
               onPressed: () {
                 ModalTambahCekSheetSchedule.show(
@@ -711,7 +776,7 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
       "tanggal_status": Map<int, String>.from(item.tanggalStatus),
     };
 
-    ModalEditChecksheet.show(
+    ModalEditCekSheetSchedule.show(
       context,
       scheduleMap,
       (updatedItem) {

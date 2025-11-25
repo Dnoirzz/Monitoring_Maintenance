@@ -11,7 +11,7 @@ import 'package:monitoring_maintenance/controller/asset_controller.dart';
 import 'package:monitoring_maintenance/controller/check_sheet_controller.dart';
 import 'package:monitoring_maintenance/controller/karyawan_controller.dart';
 import 'package:monitoring_maintenance/controller/dashboard_controller.dart';
-import 'package:monitoring_maintenance/controller/maintenance_schedule_controller.dart';
+ 
 
 class AdminApp extends StatelessWidget {
   const AdminApp({super.key});
@@ -39,7 +39,6 @@ class _AdminTemplateState extends State<AdminTemplate>
   late CheckSheetController _checkSheetController;
   late KaryawanController _karyawanController;
   late DashboardController _dashboardController;
-  late MaintenanceScheduleController _maintenanceScheduleController;
   late AnimationController _animationController;
   late Animation<double> _animation;
 
@@ -55,7 +54,6 @@ class _AdminTemplateState extends State<AdminTemplate>
     _karyawanController.initializeSampleData();
     _dashboardController = DashboardController();
     _adminController = AdminController();
-    _maintenanceScheduleController = MaintenanceScheduleController();
 
     // Initialize animation
     _animationController = AnimationController(
@@ -164,9 +162,7 @@ class _AdminTemplateState extends State<AdminTemplate>
         return DaftarKaryawanPage(karyawanController: _karyawanController);
       case 3:
         if (_adminController.selectedScheduleSubMenu == 31) {
-          return MaintenanceSchedulePage(
-            controller: _maintenanceScheduleController,
-          );
+          return const MaintenanceSchedulePage();
         } else if (_adminController.selectedScheduleSubMenu == 32) {
           return CekSheetSchedulePage(
             checkSheetController: _checkSheetController,

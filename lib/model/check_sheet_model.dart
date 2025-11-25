@@ -6,6 +6,7 @@ class CheckSheetModel {
   final String jenisPekerjaan;
   final String standarPerawatan;
   final String alatBahan;
+  final String kategori;
   final Map<int, String> tanggalStatus;
 
   CheckSheetModel({
@@ -17,6 +18,7 @@ class CheckSheetModel {
     required this.standarPerawatan,
     required this.alatBahan,
     Map<int, String>? tanggalStatus,
+    this.kategori = 'Mesin Produksi',
   }) : tanggalStatus = Map<int, String>.from(tanggalStatus ?? {});
 
   CheckSheetModel copyWith({
@@ -27,6 +29,7 @@ class CheckSheetModel {
     String? jenisPekerjaan,
     String? standarPerawatan,
     String? alatBahan,
+    String? kategori,
     Map<int, String>? tanggalStatus,
   }) {
     return CheckSheetModel(
@@ -37,6 +40,7 @@ class CheckSheetModel {
       jenisPekerjaan: jenisPekerjaan ?? this.jenisPekerjaan,
       standarPerawatan: standarPerawatan ?? this.standarPerawatan,
       alatBahan: alatBahan ?? this.alatBahan,
+      kategori: kategori ?? this.kategori,
       tanggalStatus: tanggalStatus ?? this.tanggalStatus,
     );
   }
