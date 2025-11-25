@@ -114,6 +114,15 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
     return grouped;
   }
 
+  double _measureTextWidth(String text, TextStyle style) {
+    final tp = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout(minWidth: 0, maxWidth: double.infinity);
+    return tp.size.width;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -333,13 +342,44 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
   }
 
   Widget _buildCalendarTable(BuildContext context) {
-    const double rowHeight = 40.0; // Tinggi per baris (Plan atau Actual)
-    const double colName = 120.0; // Nama Mesin
-    const double colBagian = 100.0; // Bagian Mesin
-    const double colPeriode = 130.0; // Periode (diperlebar agar tidak terpotong)
-    const double colAction = 60.0; // Tombol aksi
-    const double colPlanActual = 60.0; // Kolom PLAN/ACTUAL
-    const double cellWidth = 35.0; // Width per week
+    const double rowHeight = 40.0;
+    final filtered = _getFilteredSchedules();
+
+    final headerStyle = TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11);
+    final bodyStyle = TextStyle(fontSize: 10, color: Colors.grey[800]);
+    final weekHeaderStyle = TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 9);
+
+    double colName = 0;
+    double colBagian = 0;
+    double colPeriode = 0;
+    double colAction = 0;
+    double colPlanActual = 0;
+    double cellWidth = 0;
+
+    colName = [
+      _measureTextWidth('NAMA MESIN', headerStyle),
+      ...filtered.map((s) => _measureTextWidth(s.assetName ?? '', bodyStyle)),
+    ].fold<double>(0, (p, c) => c > p ? c : p) + 24;
+
+    colBagian = [
+      _measureTextWidth('BAGIAN MESIN', headerStyle),
+      ...filtered.map((s) => _measureTextWidth(s.template?.bagianMesinName ?? '', bodyStyle)),
+    ].fold<double>(0, (p, c) => c > p ? c : p) + 24;
+
+    colPeriode = [
+      _measureTextWidth('LIFT TIME\nMESIN / HARI', headerStyle),
+      ...filtered.map((s) => _measureTextWidth('${s.template?.intervalPeriode ?? '-'} ${(s.template?.periode ?? '-').toLowerCase()}', bodyStyle)),
+    ].fold<double>(0, (p, c) => c > p ? c : p) + 24;
+
+    colAction = 24 + 28 + 8 + 28; // padding + 2 icon buttons + spacing
+
+    colPlanActual = [
+      _measureTextWidth('PVL', headerStyle),
+      _measureTextWidth('PLAN', bodyStyle),
+      _measureTextWidth('ACTUAL', bodyStyle),
+    ].fold<double>(0, (p, c) => c > p ? c : p) + 24;
+
+    cellWidth = _measureTextWidth('W48', weekHeaderStyle) + 12;
 
     final months = [
       'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
