@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class ModalEditCekSheetSchedule {
+class ModalEditChecksheet {
   static void show(
     BuildContext context,
     Map<String, dynamic> item,
@@ -594,4 +594,3 @@ class ModalEditCekSheetSchedule {
     );
   }
 }
-

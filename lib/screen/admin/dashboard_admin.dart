@@ -47,9 +47,8 @@ class _AdminTemplateState extends State<AdminTemplate>
     super.initState();
     // Initialize controllers
     _assetController = AssetController();
-    _assetController.initializeSampleData();
     _checkSheetController = CheckSheetController();
-    _checkSheetController.initializeSampleData();
+    // Sample data removed - data will be loaded from Supabase
     _karyawanController = KaryawanController();
     _karyawanController.initializeSampleData();
     _dashboardController = DashboardController();
