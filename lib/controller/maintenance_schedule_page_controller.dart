@@ -56,9 +56,20 @@ class MaintenanceSchedulePageController {
 
   Future<List<Map<String, dynamic>>> getBagianMesinOptions(String assetId) async {
     final bagianList = await _assetRepository.getBagianByAssetId(assetId);
+    final allTemplates = await _scheduleRepository.getAllTemplates();
+    
+    // Collect bagian mesin IDs yang sudah punya template
+    final usedBagianIds = <String>{};
+    for (var template in allTemplates) {
+      if (template.bgMesinId != null) {
+        usedBagianIds.add(template.bgMesinId!);
+      }
+    }
+    
     return bagianList.map((bagian) => {
           'id': bagian.id ?? '',
           'nama': bagian.namaBagian,
+          'isUsed': usedBagianIds.contains(bagian.id), // Flag apakah sudah ada template
         }).toList();
   }
 

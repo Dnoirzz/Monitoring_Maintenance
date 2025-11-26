@@ -7,6 +7,7 @@ import 'package:monitoring_maintenance/repositories/maintenance_schedule_reposit
 import 'package:monitoring_maintenance/services/maintenance_schedule/calendar_service.dart';
 import 'package:monitoring_maintenance/services/maintenance_schedule/maintenance_dialog_service.dart';
 import 'package:monitoring_maintenance/services/maintenance_schedule/maintenance_date_service.dart';
+import 'package:monitoring_maintenance/services/maintenance_schedule/maintenance_edit_service.dart';
 
 /// Maintenance Schedule dalam format kalender tahunan (mirip Excel)
 class MaintenanceSchedulePage extends StatefulWidget {
@@ -102,13 +103,26 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Maintenance Schedule - $_selectedYear",
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF022415),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Maintenance Schedule - $_selectedYear",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF022415),
+              ),
+            ),
+            // Tombol Refresh
+            IconButton(
+              icon: Icon(Icons.refresh, color: Color(0xFF0A9C5D)),
+              tooltip: 'Refresh Data',
+              onPressed: () async {
+                await _loadSchedules();
+              },
+            ),
+          ],
         ),
         SizedBox(height: 20),
         if (_filterJenisAset != null) ...[
@@ -669,18 +683,31 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                       children: List.generate(12, (monthIndex) {
                         return Row(
                           children: List.generate(4, (weekIndex) {
-                            int startDay = weekIndex * 7 + 1;
-                            int endDay = (weekIndex + 1) * 7;
-                            
+                            // Cari schedule dengan ACTUAL date dalam minggu ini
+                            // ACTUAL bisa berada di bulan berbeda dengan month display saat ini
                             MtSchedule? scheduleInWeek;
                             for (var schedule in schedules) {
-                              if (schedule.tglSelesai != null &&
-                                  schedule.tglSelesai!.year == _selectedYear &&
-                                  schedule.tglSelesai!.month == monthIndex + 1 &&
-                                  schedule.tglSelesai!.day >= startDay &&
-                                  schedule.tglSelesai!.day <= endDay) {
-                                scheduleInWeek = schedule;
-                                break;
+                              if (schedule.tglSelesai != null && schedule.status.toLowerCase() == 'selesai') {
+                                // Hitung minggu ke berapa dalam tahun untuk actual date
+                                final actualDate = schedule.tglSelesai!;
+                                
+                                // Hanya tampilkan jika dalam tahun yang sama
+                                if (actualDate.year != _selectedYear) continue;
+                                
+                                // Hitung minggu dalam bulan untuk actual date
+                                int actualMonth = actualDate.month;
+                                int actualDay = actualDate.day;
+                                
+                                // Hitung minggu (0-3) dari hari dalam bulan
+                                int actualWeekInMonth = (actualDay - 1) ~/ 7;
+                                
+                                // Jika month yang ditampilkan sama dengan bulan actual, cek minggu
+                                if (actualMonth == monthIndex + 1) {
+                                  if (actualWeekInMonth == weekIndex) {
+                                    scheduleInWeek = schedule;
+                                    break;
+                                  }
+                                }
                               }
                             }
 
@@ -690,7 +717,7 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                               isEvenRow,
                               isHovered,
                               scheduleInWeek,
-                              DateTime(_selectedYear, monthIndex + 1, startDay),
+                              DateTime(_selectedYear, monthIndex + 1, weekIndex * 7 + 1),
                               isPlan: false,
                             );
                           }),
@@ -802,20 +829,55 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                 ),
               );
               if (confirmed != true) return;
+              
               try {
-                for (final s in schedules) {
-                  if (s.id != null) {
-                    await _repository.deleteSchedule(s.id!);
+                // Show loading dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Menghapus jadwal...'),
+                      ],
+                    ),
+                  ),
+                );
+
+                // Collect all IDs to delete
+                final idsToDelete = schedules
+                    .where((s) => s.id != null)
+                    .map((s) => s.id!)
+                    .toList();
+
+                // Batch delete menggunakan optimized method
+                if (idsToDelete.isNotEmpty) {
+                  // Get template IDs sebelum delete schedules
+                  final templateIds = await _repository.getTemplateIdsByScheduleIds(idsToDelete);
+                  
+                  // Delete schedules
+                  await _repository.batchDeleteSchedulesByIds(idsToDelete);
+                  
+                  // Delete templates yang tidak punya schedule lain
+                  for (final templateId in templateIds) {
+                    await _repository.deleteTemplateIfNoSchedules(templateId);
                   }
                 }
+
                 await _loadSchedules();
+                
                 if (mounted) {
+                  Navigator.pop(context); // Close loading dialog
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Jadwal berhasil dihapus')),
+                    SnackBar(content: Text('${idsToDelete.length} jadwal berhasil dihapus')),
                   );
                 }
               } catch (e) {
                 if (mounted) {
+                  Navigator.pop(context); // Close loading dialog
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Gagal menghapus: $e'), backgroundColor: Colors.red),
                   );
@@ -947,10 +1009,17 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
   
 
   void _showEditScheduleModal(BuildContext context, MtSchedule schedule) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Fitur Edit untuk ${schedule.assetName ?? 'Asset'}"),
-      ),
+    final editService = MaintenanceEditService(
+      repository: _repository,
+      context: context,
+    );
+
+    editService.showEditIntervalModal(
+      schedule: schedule,
+      selectedYear: _selectedYear,
+      onSuccess: () {
+        _loadSchedules();
+      },
     );
   }
 

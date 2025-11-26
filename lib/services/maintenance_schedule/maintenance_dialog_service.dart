@@ -171,6 +171,28 @@ class MaintenanceDialogService {
                   : 'Belum ada tanggal actual',
               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
             ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info, size: 16, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Tanggal actual dapat dipilih kapan saja, termasuk sebelum tanggal plan',
+                      style: TextStyle(fontSize: 9, color: Colors.blue[700]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         actions: [
