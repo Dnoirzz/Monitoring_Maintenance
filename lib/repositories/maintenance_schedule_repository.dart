@@ -159,6 +159,19 @@ class MaintenanceScheduleRepository {
     }
   }
 
+  Future<void> updateActualDate(String id, DateTime actualDate,
+      {bool markCompleted = true}) async {
+    try {
+      final Map<String, dynamic> data = {
+        'tgl_selesai': actualDate.toIso8601String().split('T')[0],
+        if (markCompleted) 'status': 'Selesai',
+      };
+      await _client.from('mt_schedule').update(data).eq('id', id);
+    } catch (e) {
+      throw Exception('Failed to update actual date: $e');
+    }
+  }
+
   /// Delete schedule
   Future<void> deleteSchedule(String id) async {
     try {

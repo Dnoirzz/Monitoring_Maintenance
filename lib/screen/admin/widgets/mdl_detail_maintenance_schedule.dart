@@ -8,6 +8,7 @@ class ModalDetailMaintenanceSchedule {
     required MtSchedule schedule,
     required DateTime date,
     VoidCallback? onEdit,
+    VoidCallback? onSetActual,
   }) {
     showDialog(
       context: context,
@@ -25,6 +26,21 @@ class ModalDetailMaintenanceSchedule {
           ],
         ),
         actions: [
+          if (onSetActual != null)
+            ElevatedButton.icon(
+              onPressed: onSetActual,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0A9C5D),
+                foregroundColor: Colors.white,
+              ),
+              icon: Icon(Icons.event_available),
+              label: Text('Isi Tanggal Actual'),
+            ),
+          if (onEdit != null)
+            TextButton(
+              onPressed: onEdit,
+              child: Text('Edit'),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text('Tutup'),

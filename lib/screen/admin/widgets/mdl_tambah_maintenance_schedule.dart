@@ -20,7 +20,6 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
     String? selectedPeriode;
     DateTime? startDate;
     DateTime? selectedTglJadwal;
-    String selectedStatus = 'Perlu Maintenance';
     final catatanController = TextEditingController();
     final intervalController = TextEditingController();
 
@@ -31,6 +30,7 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -39,54 +39,64 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
               try {
                 final assetsOptions = await pageController.getAssetsOptions();
 
-                setModalState(() {
-                  assetsList = assetsOptions;
-                  isLoadingData = false;
-                });
+                if (context.mounted) {
+                  setModalState(() {
+                    assetsList = assetsOptions;
+                    isLoadingData = false;
+                  });
+                }
               } catch (e) {
-                setModalState(() {
-                  isLoadingData = false;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Gagal memuat data: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                if (context.mounted) {
+                  setModalState(() {
+                    isLoadingData = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Gagal memuat data: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             }
 
             // Load bagian mesin berdasarkan asset yang dipilih
             Future<void> loadBagianMesin(String assetId) async {
               try {
-                setModalState(() {
-                  isLoadingBgMesin = true;
-                  bgMesinList = [];
-                });
+                if (context.mounted) {
+                  setModalState(() {
+                    isLoadingBgMesin = true;
+                    bgMesinList = [];
+                  });
+                }
 
                 final bagianOptions = await pageController.getBagianMesinOptions(assetId);
 
-                setModalState(() {
-                  bgMesinList = bagianOptions;
-                  isLoadingBgMesin = false;
-                });
+                if (context.mounted) {
+                  setModalState(() {
+                    bgMesinList = bagianOptions;
+                    isLoadingBgMesin = false;
+                  });
+                }
               } catch (e) {
-                setModalState(() {
-                  isLoadingBgMesin = false;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Gagal memuat bagian mesin: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                if (context.mounted) {
+                  setModalState(() {
+                    isLoadingBgMesin = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Gagal memuat bagian mesin: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             }
 
             // Load data on first build
             if (isLoadingData && assetsList.isEmpty) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                loadData();
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                await loadData();
               });
             }
 
@@ -364,39 +374,7 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                     ],
 
                                     // (Tanggal selesai dihapus dari form tambah)
-
-                                    // Status Dropdown
-                                    // Sesuai schema: mt_schedule.status (USER-DEFINED enum: 'Perlu Maintenance', 'Sedang Maintenance', 'Selesai', 'Dibatalkan')
-                                    _modalDropdownField(
-                                      context: context,
-                                      label: "Status",
-                                      icon: Icons.info,
-                                      value: selectedStatus,
-                                      items: [
-                                        DropdownMenuItem(
-                                          value: 'Perlu Maintenance',
-                                          child: Text('Perlu Maintenance'),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'Sedang Maintenance',
-                                          child: Text('Sedang Maintenance'),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'Selesai',
-                                          child: Text('Selesai'),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'Dibatalkan',
-                                          child: Text('Dibatalkan'),
-                                        ),
-                                      ],
-                                      onChanged: (value) {
-                                        setModalState(() {
-                                          selectedStatus = value ?? 'Perlu Maintenance';
-                                        });
-                                      },
-                                    ),
-                                    const SizedBox(height: 20),
+                                    // (Status field dihapus - default akan terisi "Perlu Maintenance" saat save)
 
                                     // Catatan
                                     // Sesuai schema: mt_schedule.catatan (text, nullable)
@@ -406,6 +384,10 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                       label: "Catatan (Opsional)",
                                       icon: Icons.note,
                                       maxLines: 3,
+                                      onChanged: (value) {
+                                        // Trigger rebuild when catatan changes (if needed)
+                                        setModalState(() {});
+                                      },
                                     ),
                                   ],
                                 ),
@@ -434,12 +416,14 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                 // Parse interval periode
                                 final interval = int.tryParse(intervalController.text.trim());
                                 if (interval == null || interval <= 0) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Interval periode harus berupa angka positif'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Interval periode harus berupa angka positif'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
                                   return;
                                 }
 
@@ -447,12 +431,14 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                 if (selectedBgMesinId == null || 
                                     selectedPeriode == null || 
                                     selectedTglJadwal == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Semua field wajib diisi'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Semua field wajib diisi'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
                                   return;
                                 }
 
@@ -497,7 +483,7 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                     templateId: createdTemplate.id,
                                     assetsId: selectedAssetId,
                                     tglJadwal: date,
-                                    status: selectedStatus,
+                                    status: 'Perlu Maintenance',
                                     catatan: catatanController.text.trim().isEmpty
                                         ? null
                                         : catatanController.text.trim(),
