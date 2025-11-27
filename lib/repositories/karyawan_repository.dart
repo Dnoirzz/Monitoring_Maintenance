@@ -87,6 +87,29 @@ class KaryawanRepository {
 
       final karyawanId = karyawanResponse['id'] as String;
 
+      // Berikan akses ke aplikasi MT secara otomatis
+      // Ambil ID aplikasi MT
+      final aplikasiResponse = await _client
+          .from('aplikasi')
+          .select('id')
+          .eq('kode_aplikasi', 'MT')
+          .maybeSingle();
+
+      if (aplikasiResponse != null) {
+        final aplikasiMtId = aplikasiResponse['id'] as String;
+        // Tentukan role berdasarkan jabatan (default: Teknisi)
+        final role = jabatan ?? 'Teknisi';
+        
+        // Insert ke karyawan_aplikasi untuk memberikan akses MT
+        await _client
+            .from('karyawan_aplikasi')
+            .insert({
+              'karyawan_id': karyawanId,
+              'aplikasi_id': aplikasiMtId,
+              'role': role,
+            });
+      }
+
       // Assign assets jika ada
       if (assetIds != null && assetIds.isNotEmpty) {
         await _userAssetsRepo.updateKaryawanAssets(

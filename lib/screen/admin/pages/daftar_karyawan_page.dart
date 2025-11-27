@@ -1,11 +1,19 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:monitoring_maintenance/controller/karyawan_controller.dart';
+import 'package:monitoring_maintenance/controller/dashboard_controller.dart';
 
 class DaftarKaryawanPage extends StatefulWidget {
   final KaryawanController karyawanController;
+  final DashboardController? dashboardController;
+  final VoidCallback? onKaryawanChanged;
   
-  const DaftarKaryawanPage({super.key, required this.karyawanController});
+  const DaftarKaryawanPage({
+    super.key, 
+    required this.karyawanController,
+    this.dashboardController,
+    this.onKaryawanChanged,
+  });
 
   @override
   State<DaftarKaryawanPage> createState() => _DaftarKaryawanPageState();
@@ -79,6 +87,22 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  /// Helper method untuk refresh dashboard setelah perubahan data karyawan
+  Future<void> _refreshDashboard() async {
+    if (widget.dashboardController != null) {
+      try {
+        // Refresh dashboard stats
+        await widget.dashboardController!.getStats();
+        // Panggil callback jika ada untuk refresh dashboard UI
+        if (widget.onKaryawanChanged != null) {
+          widget.onKaryawanChanged!();
+        }
+      } catch (e) {
+        print('Error refreshing dashboard: $e');
       }
     }
   }
@@ -1000,6 +1024,10 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                   if (mounted) {
                                     Navigator.of(dialogContext).pop();
                                     await _loadData();
+                                    
+                                    // Refresh dashboard setelah menambah karyawan
+                                    await _refreshDashboard();
+                                    
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -1340,6 +1368,10 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                   if (mounted) {
                                     Navigator.of(dialogContext).pop();
                                     await _loadData();
+                                    
+                                    // Refresh dashboard setelah update karyawan
+                                    await _refreshDashboard();
+                                    
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text('Karyawan berhasil diupdate'),
@@ -1585,6 +1617,10 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 try {
                   await widget.karyawanController.deleteKaryawan(id);
                   await _loadData();
+                  
+                  // Refresh dashboard setelah menghapus karyawan
+                  await _refreshDashboard();
+                  
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

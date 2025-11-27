@@ -32,6 +32,14 @@ class _BerandaPageState extends State<BerandaPage> {
     _loadStats();
   }
 
+  @override
+  void didUpdateWidget(BerandaPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Refresh stats saat widget diupdate (misalnya saat kembali dari halaman lain)
+    // Refresh setiap kali widget diupdate untuk memastikan data terbaru
+    _loadStats();
+  }
+
   void _loadStats() {
     setState(() {
       _statsFuture = widget.dashboardController.getStats();

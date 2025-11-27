@@ -157,7 +157,10 @@ class _AdminTemplateState extends State<AdminTemplate>
       case 1:
         return DataMesinPage(assetController: _assetController);
       case 2:
-        return DaftarKaryawanPage(karyawanController: _karyawanController);
+        return DaftarKaryawanPage(
+          karyawanController: _karyawanController,
+          dashboardController: _dashboardController,
+        );
       case 3:
         if (_adminController.selectedScheduleSubMenu == 31) {
           return const MaintenanceSchedulePage();
@@ -171,6 +174,7 @@ class _AdminTemplateState extends State<AdminTemplate>
         }
       default:
         return BerandaPage(
+          key: ValueKey('beranda'), // Key tetap untuk memungkinkan refresh
           dashboardController: _dashboardController,
           onNavigateToDataMesin: () {
             setState(() {
