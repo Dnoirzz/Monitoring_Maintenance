@@ -1,8 +1,10 @@
 import '../model/dashboard_model.dart';
 import '../repositories/asset_supabase_repository.dart';
+import '../repositories/karyawan_repository.dart';
 
 class DashboardController {
   final AssetSupabaseRepository _assetRepository = AssetSupabaseRepository();
+  final KaryawanRepository _karyawanRepository = KaryawanRepository();
 
   Future<DashboardStats> getStats() async {
     try {
@@ -12,9 +14,12 @@ class DashboardController {
       // Count unique assets berdasarkan nama_assets
       final uniqueAssets = assets.map((a) => a['nama_assets']).toSet().length;
 
+      // Hitung total karyawan yang memiliki akses ke aplikasi sistem maintenance (MT)
+      final totalKaryawan = await _karyawanRepository.getTotalMaintenanceUsers();
+
       return DashboardStats(
         totalAssets: uniqueAssets,
-        totalKaryawan: 0, // TODO: Implement when karyawan uses Supabase
+        totalKaryawan: totalKaryawan,
         pendingRequests: 0, // TODO: Calculate from actual data
         activeMaintenance: 0, // TODO: Calculate from actual data
         overdueSchedule: 0, // TODO: Calculate from actual data

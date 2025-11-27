@@ -50,7 +50,6 @@ class _AdminTemplateState extends State<AdminTemplate>
     _checkSheetController = CheckSheetController();
     // Sample data removed - data will be loaded from Supabase
     _karyawanController = KaryawanController();
-    _karyawanController.initializeSampleData();
     _dashboardController = DashboardController();
     _adminController = AdminController();
 

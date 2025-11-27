@@ -21,34 +21,17 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
   String _searchQuery = '';
   String? _filterMesin;
   String? _hoveredRowKey;
+  bool _isLoading = true; // Set true untuk menampilkan loading saat pertama kali
+  List<String> _mesinList = [];
+  // Jabatan options untuk Maintenance: Teknisi, Kasie, Admin Staff
+  List<String> _jabatanList = ['Teknisi', 'Kasie', 'Admin Staff'];
 
-  final List<Map<String, String>> _karyawan = [
-    {
-      "nama": "Ramadhan F",
-      "mesin": "Creeper 1",
-      "telp": "08123456789",
-      "email": "ramadhan@example.com",
-      "password": "******",
-    },
-    {
-      "nama": "Adityo Saputro",
-      "mesin": "Mixing Machine",
-      "telp": "087812345678",
-      "email": "adityo@example.com",
-      "password": "******",
-    },
-    {
-      "nama": "Rama Wijaya",
-      "mesin": "Creeper 2",
-      "telp": "085312345678",
-      "email": "rama@example.com",
-      "password": "******",
-    },
-  ];
+  List<Map<String, String>> _karyawan = [];
 
   @override
   void initState() {
     super.initState();
+    _loadData();
 
     // Sinkron horizontal scroll header & body
     _horizontalScrollController.addListener(() {
@@ -73,6 +56,31 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
         _searchQuery = _searchController.text.toLowerCase();
       });
     });
+  }
+
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    try {
+      await widget.karyawanController.loadKaryawan();
+      final mesinList = await widget.karyawanController.getMesinList();
+      setState(() {
+        _karyawan = widget.karyawanController.getAllKaryawan();
+        _mesinList = mesinList;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memuat data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -117,11 +125,13 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
         final mesin = item["mesin"]?.toLowerCase() ?? '';
         final telp = item["telp"]?.toLowerCase() ?? '';
         final email = item["email"]?.toLowerCase() ?? '';
+        final jabatan = item["jabatan"]?.toLowerCase() ?? '';
 
         return nama.contains(_searchQuery) ||
             mesin.contains(_searchQuery) ||
             telp.contains(_searchQuery) ||
-            email.contains(_searchQuery);
+            email.contains(_searchQuery) ||
+            jabatan.contains(_searchQuery);
       }).toList();
     }
 
@@ -146,13 +156,24 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Daftar Karyawan",
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF022415),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Daftar Karyawan",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF022415),
+              ),
+            ),
+            // Tombol Refresh
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Color(0xFF0A9C5D)),
+              tooltip: 'Refresh Data',
+              onPressed: _loadData,
+            ),
+          ],
         ),
         const SizedBox(height: 20),
 
@@ -304,10 +325,11 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
 
             if (_filterMesin != null) ...[
               const SizedBox(height: 8),
-              Row(
+              Wrap(
+                spacing: 8,
                 children: [
                   Chip(
-                    label: Text('Filter: $_filterMesin'),
+                    label: Text('Mesin: $_filterMesin'),
                     onDeleted: () {
                       setState(() {
                         _filterMesin = null;
@@ -341,7 +363,13 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 ),
               ],
             ),
-            child: _buildTableWithStickyHeader(context),
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF0A9C5D),
+                    ),
+                  )
+                : _buildTableWithStickyHeader(context),
           ),
         ),
       ],
@@ -381,6 +409,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
           children: [
             _headerCell("NO", colNo, rowHeight, headerStyle),
             _headerCell("NAMA PETUGAS", col1, rowHeight, headerStyle),
+            _headerCell("JABATAN", col2, rowHeight, headerStyle),
             _headerCell("MESIN YANG DIKERJAKAN", col2, rowHeight, headerStyle),
             _headerCell("NOMOR TELEPON", col3, rowHeight, headerStyle),
             _headerCell("ALAMAT EMAIL", col4, rowHeight, headerStyle),
@@ -401,7 +430,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
         );
 
         final totalTableWidth =
-            colNo + col1 + col2 + col3 + col4 + col5 + col6;
+            colNo + col1 + col2 + col2 + col2 + col3 + col4 + col5 + col6;
         final needsScroll = totalTableWidth > constraints.maxWidth;
 
         return Scrollbar(
@@ -623,6 +652,14 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
+                item["jabatan"] ?? '-',
+                col2,
+                rowHeight,
+                null,
+                isEvenRow: isEvenRow,
+                isHovered: isHovered,
+              ),
+              _cellCenter(
                 item["mesin"] ?? '-',
                 col2,
                 rowHeight,
@@ -679,6 +716,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
 
   // Modal Tambah Karyawan
   void _showTambahKaryawanModal(BuildContext context) {
+    print('DEBUG: _showTambahKaryawanModal dipanggil'); // Debug log
     final formKey = GlobalKey<FormState>();
     final TextEditingController namaController = TextEditingController();
     final TextEditingController telpController = TextEditingController();
@@ -692,19 +730,14 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
       passwordController,
     ];
 
-    final List<String> mesinOptions = [
-      "Creeper 1",
-      "Creeper 2",
-      "Mixing Machine",
-      "Generator Set",
-      "Excavator",
-    ];
-    String selectedMesin = mesinOptions.first;
+    List<String> selectedAssetIds = []; // Multi-select: list of asset IDs
+    // Department dan Jabatan otomatis: Maintenance & Teknisi
 
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
+        print('DEBUG: Dialog builder dipanggil'); // Debug log
         return Dialog(
           insetPadding:
               const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -714,20 +747,22 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
           child: StatefulBuilder(
             builder: (childContext, setStateDialog) {
               final double fieldWidth = _dialogFieldWidth(childContext);
-              return ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 26,
-                  ),
-                  child: Form(
-                    key: formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 26,
+                    ),
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
                               padding: const EdgeInsets.all(10),
@@ -741,26 +776,30 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                               ),
                             ),
                             const SizedBox(width: 16),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  "Tambah Karyawan",
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF022415),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text(
+                                    "Tambah Karyawan",
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF022415),
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  "Lengkapi informasi karyawan untuk akses dashboard",
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 14,
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    "Lengkapi informasi karyawan untuk akses dashboard",
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -781,33 +820,90 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                   if (value == null || value.trim().isEmpty) {
                                     return "Nama wajib diisi";
                                   }
-                                  if (value.trim().split(' ').length < 2) {
-                                    return "Masukkan nama lengkap";
-                                  }
                                   return null;
                                 },
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
-                              child: DropdownButtonFormField<String>(
-                                value: selectedMesin,
-                                decoration: _modalInputDecoration(
-                                  label: "Mesin yang Dikerjakan",
-                                  icon:
-                                      Icons.precision_manufacturing_outlined,
-                                ),
-                                items: mesinOptions
-                                    .map(
-                                      (mesin) => DropdownMenuItem<String>(
-                                        value: mesin,
-                                        child: Text(mesin),
+                              child: FutureBuilder<List<Map<String, dynamic>>>(
+                                future: widget.karyawanController.getAllAssets(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                    return Container(
+                                      padding: EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey.shade300),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                    )
-                                    .toList(),
-                                onChanged: (value) {
-                                  if (value == null) return;
-                                  setStateDialog(() => selectedMesin = value);
+                                      child: Center(child: CircularProgressIndicator()),
+                                    );
+                                  }
+                                  
+                                  final assets = snapshot.data ?? [];
+                                  if (assets.isEmpty) {
+                                    return Container(
+                                      padding: EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey.shade300),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text('Tidak ada mesin tersedia'),
+                                    );
+                                  }
+
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey.shade300),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: ExpansionTile(
+                                      title: Text(
+                                        selectedAssetIds.isEmpty
+                                            ? "Pilih Mesin yang Dikerjakan"
+                                            : "${selectedAssetIds.length} mesin dipilih",
+                                        style: TextStyle(
+                                          color: selectedAssetIds.isEmpty
+                                              ? Colors.grey[600]
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                      leading: Icon(
+                                        Icons.precision_manufacturing_outlined,
+                                        color: Color(0xFF0A9C5D),
+                                      ),
+                                      children: [
+                                        Container(
+                                          constraints: BoxConstraints(maxHeight: 200),
+                                          child: SingleChildScrollView(
+                                            child: Column(
+                                              children: assets.map((asset) {
+                                                final assetId = asset['id']?.toString() ?? '';
+                                                final assetName = asset['nama_assets'] as String? ?? 'Unknown';
+                                                final isSelected = selectedAssetIds.contains(assetId);
+                                                
+                                                return CheckboxListTile(
+                                                  title: Text(assetName),
+                                                  value: isSelected,
+                                                  onChanged: (value) {
+                                                    setStateDialog(() {
+                                                      if (value == true) {
+                                                        if (!selectedAssetIds.contains(assetId)) {
+                                                          selectedAssetIds.add(assetId);
+                                                        }
+                                                      } else {
+                                                        selectedAssetIds.remove(assetId);
+                                                      }
+                                                    });
+                                                  },
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
                                 },
                               ),
                             ),
@@ -845,7 +941,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                 controller: passwordController,
                                 label: "Password",
                                 icon: Icons.lock_outline,
-                                obscureText: true,
+                                obscureText: false, // Password bisa ditampilkan
                                 validator: (value) {
                                   if (value == null || value.trim().isEmpty) {
                                     return "Password wajib diisi";
@@ -857,6 +953,8 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                 },
                               ),
                             ),
+                            // Department dan Jabatan otomatis diisi: Maintenance & Teknisi
+                            // (tidak ditampilkan di UI untuk admin maintenance)
                           ],
                         ),
 
@@ -871,29 +969,56 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                             ),
                             const SizedBox(width: 12),
                             ElevatedButton.icon(
-                              onPressed: () {
+                              onPressed: () async {
                                 if (!(formKey.currentState?.validate() ??
                                     false)) {
                                   return;
                                 }
-                                setState(() {
-                                  _karyawan.add({
-                                    "nama": namaController.text.trim(),
-                                    "mesin": selectedMesin,
-                                    "telp": telpController.text.trim(),
-                                    "email": emailController.text.trim(),
-                                    "password":
-                                        passwordController.text.trim(),
-                                  });
-                                });
-                                Navigator.of(dialogContext).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      "Karyawan ${namaController.text.trim()} ditambahkan",
+                                
+                                if (selectedAssetIds.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Pilih minimal 1 mesin'),
+                                      backgroundColor: Colors.orange,
                                     ),
-                                  ),
-                                );
+                                  );
+                                  return;
+                                }
+
+                                try {
+                                  // Auto-fill department dan jabatan untuk admin maintenance
+                                  await widget.karyawanController.createKaryawan(
+                                    nama: namaController.text.trim(),
+                                    email: emailController.text.trim(),
+                                    password: passwordController.text.trim(),
+                                    telp: telpController.text.trim(),
+                                    assetIds: selectedAssetIds,
+                                    department: 'Maintenance', // Otomatis Maintenance
+                                    jabatan: 'Teknisi', // Otomatis Teknisi
+                                  );
+                                  
+                                  if (mounted) {
+                                    Navigator.of(dialogContext).pop();
+                                    await _loadData();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "Teknisi ${namaController.text.trim()} berhasil ditambahkan ke Department Maintenance",
+                                        ),
+                                        backgroundColor: Color(0xFF0A9C5D),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Gagal menambahkan: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0A9C5D),
@@ -908,6 +1033,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                     ),
                   ),
                 ),
+              ),
               );
             },
           ),
@@ -921,8 +1047,20 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
   }
 
   // Modal Edit Karyawan
-  void _showEditKaryawanModal(BuildContext context, int index) {
+  void _showEditKaryawanModal(BuildContext context, int index) async {
     final item = _karyawan[index];
+    final karyawanId = item["id"] ?? '';
+
+    // Load karyawan data dengan assets
+    List<String> selectedAssetIds = [];
+    try {
+      final karyawanData = await widget.karyawanController.getKaryawanWithAssets(karyawanId);
+      if (karyawanData != null) {
+        selectedAssetIds = widget.karyawanController.getAssetIds(karyawanData);
+      }
+    } catch (e) {
+      print('Error loading karyawan data: $e');
+    }
 
     final formKey = GlobalKey<FormState>();
     final TextEditingController namaController =
@@ -932,23 +1070,16 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     final TextEditingController emailController =
         TextEditingController(text: item["email"]);
     final TextEditingController passwordController =
-        TextEditingController(text: item["password"]);
+        TextEditingController(); // Password kosong untuk edit (opsional)
 
-    final controllers = [
+    final List<TextEditingController> controllers = [
       namaController,
       telpController,
       emailController,
       passwordController,
     ];
 
-    final List<String> mesinOptions = [
-      "Creeper 1",
-      "Creeper 2",
-      "Mixing Machine",
-      "Generator Set",
-      "Excavator",
-    ];
-    String selectedMesin = item["mesin"] ?? mesinOptions.first;
+    String selectedJabatan = item["jabatan"] ?? 'Teknisi';
 
     showDialog(
       context: context,
@@ -963,46 +1094,47 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
           child: StatefulBuilder(
             builder: (childContext, setStateDialog) {
               final double fieldWidth = _dialogFieldWidth(childContext);
-              return ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 26,
-                  ),
-                  child: Form(
-                    key: formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0A9C5D).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(14),
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 560),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 26,
+                    ),
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0A9C5D).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(
+                                  Icons.edit,
+                                  color: Color(0xFF0A9C5D),
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.edit,
-                                color: Color(0xFF0A9C5D),
+                              const SizedBox(width: 16),
+                              const Text(
+                                "Edit Karyawan",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF022415),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            const Text(
-                              "Edit Karyawan",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF022415),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
 
-                        Wrap(
+                          Wrap(
                           spacing: 16,
                           runSpacing: 18,
                           children: [
@@ -1016,33 +1148,90 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                   if (value == null || value.trim().isEmpty) {
                                     return "Nama wajib diisi";
                                   }
-                                  if (value.trim().split(' ').length < 2) {
-                                    return "Masukkan nama lengkap";
-                                  }
                                   return null;
                                 },
                               ),
                             ),
                             SizedBox(
                               width: fieldWidth,
-                              child: DropdownButtonFormField<String>(
-                                value: selectedMesin,
-                                decoration: _modalInputDecoration(
-                                  label: "Mesin yang Dikerjakan",
-                                  icon:
-                                      Icons.precision_manufacturing_outlined,
-                                ),
-                                items: mesinOptions
-                                    .map(
-                                      (mesin) => DropdownMenuItem<String>(
-                                        value: mesin,
-                                        child: Text(mesin),
+                              child: FutureBuilder<List<Map<String, dynamic>>>(
+                                future: widget.karyawanController.getAllAssets(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                    return Container(
+                                      padding: EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey.shade300),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                    )
-                                    .toList(),
-                                onChanged: (value) {
-                                  if (value == null) return;
-                                  setStateDialog(() => selectedMesin = value);
+                                      child: Center(child: CircularProgressIndicator()),
+                                    );
+                                  }
+                                  
+                                  final assets = snapshot.data ?? [];
+                                  if (assets.isEmpty) {
+                                    return Container(
+                                      padding: EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey.shade300),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text('Tidak ada mesin tersedia'),
+                                    );
+                                  }
+
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey.shade300),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: ExpansionTile(
+                                      title: Text(
+                                        selectedAssetIds.isEmpty
+                                            ? "Pilih Mesin yang Dikerjakan"
+                                            : "${selectedAssetIds.length} mesin dipilih",
+                                        style: TextStyle(
+                                          color: selectedAssetIds.isEmpty
+                                              ? Colors.grey[600]
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                      leading: Icon(
+                                        Icons.precision_manufacturing_outlined,
+                                        color: Color(0xFF0A9C5D),
+                                      ),
+                                      children: [
+                                        Container(
+                                          constraints: BoxConstraints(maxHeight: 200),
+                                          child: SingleChildScrollView(
+                                            child: Column(
+                                              children: assets.map((asset) {
+                                                final assetId = asset['id']?.toString() ?? '';
+                                                final assetName = asset['nama_assets'] as String? ?? 'Unknown';
+                                                final isSelected = selectedAssetIds.contains(assetId);
+                                                
+                                                return CheckboxListTile(
+                                                  title: Text(assetName),
+                                                  value: isSelected,
+                                                  onChanged: (value) {
+                                                    setStateDialog(() {
+                                                      if (value == true) {
+                                                        if (!selectedAssetIds.contains(assetId)) {
+                                                          selectedAssetIds.add(assetId);
+                                                        }
+                                                      } else {
+                                                        selectedAssetIds.remove(assetId);
+                                                      }
+                                                    });
+                                                  },
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
                                 },
                               ),
                             ),
@@ -1078,17 +1267,29 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                               width: fieldWidth,
                               child: _modalTextField(
                                 controller: passwordController,
-                                label: "Password",
+                                label: "Password (kosongkan jika tidak diubah)",
                                 icon: Icons.lock_outline,
-                                obscureText: true,
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return "Password wajib diisi";
+                                obscureText: false, // Password bisa ditampilkan
+                              ),
+                            ),
+                            SizedBox(
+                              width: fieldWidth,
+                              child: DropdownButtonFormField<String>(
+                                value: selectedJabatan,
+                                decoration: _modalInputDecoration(
+                                  label: "Jabatan",
+                                  icon: Icons.badge,
+                                ),
+                                items: ['Teknisi', 'Kasie', 'Admin Staff'].map((jab) => 
+                                  DropdownMenuItem<String>(
+                                    value: jab,
+                                    child: Text(jab),
+                                  ),
+                                ).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setStateDialog(() => selectedJabatan = value);
                                   }
-                                  if (value.length < 6) {
-                                    return "Minimal 6 karakter";
-                                  }
-                                  return null;
                                 },
                               ),
                             ),
@@ -1106,32 +1307,56 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                             ),
                             const SizedBox(width: 12),
                             ElevatedButton.icon(
-                              onPressed: () {
+                              onPressed: () async {
                                 if (!(formKey.currentState?.validate() ??
                                     false)) {
                                   return;
                                 }
 
-                                setState(() {
-                                  _karyawan[index] = {
-                                    "nama": namaController.text.trim(),
-                                    "mesin": selectedMesin,
-                                    "telp": telpController.text.trim(),
-                                    "email": emailController.text.trim(),
-                                    "password":
-                                        passwordController.text.trim(),
-                                  };
-                                });
-
-                                Navigator.of(dialogContext).pop();
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Data karyawan berhasil diperbarui",
+                                if (selectedAssetIds.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Pilih minimal 1 mesin'),
+                                      backgroundColor: Colors.orange,
                                     ),
-                                  ),
-                                );
+                                  );
+                                  return;
+                                }
+
+                                try {
+                                  await widget.karyawanController.updateKaryawan(
+                                    id: karyawanId,
+                                    nama: namaController.text.trim(),
+                                    email: emailController.text.trim(),
+                                    password: passwordController.text.trim().isNotEmpty
+                                        ? passwordController.text.trim()
+                                        : null,
+                                    telp: telpController.text.trim(),
+                                    assetIds: selectedAssetIds,
+                                    department: 'Maintenance', // Otomatis Maintenance
+                                    jabatan: selectedJabatan,
+                                  );
+                                  
+                                  if (mounted) {
+                                    Navigator.of(dialogContext).pop();
+                                    await _loadData();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Karyawan berhasil diupdate'),
+                                        backgroundColor: Color(0xFF0A9C5D),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Gagal mengupdate: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0A9C5D),
@@ -1146,6 +1371,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                     ),
                   ),
                 ),
+              ),
               );
             },
           ),
@@ -1322,18 +1548,62 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
           _iconButton(
             icon: Icons.delete,
             color: const Color(0xFFF44336),
-            onPressed: () {
-              setState(() {
-                final nama = item["nama"];
-                if (nama != null && nama.isNotEmpty) {
-                  widget.karyawanController.deleteKaryawan(nama);
-                }
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("Hapus: ${item["nama"]}"),
+            onPressed: () async {
+              final id = item["id"];
+              final nama = item["nama"];
+              
+              if (id == null || id.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('ID karyawan tidak ditemukan'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              // Konfirmasi delete
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('Hapus Karyawan'),
+                  content: Text('Yakin ingin menghapus $nama?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text('Batal'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: Text('Hapus', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
                 ),
               );
+
+              if (confirmed == true) {
+                try {
+                  await widget.karyawanController.deleteKaryawan(id);
+                  await _loadData();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("Karyawan $nama berhasil dihapus"),
+                        backgroundColor: Color(0xFF0A9C5D),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Gagal menghapus: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              }
             },
           ),
         ],
