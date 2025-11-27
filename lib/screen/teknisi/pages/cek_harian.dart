@@ -11,10 +11,45 @@ class _CekHarianPageState extends State<CekHarianPage> {
   // Static data for demonstration
   final Color _primaryColor = const Color(0xFF0A9E5E);
 
-  // Form state (mocking static initial values)
-  String _oliLevel = 'ok';
-  String _vbeltCondition = 'bermasalah';
-  String _hidrolikPressure = 'ok';
+  // Static data matching schema
+  final Map<String, dynamic> _scheduleData = {
+    'id': 'uuid-123',
+    'tgl_jadwal': '2023-10-24',
+    'tgl_selesai': null,
+    'catatan': '',
+    'machine_name': 'Mesin Press A', // Joined from assets
+    'machine_code': 'MP-001', // Joined from assets
+  };
+
+  // Mocking checklist items based on cek_sheet_template
+  final List<Map<String, dynamic>> _checklistItems = [
+    {
+      'id': 'item-1',
+      'jenis_pekerjaan': 'Pengecekan Level Oli',
+      'std_prwtn': 'Pastikan level oli berada di antara batas min-max.',
+      'status': 'ok', // Local state to be saved
+      'notes': null,
+      'photo': null,
+    },
+    {
+      'id': 'item-2',
+      'jenis_pekerjaan': 'Kondisi V-Belt',
+      'std_prwtn': 'Periksa adanya retakan atau keausan pada V-Belt.',
+      'status': 'bermasalah',
+      'notes': 'V-Belt terlihat retak, perlu penggantian segera.',
+      'photo':
+          'https://lh3.googleusercontent.com/aida-public/AB6AXuDKaLva8VnOJDAQ0MFPhVYl8o00UmvAGxF2qHRazNeB7m12jRWZpzrEE2QyHX8MvWHasIbZfd6fBq-Mw1cuhHq3IYVxAifemzGpa_ccUlFtXo4c5B74-MC7s7ruGbtOCVCkGETUg5xCroD-zxIzrIGvh4FXEM6rW4w2ig1NV5-XDxqPYM-s-abC--F5vEXLt-EiX4A4M85gMH_hKYeCDxiIDMg73heZg2nK78uVP5l9W1Y-qOo4JgT3Ye3dVXD826RGcDXG3WZLy7lV',
+    },
+    {
+      'id': 'item-3',
+      'jenis_pekerjaan': 'Tekanan Hidrolik',
+      'std_prwtn': 'Pastikan tekanan hidrolik sesuai standar operasi.',
+      'status': 'ok',
+      'notes': null,
+      'photo': null,
+    },
+  ];
+
   final TextEditingController _notesController = TextEditingController();
 
   @override
@@ -34,9 +69,9 @@ class _CekHarianPageState extends State<CekHarianPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Checklist Harian Mesin Press A',
-          style: TextStyle(
+        title: Text(
+          'Checklist Harian ${_scheduleData['machine_name']}',
+          style: const TextStyle(
             color: Colors.black87,
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -76,11 +111,11 @@ class _CekHarianPageState extends State<CekHarianPage> {
         ),
         child: Column(
           children: [
-            _buildInfoRow('Nama Mesin', 'Mesin Press A'),
+            _buildInfoRow('Nama Mesin', _scheduleData['machine_name']),
             const SizedBox(height: 12),
-            _buildInfoRow('Kode Mesin', 'MP-001'),
+            _buildInfoRow('Kode Mesin', _scheduleData['machine_code']),
             const SizedBox(height: 12),
-            _buildInfoRow('Tanggal', '24 Oktober 2023'),
+            _buildInfoRow('Tanggal', _scheduleData['tgl_jadwal']),
           ],
         ),
       ),
@@ -127,28 +162,21 @@ class _CekHarianPageState extends State<CekHarianPage> {
             ),
           ),
         ),
-        _buildChecklistItem(
-          title: 'Pengecekan Level Oli',
-          description: 'Pastikan level oli berada di antara batas min-max.',
-          groupValue: _oliLevel,
-          onChanged: (val) => setState(() => _oliLevel = val!),
-        ),
-        _buildChecklistItem(
-          title: 'Kondisi V-Belt',
-          description: 'Periksa adanya retakan atau keausan pada V-Belt.',
-          groupValue: _vbeltCondition,
-          onChanged: (val) => setState(() => _vbeltCondition = val!),
-          hasIssue: true, // Example of issue state
-          issueNote: 'V-Belt terlihat retak, perlu penggantian segera.',
-          issueImageUrl:
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuDKaLva8VnOJDAQ0MFPhVYl8o00UmvAGxF2qHRazNeB7m12jRWZpzrEE2QyHX8MvWHasIbZfd6fBq-Mw1cuhHq3IYVxAifemzGpa_ccUlFtXo4c5B74-MC7s7ruGbtOCVCkGETUg5xCroD-zxIzrIGvh4FXEM6rW4w2ig1NV5-XDxqPYM-s-abC--F5vEXLt-EiX4A4M85gMH_hKYeCDxiIDMg73heZg2nK78uVP5l9W1Y-qOo4JgT3Ye3dVXD826RGcDXG3WZLy7lV',
-        ),
-        _buildChecklistItem(
-          title: 'Tekanan Hidrolik',
-          description: 'Pastikan tekanan hidrolik sesuai standar operasi.',
-          groupValue: _hidrolikPressure,
-          onChanged: (val) => setState(() => _hidrolikPressure = val!),
-        ),
+        ..._checklistItems.map((item) {
+          return _buildChecklistItem(
+            title: item['jenis_pekerjaan'],
+            description: item['std_prwtn'],
+            groupValue: item['status'],
+            onChanged: (val) {
+              setState(() {
+                item['status'] = val;
+              });
+            },
+            hasIssue: item['status'] == 'bermasalah',
+            issueNote: item['notes'],
+            issueImageUrl: item['photo'],
+          );
+        }),
       ],
     );
   }

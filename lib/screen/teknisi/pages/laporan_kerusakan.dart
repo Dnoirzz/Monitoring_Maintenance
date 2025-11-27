@@ -12,14 +12,15 @@ class _LaporanKerusakanPageState extends State<LaporanKerusakanPage> {
   final Color _backgroundLight = const Color(0xFFF6F8F7);
 
   // Form State
-  String? _selectedMachine;
+  String? _selectedAssetId; // Changed from _selectedMachine
   String _priority = 'Sedang';
   final TextEditingController _descriptionController = TextEditingController();
 
-  final List<Map<String, String>> _machines = [
-    {'value': 'mesin-a', 'label': 'Mesin Press A'},
-    {'value': 'mesin-b', 'label': 'Mesin Mixing B'},
-    {'value': 'mesin-c', 'label': 'Mesin Cutting C'},
+  // Mock data for assets (dropdown) - matching assets table
+  final List<Map<String, dynamic>> _assets = [
+    {'id': 'uuid-1', 'nama_assets': 'Mesin Press A', 'kode_assets': 'MP-001'},
+    {'id': 'uuid-2', 'nama_assets': 'Mesin Mixing B', 'kode_assets': 'MP-002'},
+    {'id': 'uuid-3', 'nama_assets': 'Mesin Cutting C', 'kode_assets': 'CV-001'},
   ];
 
   @override
@@ -93,7 +94,7 @@ class _LaporanKerusakanPageState extends State<LaporanKerusakanPage> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _selectedMachine,
+          value: _selectedAssetId,
           decoration: InputDecoration(
             hintText: 'Pilih mesin yang rusak',
             filled: true,
@@ -116,15 +117,15 @@ class _LaporanKerusakanPageState extends State<LaporanKerusakanPage> {
             ),
           ),
           items:
-              _machines.map((machine) {
+              _assets.map((asset) {
                 return DropdownMenuItem<String>(
-                  value: machine['value'],
-                  child: Text(machine['label']!),
+                  value: asset['id'],
+                  child: Text(asset['nama_assets']!),
                 );
               }).toList(),
           onChanged: (value) {
             setState(() {
-              _selectedMachine = value;
+              _selectedAssetId = value;
             });
           },
         ),
