@@ -222,59 +222,16 @@ class KaryawanRepository {
   }
 
   /// Hitung total karyawan yang memiliki akses ke aplikasi sistem maintenance (MT)
-  /// Hanya menghitung karyawan yang aktif (is_active = true)
+  /// Hanya menghitung karyawan dengan department = 'Maintenance' agar konsisten dengan daftar karyawan
   Future<int> getTotalMaintenanceUsers() async {
     try {
-      // Ambil ID aplikasi MT terlebih dahulu
-      final aplikasiResponse = await _client
-          .from('aplikasi')
-          .select('id')
-          .eq('kode_aplikasi', 'MT')
-          .maybeSingle();
-
-      if (aplikasiResponse == null) {
-        // Jika aplikasi MT tidak ditemukan, return 0
-        return 0;
-      }
-
-      final aplikasiMtId = aplikasiResponse['id'] as String;
-
-      // Query semua karyawan yang aktif dengan akses aplikasi mereka
+      // Hitung karyawan dengan department = 'Maintenance' (konsisten dengan getAllKaryawan)
       final karyawanList = await _client
           .from('karyawan')
-          .select('''
-            id,
-            is_active,
-            karyawan_aplikasi(
-              aplikasi_id,
-              aplikasi:aplikasi_id(
-                kode_aplikasi
-              )
-            )
-          ''')
-          .eq('is_active', true);
+          .select('id')
+          .eq('department', 'Maintenance');
 
-      // Filter dan hitung yang punya akses ke aplikasi MT
-      int count = 0;
-      for (var karyawan in karyawanList) {
-        final isActive = karyawan['is_active'] as bool? ?? false;
-        if (!isActive) continue;
-
-        final karyawanAplikasi = karyawan['karyawan_aplikasi'] as List<dynamic>? ?? [];
-        final hasMTAccess = karyawanAplikasi.any((ka) {
-          final aplikasi = ka['aplikasi'] as Map<String, dynamic>?;
-          final kodeAplikasi = aplikasi?['kode_aplikasi'] as String?;
-          final aplikasiId = ka['aplikasi_id'] as String?;
-          // Cek apakah aplikasi_id sama dengan MT atau kode_aplikasi adalah MT
-          return aplikasiId == aplikasiMtId || kodeAplikasi == 'MT';
-        });
-
-        if (hasMTAccess) {
-          count++;
-        }
-      }
-
-      return count;
+      return karyawanList.length;
     } catch (e) {
       throw Exception('Gagal menghitung total karyawan maintenance: $e');
     }
