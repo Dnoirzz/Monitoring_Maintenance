@@ -1122,6 +1122,13 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
           child: StatefulBuilder(
             builder: (childContext, setStateDialog) {
               final double fieldWidth = _dialogFieldWidth(childContext);
+              
+              // Ensure selectedJabatan is in the list to prevent crash
+              final List<String> jabatanOptions = List.from(_jabatanList);
+              if (!jabatanOptions.contains(selectedJabatan)) {
+                jabatanOptions.add(selectedJabatan);
+              }
+
               return SingleChildScrollView(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 560),
@@ -1308,7 +1315,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                   label: "Jabatan",
                                   icon: Icons.badge,
                                 ),
-                                items: ['Teknisi', 'Kasie', 'Admin Staff'].map((jab) => 
+                                items: jabatanOptions.map((jab) => 
                                   DropdownMenuItem<String>(
                                     value: jab,
                                     child: Text(jab),
