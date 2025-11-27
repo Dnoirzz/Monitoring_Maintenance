@@ -180,4 +180,65 @@ class MaintenanceScheduleRepository {
       throw Exception('Failed to delete schedule: $e');
     }
   }
+
+  /// Batch delete schedules by IDs using IN operator (optimized)
+  /// Lebih cepat daripada loop delete one-by-one
+  Future<void> batchDeleteSchedulesByIds(List<String> ids) async {
+    if (ids.isEmpty) return;
+    
+    try {
+      await _client
+          .from('mt_schedule')
+          .delete()
+          .inFilter('id', ids);
+    } catch (e) {
+      throw Exception('Failed to batch delete schedules: $e');
+    }
+  }
+
+  /// Get template IDs from a list of schedule IDs
+  Future<List<String>> getTemplateIdsByScheduleIds(List<String> scheduleIds) async {
+    if (scheduleIds.isEmpty) return [];
+    
+    try {
+      final response = await _client
+          .from('mt_schedule')
+          .select('template_id')
+          .inFilter('id', scheduleIds);
+
+      return (response as List)
+          .map((json) => json['template_id'] as String?)
+          .whereType<String>()
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to get template IDs: $e');
+    }
+  }
+
+  /// Check apakah template punya schedule lain (untuk cek apakah boleh di-delete)
+  Future<int> getScheduleCountByTemplateId(String templateId) async {
+    try {
+      final response = await _client
+          .from('mt_schedule')
+          .select('id')
+          .eq('template_id', templateId)
+          .count();
+
+      return response.count;
+    } catch (e) {
+      throw Exception('Failed to get schedule count: $e');
+    }
+  }
+
+  /// Delete template jika tidak ada schedule lain yang referensi
+  Future<void> deleteTemplateIfNoSchedules(String templateId) async {
+    try {
+      final count = await getScheduleCountByTemplateId(templateId);
+      if (count == 0) {
+        await deleteTemplate(templateId);
+      }
+    } catch (e) {
+      throw Exception('Failed to delete template if no schedules: $e');
+    }
+  }
 }

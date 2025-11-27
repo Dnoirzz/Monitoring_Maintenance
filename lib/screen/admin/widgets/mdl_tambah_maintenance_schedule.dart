@@ -23,6 +23,12 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
     final catatanController = TextEditingController();
     final intervalController = TextEditingController();
 
+    // Set default tanggal ke Januari dengan tanggal hari ini
+    final today = DateTime.now();
+    final defaultDate = DateTime(selectedYear, 1, today.day);
+    selectedTglJadwal = defaultDate;
+    startDate = defaultDate;
+
     List<Map<String, dynamic>> assetsList = [];
     List<Map<String, dynamic>> bgMesinList = [];
     bool isLoadingData = true;
@@ -224,7 +230,7 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                                       SizedBox(width: 12),
                                                       Expanded(
                                                         child: Text(
-                                                          'Asset ini belum memiliki bagian mesin. Silakan tambahkan bagian mesin terlebih dahulu.',
+                                                          'Asset ini tidak memiliki bagian mesin. Silakan tambahkan bagian mesin di master data terlebih dahulu.',
                                                           style: TextStyle(color: Colors.orange.shade700),
                                                         ),
                                                       ),
@@ -237,9 +243,18 @@ import '../../../controller/maintenance_schedule_page_controller.dart';
                                                   icon: Icons.precision_manufacturing,
                                                   value: selectedBgMesinId,
                                                   items: bgMesinList.map<DropdownMenuItem<String>>((bgMesin) {
+                                                    final isUsed = bgMesin['isUsed'] as bool? ?? false;
                                                     return DropdownMenuItem<String>(
                                                       value: bgMesin['id'] as String?,
-                                                      child: Text(bgMesin['nama'] as String? ?? ''),
+                                                      enabled: !isUsed, // Disable jika sudah ada template
+                                                      child: Text(
+                                                        isUsed
+                                                            ? '${bgMesin['nama'] as String? ?? ''} (Sudah ada schedule)'
+                                                            : bgMesin['nama'] as String? ?? '',
+                                                        style: TextStyle(
+                                                          color: isUsed ? Colors.grey : Colors.black,
+                                                        ),
+                                                      ),
                                                     );
                                                   }).toList(),
                                                   onChanged: (value) {

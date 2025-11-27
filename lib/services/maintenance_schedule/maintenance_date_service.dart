@@ -69,13 +69,15 @@ class MaintenanceDateService {
   }
 
   /// Set/Edit tanggal actual (tglSelesai)
+  /// Memungkinkan tanggal actual sebelum tanggal plan (kasus lapangan selesai sebelum jadwal)
   Future<void> pickAndSetActualDate({
     required MtSchedule schedule,
     required int selectedYear,
     required VoidCallback onSuccess,
   }) async {
     final initialDate = schedule.tglSelesai ?? schedule.tglJadwal ?? DateTime.now();
-    final firstDate = schedule.tglJadwal ?? DateTime.now();
+    // Allow picking date before plan date - allow any date in selected year and next year
+    final firstDate = DateTime(selectedYear, 1, 1);
     final lastDate = DateTime(selectedYear + 1, 12, 31);
 
     final pickedDate = await showDatePicker(
@@ -96,18 +98,6 @@ class MaintenanceDateService {
     );
 
     if (pickedDate == null) return;
-
-    if (pickedDate.isBefore(schedule.tglJadwal ?? DateTime.now())) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tanggal actual tidak boleh sebelum jadwal'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-      return;
-    }
 
     try {
       if (schedule.id == null) throw Exception('ID schedule tidak ditemukan');
