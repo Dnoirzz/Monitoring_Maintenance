@@ -18,17 +18,18 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-// Helper: Generate JWT Token
-const generateToken = (userId, email) => {
+// Helper: Generate JWT Token for 2-step auth
+const generateToken = (payload) => {
   return jwt.sign(
-    { userId, email },
+    payload,
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
 };
 
 // ============================================
-// ENDPOINT: POST /api/auth/login
+// ENDPOINT: POST /api/auth/login (Step 1)
+// Returns available apps without token
 // ============================================
 app.post('/api/auth/login', async (req, res) => {
   try {
@@ -37,6 +38,7 @@ app.post('/api/auth/login', async (req, res) => {
     // Validasi input
     if (!email || !password) {
       return res.status(400).json({
+        success: false,
         message: 'Email dan password harus diisi'
       });
     }
@@ -46,25 +48,23 @@ app.post('/api/auth/login', async (req, res) => {
     // 1. Cari user berdasarkan email di tabel karyawan
     const { data: karyawan, error: karyawanError } = await supabase
       .from('karyawan')
-      .select('id, email, password_hash, full_name, is_active')
+      .select('id, email, password_hash, full_name, is_active, profile_picture')
       .eq('email', email)
-      .maybeSingle(); // Gunakan maybeSingle agar tidak error jika tidak ketemu
+      .maybeSingle();
 
     if (karyawanError) {
       console.error('❌ Supabase Error:', karyawanError);
       return res.status(500).json({
+        success: false,
         message: 'Database error',
         details: karyawanError.message
       });
     }
 
     if (!karyawan) {
-      console.log('❌ User tidak ditemukan (Result kosong)');
-      // Debug: Coba list semua user untuk memastikan koneksi benar
-      const { data: allUsers } = await supabase.from('karyawan').select('email').limit(5);
-      console.log('📋 Users in DB (first 5):', allUsers ? allUsers.map(u => u.email) : 'None');
-      
+      console.log('❌ User tidak ditemukan');
       return res.status(401).json({
+        success: false,
         message: 'Email atau password salah'
       });
     }
@@ -72,8 +72,9 @@ app.post('/api/auth/login', async (req, res) => {
     // Cek apakah user aktif
     if (!karyawan.is_active) {
       console.log('❌ User tidak aktif');
-      return res.status(401).json({
-        message: 'Akun Anda tidak aktif. Hubungi administrator.'
+      return res.status(403).json({
+        success: false,
+        message: 'Akun tidak aktif. Hubungi administrator.'
       });
     }
 
@@ -83,18 +84,22 @@ app.post('/api/auth/login', async (req, res) => {
     if (!isPasswordValid) {
       console.log('❌ Password salah');
       return res.status(401).json({
+        success: false,
         message: 'Email atau password salah'
       });
     }
 
     console.log('✅ Password valid');
 
-    // 3. Ambil daftar aplikasi yang bisa diakses user (tiket)
+    // 3. Ambil daftar aplikasi yang bisa diakses user dengan detail lengkap
     const { data: karyawanAplikasi, error: aplikasiError } = await supabase
       .from('karyawan_aplikasi')
       .select(`
+        id,
         role,
         aplikasi:aplikasi_id (
+          id,
+          nama_aplikasi,
           kode_aplikasi
         )
       `)
@@ -103,41 +108,214 @@ app.post('/api/auth/login', async (req, res) => {
     if (aplikasiError) {
       console.error('❌ Error fetching aplikasi:', aplikasiError);
       return res.status(500).json({
+        success: false,
         message: 'Terjadi kesalahan saat mengambil data akses aplikasi'
       });
     }
 
-    // 4. Format available_apps
+    // 4. Format available_apps dengan detail lengkap
     const availableApps = (karyawanAplikasi || []).map(ka => ({
+      karyawan_aplikasi_id: ka.id,
+      aplikasi_id: ka.aplikasi.id,
+      nama_aplikasi: ka.aplikasi.nama_aplikasi,
       kode_aplikasi: ka.aplikasi.kode_aplikasi,
       role: ka.role
     }));
 
     console.log('📋 Available apps:', availableApps);
 
-    // 5. Generate JWT token
-    const token = generateToken(karyawan.id, karyawan.email);
-
-    // 6. Return response
+    // 5. Return response tanpa token (token di-generate di select-app)
     const response = {
-      user: {
-        id: karyawan.id,
-        email: karyawan.email,
-        full_name: karyawan.full_name || email.split('@')[0]
-      },
-      token: token,
+      success: true,
+      karyawan_id: karyawan.id,
+      email: karyawan.email,
+      full_name: karyawan.full_name || email.split('@')[0],
       available_apps: availableApps
     };
 
-    console.log('✅ Login berhasil untuk:', email);
+    console.log('✅ Login Step 1 berhasil untuk:', email);
     
     return res.status(200).json(response);
 
   } catch (error) {
     console.error('❌ Error di /api/auth/login:', error);
     return res.status(500).json({
+      success: false,
       message: 'Terjadi kesalahan server',
       error: error.message
+    });
+  }
+});
+
+// ============================================
+// ENDPOINT: POST /api/auth/select-app (Step 2)
+// Generate JWT token after selecting app
+// ============================================
+app.post('/api/auth/select-app', async (req, res) => {
+  try {
+    const { karyawan_id, aplikasi_id } = req.body;
+
+    // Validasi input
+    if (!karyawan_id || !aplikasi_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'karyawan_id dan aplikasi_id harus diisi'
+      });
+    }
+
+    console.log(`🔐 Select app attempt - karyawan: ${karyawan_id}, app: ${aplikasi_id}`);
+
+    // 1. Verify karyawan exists and is active
+    const { data: karyawan, error: karyawanError } = await supabase
+      .from('karyawan')
+      .select('id, email, full_name, profile_picture, is_active')
+      .eq('id', karyawan_id)
+      .maybeSingle();
+
+    if (karyawanError || !karyawan) {
+      return res.status(400).json({
+        success: false,
+        message: 'Karyawan tidak ditemukan'
+      });
+    }
+
+    if (!karyawan.is_active) {
+      return res.status(403).json({
+        success: false,
+        message: 'Akun tidak aktif'
+      });
+    }
+
+    // 2. Verify access to the selected app
+    const { data: karyawanAplikasi, error: accessError } = await supabase
+      .from('karyawan_aplikasi')
+      .select(`
+        id,
+        role,
+        aplikasi:aplikasi_id (
+          id,
+          nama_aplikasi,
+          kode_aplikasi
+        )
+      `)
+      .eq('karyawan_id', karyawan_id)
+      .eq('aplikasi_id', aplikasi_id)
+      .maybeSingle();
+
+    if (accessError) {
+      console.error('❌ Error verifying access:', accessError);
+      return res.status(500).json({
+        success: false,
+        message: 'Terjadi kesalahan saat verifikasi akses'
+      });
+    }
+
+    if (!karyawanAplikasi) {
+      console.log('❌ Tidak memiliki akses ke aplikasi');
+      return res.status(403).json({
+        success: false,
+        message: 'Tidak memiliki akses ke aplikasi ini'
+      });
+    }
+
+    // 3. Generate JWT token with app-specific claims
+    const tokenPayload = {
+      karyawan_id: karyawan.id,
+      karyawan_aplikasi_id: karyawanAplikasi.id,
+      email: karyawan.email,
+      role: karyawanAplikasi.role,
+      aplikasi_kode: karyawanAplikasi.aplikasi.kode_aplikasi
+    };
+
+    const token = generateToken(tokenPayload);
+
+    // 4. Return response with token and user info
+    const response = {
+      success: true,
+      token: token,
+      user: {
+        karyawan_id: karyawan.id,
+        email: karyawan.email,
+        full_name: karyawan.full_name,
+        role: karyawanAplikasi.role,
+        profile_picture: karyawan.profile_picture || null,
+        aplikasi: {
+          nama: karyawanAplikasi.aplikasi.nama_aplikasi,
+          kode: karyawanAplikasi.aplikasi.kode_aplikasi
+        }
+      }
+    };
+
+    console.log('✅ Select app berhasil - token generated');
+    
+    return res.status(200).json(response);
+
+  } catch (error) {
+    console.error('❌ Error di /api/auth/select-app:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server',
+      error: error.message
+    });
+  }
+});
+
+// ============================================
+// ENDPOINT: GET /api/auth/me (Protected)
+// Get current user profile from token
+// ============================================
+app.get('/api/auth/me', verifyToken, async (req, res) => {
+  try {
+    const { karyawan_id, karyawan_aplikasi_id, role, aplikasi_kode } = req.user;
+
+    // Get karyawan data
+    const { data: karyawan, error: karyawanError } = await supabase
+      .from('karyawan')
+      .select('id, email, full_name, profile_picture')
+      .eq('id', karyawan_id)
+      .maybeSingle();
+
+    if (karyawanError || !karyawan) {
+      return res.status(401).json({
+        success: false,
+        message: 'User tidak ditemukan'
+      });
+    }
+
+    // Get aplikasi name
+    const { data: karyawanAplikasi, error: appError } = await supabase
+      .from('karyawan_aplikasi')
+      .select(`
+        aplikasi:aplikasi_id (
+          nama_aplikasi,
+          kode_aplikasi
+        )
+      `)
+      .eq('id', karyawan_aplikasi_id)
+      .maybeSingle();
+
+    const response = {
+      success: true,
+      user: {
+        karyawan_id: karyawan.id,
+        email: karyawan.email,
+        full_name: karyawan.full_name,
+        role: role,
+        profile_picture: karyawan.profile_picture || null,
+        aplikasi: {
+          nama: karyawanAplikasi?.aplikasi?.nama_aplikasi || 'Unknown',
+          kode: aplikasi_kode
+        }
+      }
+    };
+
+    return res.status(200).json(response);
+
+  } catch (error) {
+    console.error('❌ Error di /api/auth/me:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server'
     });
   }
 });
@@ -146,10 +324,14 @@ app.post('/api/auth/login', async (req, res) => {
 // MIDDLEWARE: Verify JWT Token
 // ============================================
 const verifyToken = (req, res, next) => {
-  const token = req.headers['authorization']?.split(' ')[1]; // Bearer <token>
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.split(' ')[1]; // Bearer <token>
   
   if (!token) {
-    return res.status(401).json({ message: 'Token tidak ditemukan' });
+    return res.status(401).json({ 
+      success: false,
+      message: 'Token tidak ditemukan' 
+    });
   }
 
   try {
@@ -157,7 +339,16 @@ const verifyToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(403).json({ message: 'Token tidak valid' });
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Token sudah expired' 
+      });
+    }
+    return res.status(401).json({ 
+      success: false,
+      message: 'Token tidak valid' 
+    });
   }
 };
 
@@ -436,11 +627,13 @@ app.get('/api/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     message: 'Monitoring Maintenance Backend API',
-    version: '1.0.0',
+    version: '2.0.0',
     endpoints: {
       health: 'GET /api/health',
       auth: {
-        login: 'POST /api/auth/login'
+        login: 'POST /api/auth/login (Step 1)',
+        selectApp: 'POST /api/auth/select-app (Step 2)',
+        me: 'GET /api/auth/me (Protected)'
       },
       karyawan: {
         list: 'GET /api/karyawan',
@@ -478,8 +671,10 @@ app.listen(PORT, () => {
   console.log('='.repeat(50));
   console.log('');
   console.log('📌 API Endpoints:');
-  console.log('   Auth:');
-  console.log('   - POST /api/auth/login');
+  console.log('   Auth (2-Step):');
+  console.log('   - POST /api/auth/login (Step 1)');
+  console.log('   - POST /api/auth/select-app (Step 2)');
+  console.log('   - GET  /api/auth/me (Protected)');
   console.log('');
   console.log('   Karyawan:');
   console.log('   - GET    /api/karyawan');
