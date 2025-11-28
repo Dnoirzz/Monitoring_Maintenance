@@ -14,7 +14,6 @@ import 'package:monitoring_maintenance/controller/karyawan_controller.dart';
 import 'package:monitoring_maintenance/controller/dashboard_controller.dart';
 import 'package:monitoring_maintenance/providers/auth_provider.dart';
 import 'package:monitoring_maintenance/services/supabase_service.dart';
- 
 
 class AdminApp extends StatelessWidget {
   const AdminApp({super.key});
@@ -119,10 +118,7 @@ class _AdminTemplateState extends ConsumerState<AdminTemplate>
                 Navigator.of(context).pop();
                 await _performLogout();
               },
-              child: Text(
-                'Keluar',
-                style: TextStyle(color: Colors.red),
-              ),
+              child: Text('Keluar', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -176,49 +172,83 @@ class _AdminTemplateState extends ConsumerState<AdminTemplate>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // ========================== MAIN CONTENT ==========================
-          Column(
-            children: [
-              // ====================== HEADER ======================
-              HeaderWidget(
-                title: "Selamat Datang, Admin",
-                onMenuPressed: _toggleSidebar,
-              ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Show exit confirmation dialog
+        _showExitDialog();
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            // ========================== MAIN CONTENT ==========================
+            Column(
+              children: [
+                // ====================== HEADER ======================
+                HeaderWidget(
+                  title: "Selamat Datang, Admin",
+                  onMenuPressed: _toggleSidebar,
+                ),
 
-              // ====================== CONTENT ======================
-              Expanded(
-                child: Container(
-                  color: Colors.grey.shade50,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: getSelectedPage(),
+                // ====================== CONTENT ======================
+                Expanded(
+                  child: Container(
+                    color: Colors.grey.shade50,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: getSelectedPage(),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          // ========================== SIDEBAR ==========================
-          SidebarWidget(
-            isOpen: _adminController.isSidebarOpen,
-            animation: _animation,
-            selectedIndex: _adminController.selectedIndex,
-            selectedScheduleSubMenu: _adminController.selectedScheduleSubMenu,
-            isScheduleExpanded: _adminController.isScheduleExpanded,
-            onMenuSelected: _handleMenuSelected,
-            onToggleSchedule: () {
-              setState(() {
-                _adminController.toggleSchedule();
-              });
-            },
-            onSubMenuSelected: _handleSubMenuSelected,
-            onOverlayTap: _toggleSidebar,
-          ),
-        ],
+            // ========================== SIDEBAR ==========================
+            SidebarWidget(
+              isOpen: _adminController.isSidebarOpen,
+              animation: _animation,
+              selectedIndex: _adminController.selectedIndex,
+              selectedScheduleSubMenu: _adminController.selectedScheduleSubMenu,
+              isScheduleExpanded: _adminController.isScheduleExpanded,
+              onMenuSelected: _handleMenuSelected,
+              onToggleSchedule: () {
+                setState(() {
+                  _adminController.toggleSchedule();
+                });
+              },
+              onSubMenuSelected: _handleSubMenuSelected,
+              onOverlayTap: _toggleSidebar,
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _showExitDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Keluar Aplikasi'),
+          content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Exit app or go back
+                _showLogoutDialog();
+              },
+              child: const Text('Keluar', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
     );
   }
 

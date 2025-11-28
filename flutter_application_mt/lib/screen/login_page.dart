@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../model/available_app.dart';
-import 'admin/dashboard_admin.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -113,9 +112,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   void _navigateToDashboard() {
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const AdminTemplate()));
+    // Navigation handled by main.dart based on authState.isAuthenticated
+    // No manual navigation needed
   }
 
   void _showError(String message) {
