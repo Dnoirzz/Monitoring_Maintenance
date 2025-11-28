@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:monitoring_maintenance/providers/auth_provider.dart';
+import 'package:monitoring_maintenance/utils/name_helper.dart';
 
-class TeknisiDashboardPage extends StatefulWidget {
+class TeknisiDashboardPage extends ConsumerStatefulWidget {
   const TeknisiDashboardPage({Key? key}) : super(key: key);
 
   @override
-  State<TeknisiDashboardPage> createState() => _TeknisiDashboardPageState();
+  ConsumerState<TeknisiDashboardPage> createState() => _TeknisiDashboardPageState();
 }
 
-class _TeknisiDashboardPageState extends State<TeknisiDashboardPage>
+class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage>
     with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final userFullName = authState.userFullName;
     final Color primary = const Color(0xFF0A9C5D);
     final Color textLight = const Color(0xFF0D1C15);
     final Color textSubtle = const Color(0xFF4B9B78);
@@ -33,16 +38,15 @@ class _TeknisiDashboardPageState extends State<TeknisiDashboardPage>
                       children: [
                         Row(
                           children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                image: const DecorationImage(
-                                  image: NetworkImage(
-                                    'https://lh3.googleusercontent.com/aida-public/AB6AXuAaV1rK_LqaTAK6KQTZu-mxRvLO-6MWPsK5dLF4xOG1q48QYamUU3mGDBPIWBYiaIY5KExIKpz3cXSZ12nrVrFwDPOC3qJ0cULjh2NSoSUYqo99NSphnENy7HegDJBknBfKPu8GOmLtSUHuDuTRW2pkoYgP5RjFrJkbe3aSVSKKnp5AGDLXdRLazuO_B5nUNTkMzFhqxKNEt7g5dWpRxFx8LdQa_gW_UMIE03sy_NE1PH8vNwiX74ioua--C0fIGTzNIyC579pWW0qP',
-                                  ),
-                                  fit: BoxFit.cover,
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: primary,
+                              child: Text(
+                                NameHelper.getInitials(userFullName),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                 ),
                               ),
                             ),
@@ -57,7 +61,7 @@ class _TeknisiDashboardPageState extends State<TeknisiDashboardPage>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Selamat Pagi, Budi',
+                      NameHelper.getGreetingWithName(userFullName),
                       style: TextStyle(
                         color: textLight,
                         fontSize: 28,

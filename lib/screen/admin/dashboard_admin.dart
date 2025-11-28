@@ -14,6 +14,8 @@ import 'package:monitoring_maintenance/controller/karyawan_controller.dart';
 import 'package:monitoring_maintenance/controller/dashboard_controller.dart';
 import 'package:monitoring_maintenance/providers/auth_provider.dart';
 import 'package:monitoring_maintenance/services/supabase_service.dart';
+import 'package:monitoring_maintenance/utils/name_helper.dart';
+import 'package:monitoring_maintenance/screen/login_page.dart';
  
 
 class AdminApp extends StatelessWidget {
@@ -148,8 +150,13 @@ class _AdminTemplateState extends ConsumerState<AdminTemplate>
       // Logout from auth provider (clears storage and resets state)
       await ref.read(authProvider.notifier).logout();
 
-      // Navigation will be handled automatically by main.dart
-      // based on authState.isAuthenticated
+      // Navigate to login page
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+          (route) => false, // Remove all previous routes
+        );
+      }
     } catch (e) {
       // Show error if logout fails
       if (mounted) {
@@ -184,7 +191,7 @@ class _AdminTemplateState extends ConsumerState<AdminTemplate>
             children: [
               // ====================== HEADER ======================
               HeaderWidget(
-                title: "Selamat Datang, Admin",
+                title: NameHelper.getGreetingWithName(ref.watch(authProvider).userFullName),
                 onMenuPressed: _toggleSidebar,
               ),
 

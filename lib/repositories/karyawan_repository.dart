@@ -1,13 +1,12 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:bcrypt/bcrypt.dart';
 import '../services/supabase_service.dart';
 import 'user_assets_repository.dart';
-import 'asset_supabase_repository.dart';
 
 /// Repository untuk CRUD karyawan dengan integrasi user_assets
 class KaryawanRepository {
   final SupabaseClient _client = SupabaseService.instance.client;
   final UserAssetsRepository _userAssetsRepo = UserAssetsRepository();
-  final AssetSupabaseRepository _assetRepo = AssetSupabaseRepository();
 
   /// Get semua karyawan dengan assets mereka (hanya department Maintenance)
   Future<List<Map<String, dynamic>>> getAllKaryawan() async {
@@ -51,7 +50,7 @@ class KaryawanRepository {
           .eq('id', id)
           .maybeSingle();
 
-      return response as Map<String, dynamic>?;
+      return response;
     } catch (e) {
       throw Exception('Gagal mengambil data karyawan: $e');
     }
@@ -68,14 +67,16 @@ class KaryawanRepository {
     String? jabatan,
   }) async {
     try {
-      // Simpan password plain text (tanpa hashing untuk kemudahan admin)
+      // Hash password dengan bcrypt (default rounds: 10)
+      final salt = BCrypt.gensalt();
+      final passwordHash = BCrypt.hashpw(password, salt);
 
       // Insert karyawan
       final karyawanResponse = await _client
           .from('karyawan')
           .insert({
             'email': email,
-            'password_hash': password, // Simpan password asli (plain text)
+            'password_hash': passwordHash, // Password sudah di-hash dengan bcrypt
             'full_name': fullName,
             'phone': phone,
             'department': department,
@@ -145,9 +146,11 @@ class KaryawanRepository {
       if (department != null) updateData['department'] = department;
       if (jabatan != null) updateData['jabatan'] = jabatan;
       
-      // Simpan password plain text jika ada
+      // Hash password dengan bcrypt jika ada
       if (password != null && password.isNotEmpty) {
-        updateData['password_hash'] = password; // Simpan password asli (plain text)
+        final salt = BCrypt.gensalt();
+        final passwordHash = BCrypt.hashpw(password, salt);
+        updateData['password_hash'] = passwordHash; // Password sudah di-hash dengan bcrypt
       }
 
       // Update karyawan
@@ -156,6 +159,46 @@ class KaryawanRepository {
             .from('karyawan')
             .update(updateData)
             .eq('id', id);
+      }
+
+      // Update role di karyawan_aplikasi jika jabatan berubah
+      if (jabatan != null) {
+        // Ambil ID aplikasi MT
+        final aplikasiResponse = await _client
+            .from('aplikasi')
+            .select('id')
+            .eq('kode_aplikasi', 'MT')
+            .maybeSingle();
+
+        if (aplikasiResponse != null) {
+          final aplikasiMtId = aplikasiResponse['id'] as String;
+          
+          // Cek apakah entry sudah ada
+          final existingEntry = await _client
+              .from('karyawan_aplikasi')
+              .select('id')
+              .eq('karyawan_id', id)
+              .eq('aplikasi_id', aplikasiMtId)
+              .maybeSingle();
+
+          if (existingEntry != null) {
+            // Update role jika entry sudah ada
+            await _client
+                .from('karyawan_aplikasi')
+                .update({'role': jabatan})
+                .eq('karyawan_id', id)
+                .eq('aplikasi_id', aplikasiMtId);
+          } else {
+            // Insert entry baru jika belum ada
+            await _client
+                .from('karyawan_aplikasi')
+                .insert({
+                  'karyawan_id': id,
+                  'aplikasi_id': aplikasiMtId,
+                  'role': jabatan,
+                });
+          }
+        }
       }
 
       // Update assets jika ada

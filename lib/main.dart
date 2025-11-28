@@ -3,8 +3,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:monitoring_maintenance/screen/login_page.dart';
 import 'package:monitoring_maintenance/services/supabase_service.dart';
-import 'package:monitoring_maintenance/screen/admin/dashboard_admin.dart';
 import 'package:monitoring_maintenance/providers/auth_provider.dart';
+import 'package:monitoring_maintenance/utils/route_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,8 +45,9 @@ class MyApp extends ConsumerWidget {
         ),
         useMaterial3: true,
       ),
-      home:
-          authState.isAuthenticated ? const AdminTemplate() : const LoginPage(),
+      home: authState.isAuthenticated
+          ? RouteHelper.getDashboardByRole(authState.userRole)
+          : const LoginPage(),
     );
   }
 }

@@ -32,7 +32,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
   bool _isLoading = true; // Set true untuk menampilkan loading saat pertama kali
   List<String> _mesinList = [];
   // Jabatan options untuk Maintenance: Teknisi, Kasie, Admin Staff
-  List<String> _jabatanList = ['Teknisi', 'Kasie', 'Admin Staff'];
+  List<String> _jabatanList = ['Teknisi', 'Kasie Teknisi', 'Admin Staff'];
 
   List<Map<String, String>> _karyawan = [];
 
@@ -755,7 +755,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
     ];
 
     List<String> selectedAssetIds = []; // Multi-select: list of asset IDs
-    // Department dan Jabatan otomatis: Maintenance & Teknisi
+    String selectedJabatan = 'Teknisi'; // Default jabatan untuk form tambah
 
     showDialog(
       context: context,
@@ -850,9 +850,44 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                             ),
                             SizedBox(
                               width: fieldWidth,
-                              child: FutureBuilder<List<Map<String, dynamic>>>(
-                                future: widget.karyawanController.getAllAssets(),
-                                builder: (context, snapshot) {
+                              child: DropdownButtonFormField<String>(
+                                value: selectedJabatan,
+                                decoration: _modalInputDecoration(
+                                  label: "Jabatan",
+                                  icon: Icons.badge,
+                                ),
+                                items: ['Teknisi', 'KASIE Teknisi'].map((jab) => 
+                                  DropdownMenuItem<String>(
+                                    value: jab,
+                                    child: Text(jab),
+                                  ),
+                                ).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setStateDialog(() {
+                                      selectedJabatan = value;
+                                      // Reset selectedAssetIds jika jabatan berubah ke KASIE Teknisi
+                                      if (value == 'KASIE Teknisi') {
+                                        selectedAssetIds.clear();
+                                      }
+                                    });
+                                  }
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return "Jabatan wajib dipilih";
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            // Field pemilihan mesin hanya tampil untuk jabatan Teknisi
+                            if (selectedJabatan == 'Teknisi')
+                              SizedBox(
+                                width: fieldWidth,
+                                child: FutureBuilder<List<Map<String, dynamic>>>(
+                                  future: widget.karyawanController.getAllAssets(),
+                                  builder: (context, snapshot) {
                                   if (snapshot.connectionState == ConnectionState.waiting) {
                                     return Container(
                                       padding: EdgeInsets.all(16),
@@ -977,8 +1012,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                 },
                               ),
                             ),
-                            // Department dan Jabatan otomatis diisi: Maintenance & Teknisi
-                            // (tidak ditampilkan di UI untuk admin maintenance)
+                            // Department otomatis: Maintenance (tidak ditampilkan di UI)
                           ],
                         ),
 
@@ -999,7 +1033,8 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                   return;
                                 }
                                 
-                                if (selectedAssetIds.isEmpty) {
+                                // Validasi pemilihan mesin hanya untuk jabatan Teknisi
+                                if (selectedJabatan == 'Teknisi' && selectedAssetIds.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text('Pilih minimal 1 mesin'),
@@ -1010,15 +1045,16 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                 }
 
                                 try {
-                                  // Auto-fill department dan jabatan untuk admin maintenance
+                                  // Auto-fill department untuk admin maintenance
+                                  // Jika KASIE Teknisi, assetIds bisa kosong (bisa lihat semua mesin)
                                   await widget.karyawanController.createKaryawan(
                                     nama: namaController.text.trim(),
                                     email: emailController.text.trim(),
                                     password: passwordController.text.trim(),
                                     telp: telpController.text.trim(),
-                                    assetIds: selectedAssetIds,
+                                    assetIds: selectedJabatan == 'KASIE Teknisi' ? [] : selectedAssetIds,
                                     department: 'Maintenance', // Otomatis Maintenance
-                                    jabatan: 'Teknisi', // Otomatis Teknisi
+                                    jabatan: selectedJabatan, // Dari dropdown
                                   );
                                   
                                   if (mounted) {
@@ -1031,7 +1067,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          "Teknisi ${namaController.text.trim()} berhasil ditambahkan ke Department Maintenance",
+                                          "${selectedJabatan} ${namaController.text.trim()} berhasil ditambahkan ke Department Maintenance",
                                         ),
                                         backgroundColor: Color(0xFF0A9C5D),
                                       ),
@@ -1107,7 +1143,15 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
       passwordController,
     ];
 
-    String selectedJabatan = item["jabatan"] ?? 'Teknisi';
+    // Normalisasi jabatan dari database ke format dropdown
+    String jabatanFromDb = item["jabatan"] ?? 'Teknisi';
+    String selectedJabatan = jabatanFromDb;
+    // Normalisasi jika database menggunakan format yang berbeda
+    if (jabatanFromDb == 'Kasie Teknisi' || jabatanFromDb == 'Kasie') {
+      selectedJabatan = 'KASIE Teknisi';
+    } else if (jabatanFromDb != 'Teknisi' && jabatanFromDb != 'KASIE Teknisi') {
+      selectedJabatan = 'Teknisi'; // Default jika tidak dikenal
+    }
 
     showDialog(
       context: context,
@@ -1122,12 +1166,6 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
           child: StatefulBuilder(
             builder: (childContext, setStateDialog) {
               final double fieldWidth = _dialogFieldWidth(childContext);
-              
-              // Ensure selectedJabatan is in the list to prevent crash
-              final List<String> jabatanOptions = List.from(_jabatanList);
-              if (!jabatanOptions.contains(selectedJabatan)) {
-                jabatanOptions.add(selectedJabatan);
-              }
 
               return SingleChildScrollView(
                 child: ConstrainedBox(
@@ -1189,87 +1227,122 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                             ),
                             SizedBox(
                               width: fieldWidth,
-                              child: FutureBuilder<List<Map<String, dynamic>>>(
-                                future: widget.karyawanController.getAllAssets(),
-                                builder: (context, snapshot) {
-                                  if (snapshot.connectionState == ConnectionState.waiting) {
-                                    return Container(
-                                      padding: EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey.shade300),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Center(child: CircularProgressIndicator()),
-                                    );
+                              child: DropdownButtonFormField<String>(
+                                value: selectedJabatan,
+                                decoration: _modalInputDecoration(
+                                  label: "Jabatan",
+                                  icon: Icons.badge,
+                                ),
+                                items: ['Teknisi', 'KASIE Teknisi'].map((jab) => 
+                                  DropdownMenuItem<String>(
+                                    value: jab,
+                                    child: Text(jab),
+                                  ),
+                                ).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setStateDialog(() {
+                                      selectedJabatan = value;
+                                      // Reset selectedAssetIds jika jabatan berubah ke KASIE Teknisi
+                                      if (value == 'KASIE Teknisi') {
+                                        selectedAssetIds.clear();
+                                      }
+                                    });
                                   }
-                                  
-                                  final assets = snapshot.data ?? [];
-                                  if (assets.isEmpty) {
-                                    return Container(
-                                      padding: EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey.shade300),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text('Tidak ada mesin tersedia'),
-                                    );
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return "Jabatan wajib dipilih";
                                   }
-
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey.shade300),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: ExpansionTile(
-                                      title: Text(
-                                        selectedAssetIds.isEmpty
-                                            ? "Pilih Mesin yang Dikerjakan"
-                                            : "${selectedAssetIds.length} mesin dipilih",
-                                        style: TextStyle(
-                                          color: selectedAssetIds.isEmpty
-                                              ? Colors.grey[600]
-                                              : Colors.black87,
-                                        ),
-                                      ),
-                                      leading: Icon(
-                                        Icons.precision_manufacturing_outlined,
-                                        color: Color(0xFF0A9C5D),
-                                      ),
-                                      children: [
-                                        Container(
-                                          constraints: BoxConstraints(maxHeight: 200),
-                                          child: SingleChildScrollView(
-                                            child: Column(
-                                              children: assets.map((asset) {
-                                                final assetId = asset['id']?.toString() ?? '';
-                                                final assetName = asset['nama_assets'] as String? ?? 'Unknown';
-                                                final isSelected = selectedAssetIds.contains(assetId);
-                                                
-                                                return CheckboxListTile(
-                                                  title: Text(assetName),
-                                                  value: isSelected,
-                                                  onChanged: (value) {
-                                                    setStateDialog(() {
-                                                      if (value == true) {
-                                                        if (!selectedAssetIds.contains(assetId)) {
-                                                          selectedAssetIds.add(assetId);
-                                                        }
-                                                      } else {
-                                                        selectedAssetIds.remove(assetId);
-                                                      }
-                                                    });
-                                                  },
-                                                );
-                                              }).toList(),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
+                                  return null;
                                 },
                               ),
                             ),
+                            // Field pemilihan mesin hanya tampil untuk jabatan Teknisi
+                            if (selectedJabatan == 'Teknisi')
+                              SizedBox(
+                                width: fieldWidth,
+                                child: FutureBuilder<List<Map<String, dynamic>>>(
+                                  future: widget.karyawanController.getAllAssets(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return Container(
+                                        padding: EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey.shade300),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Center(child: CircularProgressIndicator()),
+                                      );
+                                    }
+                                    
+                                    final assets = snapshot.data ?? [];
+                                    if (assets.isEmpty) {
+                                      return Container(
+                                        padding: EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey.shade300),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text('Tidak ada mesin tersedia'),
+                                      );
+                                    }
+
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey.shade300),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: ExpansionTile(
+                                        title: Text(
+                                          selectedAssetIds.isEmpty
+                                              ? "Pilih Mesin yang Dikerjakan"
+                                              : "${selectedAssetIds.length} mesin dipilih",
+                                          style: TextStyle(
+                                            color: selectedAssetIds.isEmpty
+                                                ? Colors.grey[600]
+                                                : Colors.black87,
+                                          ),
+                                        ),
+                                        leading: Icon(
+                                          Icons.precision_manufacturing_outlined,
+                                          color: Color(0xFF0A9C5D),
+                                        ),
+                                        children: [
+                                          Container(
+                                            constraints: BoxConstraints(maxHeight: 200),
+                                            child: SingleChildScrollView(
+                                              child: Column(
+                                                children: assets.map((asset) {
+                                                  final assetId = asset['id']?.toString() ?? '';
+                                                  final assetName = asset['nama_assets'] as String? ?? 'Unknown';
+                                                  final isSelected = selectedAssetIds.contains(assetId);
+                                                  
+                                                  return CheckboxListTile(
+                                                    title: Text(assetName),
+                                                    value: isSelected,
+                                                    onChanged: (value) {
+                                                      setStateDialog(() {
+                                                        if (value == true) {
+                                                          if (!selectedAssetIds.contains(assetId)) {
+                                                            selectedAssetIds.add(assetId);
+                                                          }
+                                                        } else {
+                                                          selectedAssetIds.remove(assetId);
+                                                        }
+                                                      });
+                                                    },
+                                                  );
+                                                }).toList(),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                             SizedBox(
                               width: fieldWidth,
                               child: _modalTextField(
@@ -1302,30 +1375,9 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                               width: fieldWidth,
                               child: _modalTextField(
                                 controller: passwordController,
-                                label: "Password (kosongkan jika tidak diubah)",
+                                label: "Password",
                                 icon: Icons.lock_outline,
                                 obscureText: false, // Password bisa ditampilkan
-                              ),
-                            ),
-                            SizedBox(
-                              width: fieldWidth,
-                              child: DropdownButtonFormField<String>(
-                                value: selectedJabatan,
-                                decoration: _modalInputDecoration(
-                                  label: "Jabatan",
-                                  icon: Icons.badge,
-                                ),
-                                items: jabatanOptions.map((jab) => 
-                                  DropdownMenuItem<String>(
-                                    value: jab,
-                                    child: Text(jab),
-                                  ),
-                                ).toList(),
-                                onChanged: (value) {
-                                  if (value != null) {
-                                    setStateDialog(() => selectedJabatan = value);
-                                  }
-                                },
                               ),
                             ),
                           ],
@@ -1348,7 +1400,8 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                   return;
                                 }
 
-                                if (selectedAssetIds.isEmpty) {
+                                // Validasi pemilihan mesin hanya untuk jabatan Teknisi
+                                if (selectedJabatan == 'Teknisi' && selectedAssetIds.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text('Pilih minimal 1 mesin'),
@@ -1359,6 +1412,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                 }
 
                                 try {
+                                  // Jika KASIE Teknisi, assetIds bisa kosong (bisa lihat semua mesin)
                                   await widget.karyawanController.updateKaryawan(
                                     id: karyawanId,
                                     nama: namaController.text.trim(),
@@ -1367,7 +1421,7 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                         ? passwordController.text.trim()
                                         : null,
                                     telp: telpController.text.trim(),
-                                    assetIds: selectedAssetIds,
+                                    assetIds: selectedJabatan == 'KASIE Teknisi' ? [] : selectedAssetIds,
                                     department: 'Maintenance', // Otomatis Maintenance
                                     jabatan: selectedJabatan,
                                   );

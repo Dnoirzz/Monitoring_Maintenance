@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:monitoring_maintenance/providers/auth_provider.dart';
-import 'package:monitoring_maintenance/screen/admin/dashboard_admin.dart';
 import 'package:monitoring_maintenance/services/auth_service.dart';
+import 'package:monitoring_maintenance/utils/route_helper.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -37,10 +37,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             password: _passwordController.text,
           );
 
-      // Login berhasil - navigasi ke dashboard
+      // Login berhasil - navigasi ke dashboard berdasarkan role
       if (mounted) {
+        final authState = ref.read(authProvider);
+        final dashboard = RouteHelper.getDashboardByRole(authState.userRole);
+        
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AdminTemplate()),
+          MaterialPageRoute(builder: (_) => dashboard),
         );
       }
     } on AuthException catch (e) {
