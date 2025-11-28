@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 
 import 'package:monitoring_maintenance/controller/check_sheet_controller.dart';
 import 'package:monitoring_maintenance/model/check_sheet_model.dart';
-import 'package:monitoring_maintenance/repositories/asset_supabase_repository.dart';
-import 'package:monitoring_maintenance/repositories/check_sheet_template_repository.dart';
 import 'package:monitoring_maintenance/screen/admin/widgets/mdl_edit_cek_sheet_schedule.dart';
 import 'package:monitoring_maintenance/screen/admin/widgets/mdl_tambah_cek_sheet_schedule.dart';
 
@@ -725,49 +723,49 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
             icon: Icons.edit,
             color: Color(0xFF2196F3),
             onPressed: () {
-              final scheduleMap = {
-                "no": item.no,
-                "nama_infrastruktur": item.namaInfrastruktur,
-                "bagian": item.bagian,
-                "periode": item.periode,
-                "jenis_pekerjaan": item.jenisPekerjaan,
-                "standar_perawatan": item.standarPerawatan,
-                "alat_bahan": item.alatBahan,
-                "tanggal_status": Map<int, String>.from(item.tanggalStatus),
-              };
+    final scheduleMap = {
+      "no": item.no,
+      "nama_infrastruktur": item.namaInfrastruktur,
+      "bagian": item.bagian,
+      "periode": item.periode,
+      "jenis_pekerjaan": item.jenisPekerjaan,
+      "standar_perawatan": item.standarPerawatan,
+      "alat_bahan": item.alatBahan,
+      "tanggal_status": Map<int, String>.from(item.tanggalStatus),
+    };
 
-              ModalEditChecksheet.show(
-                context,
-                scheduleMap,
+    ModalEditChecksheet.show(
+      context,
+      scheduleMap,
                 (updatedItem) async {
-                  final updatedTanggalStatus =
-                      (updatedItem["tanggal_status"] as Map<int, String>?) ??
-                          item.tanggalStatus;
-                  final updatedSchedule = item.copyWith(
-                    namaInfrastruktur:
-                        updatedItem["nama_infrastruktur"] ?? item.namaInfrastruktur,
-                    bagian: updatedItem["bagian"] ?? item.bagian,
-                    periode: updatedItem["periode"] ?? item.periode,
-                    jenisPekerjaan:
-                        updatedItem["jenis_pekerjaan"] ?? item.jenisPekerjaan,
-                    standarPerawatan: updatedItem["standar_perawatan"] ??
-                        item.standarPerawatan,
-                    alatBahan: updatedItem["alat_bahan"] ?? item.alatBahan,
-                    tanggalStatus: Map<int, String>.from(updatedTanggalStatus),
-                  );
+        final updatedTanggalStatus =
+            (updatedItem["tanggal_status"] as Map<int, String>?) ??
+                item.tanggalStatus;
+        final updatedSchedule = item.copyWith(
+          namaInfrastruktur:
+              updatedItem["nama_infrastruktur"] ?? item.namaInfrastruktur,
+          bagian: updatedItem["bagian"] ?? item.bagian,
+          periode: updatedItem["periode"] ?? item.periode,
+          jenisPekerjaan:
+              updatedItem["jenis_pekerjaan"] ?? item.jenisPekerjaan,
+          standarPerawatan: updatedItem["standar_perawatan"] ??
+              item.standarPerawatan,
+          alatBahan: updatedItem["alat_bahan"] ?? item.alatBahan,
+          tanggalStatus: Map<int, String>.from(updatedTanggalStatus),
+        );
 
                   try {
                     await widget.checkSheetController.updateSchedule(updatedSchedule);
                     if (mounted) {
-                      setState(() {});
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            "Bagian ${updatedSchedule.bagian} berhasil diupdate",
-                          ),
-                          backgroundColor: Color(0xFF2196F3),
-                        ),
-                      );
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Bagian ${updatedSchedule.bagian} berhasil diupdate",
+            ),
+            backgroundColor: Color(0xFF2196F3),
+          ),
+        );
                     }
                   } catch (e) {
                     if (mounted) {
@@ -779,8 +777,8 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                       );
                     }
                   }
-                },
-              );
+      },
+    );
             },
           ),
           const SizedBox(width: 8),
@@ -816,9 +814,9 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                 try {
                   await widget.checkSheetController.deleteSchedule(item.no);
                   setState(() {});
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+            content: Text(
                         '${item.namaInfrastruktur} - ${item.bagian} berhasil dihapus',
                       ),
                       backgroundColor: Color(0xFF0A9C5D),

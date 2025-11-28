@@ -15,8 +15,7 @@ class AdminController {
       isScheduleExpanded = true;
       selectedScheduleSubMenu = null;
     } else if (index == 4) {
-      // Logout action
-      // Add your logout logic here
+      // Logout action - handled in dashboard_admin.dart
     } else {
       toggleSidebar();
     }

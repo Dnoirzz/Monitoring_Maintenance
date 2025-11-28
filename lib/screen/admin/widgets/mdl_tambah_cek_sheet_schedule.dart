@@ -13,7 +13,6 @@ class ModalTambahChecksheet {
     final repository = CheckSheetTemplateRepository();
     String? selectedAssetId;
     String? selectedAssetName;
-    List<Map<String, dynamic>> availableKomponen = [];
     bool isLoadingKomponen = false;
     final List<KomponenScheduleItem> komponenList = [];
 
@@ -521,19 +520,6 @@ class ModalTambahChecksheet {
                                       for (var komponenItem in komponenList) {
                                         if (komponenItem.selectedKomponenId == null) {
                                           continue;
-                                        }
-
-                                        String intervalUnit = "";
-                                        switch (komponenItem.selectedPeriode) {
-                                          case "Harian":
-                                            intervalUnit = "Hari";
-                                            break;
-                                          case "Mingguan":
-                                            intervalUnit = "Minggu";
-                                            break;
-                                          case "Bulanan":
-                                            intervalUnit = "Bulan";
-                                            break;
                                         }
                                         
                                         final interval = int.tryParse(komponenItem.intervalController.text.trim()) ?? 1;

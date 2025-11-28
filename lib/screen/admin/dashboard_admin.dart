@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:monitoring_maintenance/screen/admin/widgets/header_widget.dart';
 import 'package:monitoring_maintenance/screen/admin/widgets/sidebar_widget.dart';
 import 'package:monitoring_maintenance/screen/admin/pages/beranda_page.dart';
@@ -11,6 +12,8 @@ import 'package:monitoring_maintenance/controller/asset_controller.dart';
 import 'package:monitoring_maintenance/controller/check_sheet_controller.dart';
 import 'package:monitoring_maintenance/controller/karyawan_controller.dart';
 import 'package:monitoring_maintenance/controller/dashboard_controller.dart';
+import 'package:monitoring_maintenance/providers/auth_provider.dart';
+import 'package:monitoring_maintenance/services/supabase_service.dart';
  
 
 class AdminApp extends StatelessWidget {
@@ -25,14 +28,14 @@ class AdminApp extends StatelessWidget {
   }
 }
 
-class AdminTemplate extends StatefulWidget {
+class AdminTemplate extends ConsumerStatefulWidget {
   const AdminTemplate({super.key});
 
   @override
-  _AdminTemplateState createState() => _AdminTemplateState();
+  ConsumerState<AdminTemplate> createState() => _AdminTemplateState();
 }
 
-class _AdminTemplateState extends State<AdminTemplate>
+class _AdminTemplateState extends ConsumerState<AdminTemplate>
     with SingleTickerProviderStateMixin {
   late AdminController _adminController;
   late AssetController _assetController;
@@ -50,7 +53,6 @@ class _AdminTemplateState extends State<AdminTemplate>
     _checkSheetController = CheckSheetController();
     // Sample data removed - data will be loaded from Supabase
     _karyawanController = KaryawanController();
-    _karyawanController.initializeSampleData();
     _dashboardController = DashboardController();
     _adminController = AdminController();
 
@@ -91,6 +93,74 @@ class _AdminTemplateState extends State<AdminTemplate>
         _animationController.reverse();
       }
     });
+
+    // Handle logout
+    if (index == 4) {
+      _showLogoutDialog();
+    }
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Konfirmasi Keluar'),
+          content: Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _performLogout();
+              },
+              child: Text(
+                'Keluar',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _performLogout() async {
+    try {
+      // Close sidebar
+      setState(() {
+        _adminController.isSidebarOpen = false;
+        _animationController.reverse();
+      });
+
+      // Sign out from Supabase (if using Supabase auth)
+      try {
+        await SupabaseService.instance.signOut();
+      } catch (e) {
+        // Ignore Supabase signOut errors if not using Supabase auth
+      }
+
+      // Logout from auth provider (clears storage and resets state)
+      await ref.read(authProvider.notifier).logout();
+
+      // Navigation will be handled automatically by main.dart
+      // based on authState.isAuthenticated
+    } catch (e) {
+      // Show error if logout fails
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal keluar: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _handleSubMenuSelected(int index) {
@@ -158,7 +228,10 @@ class _AdminTemplateState extends State<AdminTemplate>
       case 1:
         return DataMesinPage(assetController: _assetController);
       case 2:
-        return DaftarKaryawanPage(karyawanController: _karyawanController);
+        return DaftarKaryawanPage(
+          karyawanController: _karyawanController,
+          dashboardController: _dashboardController,
+        );
       case 3:
         if (_adminController.selectedScheduleSubMenu == 31) {
           return const MaintenanceSchedulePage();
@@ -172,6 +245,7 @@ class _AdminTemplateState extends State<AdminTemplate>
         }
       default:
         return BerandaPage(
+          key: ValueKey('beranda'), // Key tetap untuk memungkinkan refresh
           dashboardController: _dashboardController,
           onNavigateToDataMesin: () {
             setState(() {

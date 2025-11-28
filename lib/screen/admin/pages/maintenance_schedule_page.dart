@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:monitoring_maintenance/controller/maintenance_schedule_page_controller.dart';
 import 'package:monitoring_maintenance/model/mt_schedule_model.dart';
 import 'package:monitoring_maintenance/screen/admin/widgets/mdl_tambah_maintenance_schedule.dart';
-import 'package:monitoring_maintenance/screen/admin/widgets/mdl_detail_maintenance_schedule.dart';
 import 'package:monitoring_maintenance/repositories/maintenance_schedule_repository.dart';
+import 'package:monitoring_maintenance/services/maintenance_schedule/calendar_service.dart';
+import 'package:monitoring_maintenance/services/maintenance_schedule/maintenance_dialog_service.dart';
+import 'package:monitoring_maintenance/services/maintenance_schedule/maintenance_date_service.dart';
+import 'package:monitoring_maintenance/services/maintenance_schedule/maintenance_edit_service.dart';
 
 /// Maintenance Schedule dalam format kalender tahunan (mirip Excel)
 class MaintenanceSchedulePage extends StatefulWidget {
@@ -71,47 +74,19 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
   }
 
   List<MtSchedule> _getFilteredSchedules() {
-    final query = _searchQuery.trim().toLowerCase();
-    Iterable<MtSchedule> list = _schedules;
-    if (_filterJenisAset != null && _filterJenisAset!.isNotEmpty) {
-      list = list.where((s) => s.assetJenisAset == _filterJenisAset);
-    }
-    if (query.isEmpty) return list.toList();
-    return list.where((schedule) {
-      final assetName = schedule.assetName?.toLowerCase() ?? '';
-      final templateName = schedule.template?.displayName.toLowerCase() ?? '';
-      final status = schedule.status.toLowerCase();
-      final catatan = schedule.catatan?.toLowerCase() ?? '';
-      final completedBy = schedule.completedBy?.toLowerCase() ?? '';
-      return assetName.contains(query) ||
-          templateName.contains(query) ||
-          status.contains(query) ||
-          catatan.contains(query) ||
-          completedBy.contains(query);
-    }).toList();
+    return CalendarService.filterSchedules(
+      _schedules,
+      _searchQuery,
+      _filterJenisAset,
+    );
   }
 
   // Group schedules by asset and bagian mesin
   Map<String, Map<String, List<MtSchedule>>> _groupSchedules() {
-    final schedules = _getFilteredSchedules();
-    Map<String, Map<String, List<MtSchedule>>> grouped = {};
-
-    for (var schedule in schedules) {
-      if (schedule.tglJadwal?.year != _selectedYear) continue;
-      
-      String assetName = schedule.assetName ?? 'Unknown Asset';
-      String bagianMesin = schedule.template?.bagianMesinName ?? 'Unknown';
-      
-      if (!grouped.containsKey(assetName)) {
-        grouped[assetName] = {};
-      }
-      if (!grouped[assetName]!.containsKey(bagianMesin)) {
-        grouped[assetName]![bagianMesin] = [];
-      }
-      grouped[assetName]![bagianMesin]!.add(schedule);
-    }
-
-    return grouped;
+    return CalendarService.groupSchedules(
+      _getFilteredSchedules(),
+      _selectedYear,
+    );
   }
 
   double _measureTextWidth(String text, TextStyle style) {
@@ -128,13 +103,26 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Maintenance Schedule - $_selectedYear",
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF022415),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Maintenance Schedule - $_selectedYear",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF022415),
+              ),
+            ),
+            // Tombol Refresh
+            IconButton(
+              icon: Icon(Icons.refresh, color: Color(0xFF0A9C5D)),
+              tooltip: 'Refresh Data',
+              onPressed: () async {
+                await _loadSchedules();
+              },
+            ),
+          ],
         ),
         SizedBox(height: 20),
         if (_filterJenisAset != null) ...[
@@ -695,18 +683,31 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                       children: List.generate(12, (monthIndex) {
                         return Row(
                           children: List.generate(4, (weekIndex) {
-                            int startDay = weekIndex * 7 + 1;
-                            int endDay = (weekIndex + 1) * 7;
-                            
+                            // Cari schedule dengan ACTUAL date dalam minggu ini
+                            // ACTUAL bisa berada di bulan berbeda dengan month display saat ini
                             MtSchedule? scheduleInWeek;
                             for (var schedule in schedules) {
-                              if (schedule.tglSelesai != null &&
-                                  schedule.tglSelesai!.year == _selectedYear &&
-                                  schedule.tglSelesai!.month == monthIndex + 1 &&
-                                  schedule.tglSelesai!.day >= startDay &&
-                                  schedule.tglSelesai!.day <= endDay) {
-                                scheduleInWeek = schedule;
-                                break;
+                              if (schedule.tglSelesai != null && schedule.status.toLowerCase() == 'selesai') {
+                                // Hitung minggu ke berapa dalam tahun untuk actual date
+                                final actualDate = schedule.tglSelesai!;
+                                
+                                // Hanya tampilkan jika dalam tahun yang sama
+                                if (actualDate.year != _selectedYear) continue;
+                                
+                                // Hitung minggu dalam bulan untuk actual date
+                                int actualMonth = actualDate.month;
+                                int actualDay = actualDate.day;
+                                
+                                // Hitung minggu (0-3) dari hari dalam bulan
+                                int actualWeekInMonth = (actualDay - 1) ~/ 7;
+                                
+                                // Jika month yang ditampilkan sama dengan bulan actual, cek minggu
+                                if (actualMonth == monthIndex + 1) {
+                                  if (actualWeekInMonth == weekIndex) {
+                                    scheduleInWeek = schedule;
+                                    break;
+                                  }
+                                }
                               }
                             }
 
@@ -716,7 +717,7 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                               isEvenRow,
                               isHovered,
                               scheduleInWeek,
-                              DateTime(_selectedYear, monthIndex + 1, startDay),
+                              DateTime(_selectedYear, monthIndex + 1, weekIndex * 7 + 1),
                               isPlan: false,
                             );
                           }),
@@ -828,20 +829,55 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
                 ),
               );
               if (confirmed != true) return;
+              
               try {
-                for (final s in schedules) {
-                  if (s.id != null) {
-                    await _repository.deleteSchedule(s.id!);
+                // Show loading dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Menghapus jadwal...'),
+                      ],
+                    ),
+                  ),
+                );
+
+                // Collect all IDs to delete
+                final idsToDelete = schedules
+                    .where((s) => s.id != null)
+                    .map((s) => s.id!)
+                    .toList();
+
+                // Batch delete menggunakan optimized method
+                if (idsToDelete.isNotEmpty) {
+                  // Get template IDs sebelum delete schedules
+                  final templateIds = await _repository.getTemplateIdsByScheduleIds(idsToDelete);
+                  
+                  // Delete schedules
+                  await _repository.batchDeleteSchedulesByIds(idsToDelete);
+                  
+                  // Delete templates yang tidak punya schedule lain
+                  for (final templateId in templateIds) {
+                    await _repository.deleteTemplateIfNoSchedules(templateId);
                   }
                 }
+
                 await _loadSchedules();
+                
                 if (mounted) {
+                  Navigator.pop(context); // Close loading dialog
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Jadwal berhasil dihapus')),
+                    SnackBar(content: Text('${idsToDelete.length} jadwal berhasil dihapus')),
                   );
                 }
               } catch (e) {
                 if (mounted) {
+                  Navigator.pop(context); // Close loading dialog
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Gagal menghapus: $e'), backgroundColor: Colors.red),
                   );
@@ -881,61 +917,60 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
       bool isHovered, MtSchedule? schedule, DateTime cellDate, {bool isPlan = true}) {
     Color backgroundColor;
     String text = '';
+    bool isClickable = false;
     
     if (schedule != null) {
-      // Color based on status
       if (isPlan) {
-        // PLAN row - show scheduled maintenance (yellow/orange)
-        switch (schedule.status.toLowerCase()) {
-          case 'perlu maintenance':
-            backgroundColor = Colors.yellow[600]!;
-            text = '${schedule.tglJadwal?.day ?? ''}';
-            break;
-          case 'sedang maintenance':
-            backgroundColor = Colors.orange[600]!;
-            text = '${schedule.tglJadwal?.day ?? ''}';
-            break;
-          case 'selesai':
-            backgroundColor = Colors.yellow[600]!;
-            text = '${schedule.tglJadwal?.day ?? ''}';
-            break;
-          case 'dibatalkan':
-            backgroundColor = Colors.red[600]!;
-            text = 'X';
-            break;
-          default:
-            backgroundColor = Colors.grey[400]!;
-            text = '${schedule.tglJadwal?.day ?? ''}';
-        }
-      } else {
-        // ACTUAL row - show completed maintenance (green)
-        if (schedule.status.toLowerCase() == 'selesai') {
-          backgroundColor = Colors.green[600]!;
-          text = '${schedule.tglSelesai?.day ?? ''}';
+        // PLAN row - warna berdasarkan apakah sudah dikerjakan (selesai)
+        if (schedule.tglSelesai != null && schedule.status.toLowerCase() == 'selesai') {
+          // Sudah dikerjakan - BIRU
+          backgroundColor = Colors.blue[600]!;
+          text = '${schedule.tglJadwal?.day ?? ''}';
         } else {
-          // Not completed yet
+          // Belum dikerjakan - KUNING
+          backgroundColor = Colors.yellow[600]!;
+          text = '${schedule.tglJadwal?.day ?? ''}';
+        }
+        isClickable = true;
+      } else {
+        // ACTUAL row - menampilkan tanggal realisasi (HIJAU) atau kosong (edit)
+        if (schedule.tglSelesai != null && schedule.status.toLowerCase() == 'selesai') {
+          // Sudah ada actual date - tampilkan hijau dengan tanggal
+          backgroundColor = Colors.green[600]!;
+          text = '${schedule.tglSelesai!.day}';
+          isClickable = true;
+        } else {
+          // Belum ada actual date - cell kosong, bisa di-klik untuk input
           backgroundColor = isEvenRow ? Colors.grey[100]! : Colors.white;
+          text = '';
+          isClickable = true;
         }
       }
     } else {
-      // No schedule - alternate row colors
+      // No schedule - alternate row colors (tidak clickable)
       backgroundColor = isEvenRow ? Colors.grey[100]! : Colors.white;
+      isClickable = false;
     }
 
     return InkWell(
-      onTap: schedule != null
+      onTap: (schedule != null && isClickable)
           ? () {
-              final DateTime displayDate = isPlan
-                  ? (schedule.tglJadwal ?? cellDate)
-                  : (schedule.tglSelesai ?? schedule.tglJadwal ?? cellDate);
-              ModalDetailMaintenanceSchedule.show(
-                context,
-                schedule: schedule,
-                date: displayDate,
-                onEdit: () {
-                  _showEditScheduleModal(context, schedule);
-                },
-              );
+              if (isPlan) {
+                // PLAN: buka context menu untuk edit tanggal
+                _showPlanContextMenu(context, schedule);
+              } else {
+                // ACTUAL: buka context menu untuk set/edit/hapus actual date
+                _showActualContextMenu(context, schedule);
+              }
+            }
+          : null,
+      onSecondaryTap: (schedule != null && isClickable)
+          ? () {
+              if (isPlan) {
+                _showPlanContextMenu(context, schedule);
+              } else {
+                _showActualContextMenu(context, schedule);
+              }
             }
           : null,
       child: Container(
@@ -946,14 +981,27 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
           border: Border.all(color: Colors.grey[400]!, width: 0.5),
         ),
         alignment: Alignment.center,
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: schedule != null ? Colors.white : Colors.grey[400],
-          ),
-        ),
+        child: schedule != null && schedule.tglSelesai != null
+            ? Text(
+                text,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              )
+            : (schedule != null && isPlan)
+                ? Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  )
+                : (schedule != null && !isPlan)
+                    ? Icon(Icons.edit, size: 12, color: Colors.grey[600])
+                    : SizedBox(),
       ),
     );
   }
@@ -961,10 +1009,90 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
   
 
   void _showEditScheduleModal(BuildContext context, MtSchedule schedule) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Fitur Edit untuk ${schedule.assetName ?? 'Asset'}"),
-      ),
+    final editService = MaintenanceEditService(
+      repository: _repository,
+      context: context,
+    );
+
+    editService.showEditIntervalModal(
+      schedule: schedule,
+      selectedYear: _selectedYear,
+      onSuccess: () {
+        _loadSchedules();
+      },
+    );
+  }
+
+  /// Context menu untuk PLAN row - edit tanggal plan atau set actual
+  void _showPlanContextMenu(BuildContext context, MtSchedule schedule) {
+    final dialogService = MaintenanceDialogService(
+      repository: _repository,
+      context: context,
+    );
+    final dateService = MaintenanceDateService(
+      repository: _repository,
+      context: context,
+    );
+
+    dialogService.showPlanContextMenu(
+      schedule: schedule,
+      onTambahActual: () {
+        dateService.pickAndSetActualDate(
+          schedule: schedule,
+          selectedYear: _selectedYear,
+          onSuccess: () {
+            _loadSchedules();
+          },
+        );
+      },
+      onUbahTanggal: () {
+        dateService.pickAndEditPlanDate(
+          schedule: schedule,
+          selectedYear: _selectedYear,
+          onSuccess: () {
+            _loadSchedules();
+          },
+        );
+      },
+    );
+  }
+
+  /// Context menu untuk ACTUAL row - set/edit/hapus tanggal actual
+  void _showActualContextMenu(BuildContext context, MtSchedule schedule) {
+    final dialogService = MaintenanceDialogService(
+      repository: _repository,
+      context: context,
+    );
+    final dateService = MaintenanceDateService(
+      repository: _repository,
+      context: context,
+    );
+
+    dialogService.showActualContextMenu(
+      schedule: schedule,
+      onSetActual: () {
+        dateService.pickAndSetActualDate(
+          schedule: schedule,
+          selectedYear: _selectedYear,
+          onSuccess: () {
+            _loadSchedules();
+          },
+        );
+      },
+      onDeleteActual: () async {
+        final confirmed = await dialogService.showDeleteConfirmation(
+          title: 'Konfirmasi Hapus',
+          message: 'Hapus tanggal actual untuk ${schedule.assetName}?',
+        );
+        if (confirmed == true) {
+          await dateService.deleteActualDate(
+            schedule: schedule,
+            onSuccess: () {
+              _loadSchedules();
+            },
+          );
+        }
+      },
     );
   }
 }
