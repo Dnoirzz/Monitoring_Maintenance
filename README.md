@@ -1,42 +1,37 @@
-# monitoring_maintenance
+# Maintenance Tracking (MT) System
 
-🏭 Aplikasi Monitoring Maintenance Mesin Pabrik Karet
-📌 Deskripsi Singkat
+Sistem monitoring dan tracking maintenance mesin.
 
-Aplikasi ini dibuat untuk membantu proses monitoring jadwal maintenance mesin di pabrik karet.
-Dengan sistem ini, pihak teknisi dan kepala teknisi dapat memantau status mesin, mencatat kegiatan perawatan, serta menerima notifikasi otomatis H-7 sebelum jadwal maintenance berikutnya.
-Tujuan utamanya adalah meminimalkan keterlambatan perawatan dan mengurangi risiko kerusakan mendadak (breakdown). Di bagian dashboard digunakan untuk menampilkan daftar mesin yang perlu dimaintenance (yang terjadwal memiliki status "perlu dimaintenance" secara otomatis mengikuti jadwal maintenance dan yang tidak terjadwal memiliki status "breakdown" yang diatur sendiri oleh teknisi dan kepala teknisi)
+## Project Structure
 
-🚀 Fitur Utama
-1. Manajemen User
-a. Tiga jenis role: Teknisi, Kepala Teknisi, Admin
-b. Login, autentikasi, dan hak akses berdasarkan peran
+```
+├── mt_backend/              # Backend API (Node.js/Express)
+├── flutter_application_mt/  # Mobile App (Flutter)
+├── mt_web_kantor/           # Web App (Coming Soon)
+└── .kiro/                   # Specs & Documentation
+```
 
-2. Data Mesin
-a. Menyimpan informasi mesin, kode aset, dan status (Active, Breakdown, Perlu Maintenance)
-b. Jadwal Maintenance
-c. Mencatat jadwal perawatan terakhir dan berikutnya
-d. Cek harian mesin yg menampilkan nama mesin, bagian mesin berupa dropdown, jenis pekerjaan text input, catatan, tanggal, bukti foto, dan nama petugas.
+## Quick Start
 
-3. Notifikasi Otomatis
-a. Mengingatkan user 7 hari sebelum tanggal maintenance berikutnya
-b. Ditampilkan di halaman dashboard dan memunculkan popup dari luar aplikasi
+### Backend
+```bash
+cd mt_backend
+npm install
+# Edit .env dengan credentials Supabase
+npm run dev
+```
 
-4. Menu Riwayat
-a. Menampilkan riwayat maintenance mesin berdasarkan periode waktu atau status
+### Flutter App
+```bash
+cd flutter_application_mt
+flutter pub get
+flutter run
+```
 
-5. Multi-Lokasi
-a. Setiap user dan mesin terhubung ke lokasi tertentu di pabrik
+## API Documentation
 
-## Getting Started
+Base URL: `http://localhost:3000`
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- `POST /api/auth/login` - Login (Step 1)
+- `POST /api/auth/select-app` - Select App (Step 2)
+- `GET /api/auth/me` - Get Profile
