@@ -1,17 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:monitoring_maintenance/model/maintenance_request_model.dart';
+import 'package:monitoring_maintenance/model/mt_schedule_model.dart';
+import 'package:monitoring_maintenance/model/cek_sheet_schedule_model.dart';
 import 'package:monitoring_maintenance/providers/auth_provider.dart';
+import 'package:monitoring_maintenance/services/teknisi/technician_dashboard_service.dart';
+import 'package:monitoring_maintenance/screen/teknisi/pages/laporan_kerusakan.dart';
 import 'package:monitoring_maintenance/utils/name_helper.dart';
 
 class TeknisiDashboardPage extends ConsumerStatefulWidget {
   const TeknisiDashboardPage({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<TeknisiDashboardPage> createState() => _TeknisiDashboardPageState();
+  ConsumerState<TeknisiDashboardPage> createState() =>
+      _TeknisiDashboardPageState();
 }
 
 class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage>
     with SingleTickerProviderStateMixin {
+  final TechnicianDashboardService _dashboardService =
+      TechnicianDashboardService();
+  late Future<List<dynamic>> _todayTasksFuture;
+  late Future<List<dynamic>> _upcomingTasksFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshData();
+  }
+
+  void _refreshData() {
+    setState(() {
+      _todayTasksFuture = _dashboardService.fetchTodayTasks();
+      _upcomingTasksFuture = _dashboardService.fetchUpcomingTasks();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -56,7 +80,7 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage>
                           icon: const Icon(Icons.notifications),
                           color: textLight,
                           onPressed: () {},
-                        )
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -69,9 +93,22 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      'Anda memiliki 2 tugas hari ini.',
-                      style: TextStyle(color: textSubtle, fontSize: 16),
+                    FutureBuilder<List<dynamic>>(
+                      future: _todayTasksFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Text(
+                            'Memuat tugas...',
+                            style: TextStyle(color: textSubtle, fontSize: 16),
+                          );
+                        }
+                        final count = snapshot.data?.length ?? 0;
+                        return Text(
+                          'Anda memiliki $count tugas hari ini.',
+                          style: TextStyle(color: textSubtle, fontSize: 16),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -95,8 +132,22 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage>
               Expanded(
                 child: TabBarView(
                   children: [
-                    _TasksList(primary: primary, textLight: textLight, cardLight: cardLight, textSubtle: textSubtle),
-                    _UpcomingList(primary: primary, textLight: textLight, cardLight: cardLight, textSubtle: textSubtle),
+                    _TasksList(
+                      future: _todayTasksFuture,
+                      onRefresh: () async => _refreshData(),
+                      primary: primary,
+                      textLight: textLight,
+                      cardLight: cardLight,
+                      textSubtle: textSubtle,
+                    ),
+                    _UpcomingList(
+                      future: _upcomingTasksFuture,
+                      onRefresh: () async => _refreshData(),
+                      primary: primary,
+                      textLight: textLight,
+                      cardLight: cardLight,
+                      textSubtle: textSubtle,
+                    ),
                   ],
                 ),
               ),
@@ -107,7 +158,14 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage>
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: primary,
         foregroundColor: Colors.white,
-        onPressed: () {},
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const LaporanKerusakanPage(),
+            ),
+          );
+        },
         icon: const Icon(Icons.add),
         label: const Text('Lapor Kerusakan'),
       ),
@@ -116,6 +174,8 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage>
 }
 
 class _TasksList extends StatelessWidget {
+  final Future<List<dynamic>> future;
+  final RefreshCallback onRefresh;
   final Color primary;
   final Color textLight;
   final Color cardLight;
@@ -123,6 +183,8 @@ class _TasksList extends StatelessWidget {
 
   const _TasksList({
     Key? key,
+    required this.future,
+    required this.onRefresh,
     required this.primary,
     required this.textLight,
     required this.cardLight,
@@ -131,50 +193,100 @@ class _TasksList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tasks = [
-      {
-        'image':
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuDhMFpfJO_AVtyTuN8mnexoF-kWv_iLjDusKM69ZVFAenCopg7tQBpEy-izxBj20UJdKmQ_Ot0jI6dNoQiXXWS5rg7ZXM2AkepIXe1LDOXtLAAAFBfKTYHhf_nO7NZrQJvqrR4JMkJDH8iKMRjY_ZdRnWDe5eCEXp153x4tSM5MkbKDIVWqpAmAFhjqWtmqKUnLktw8bFE9mRhGYxCVyZguOEsXZwm0B6U3dy23Fn8foaya2eCrV4qGUWPM1gpJKQGKJoCh52ar3yHd',
-        'lokasi': 'Area Press A',
-        'judul': 'Mesin Press Hidrolik #MP-001',
-        'jenis': 'Perawatan Terjadwal',
-        'statusColor': Colors.yellow,
-        'statusText': 'Menunggu Dikerjakan',
-      },
-      {
-        'image':
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuD9eGJi8SQI9zyW5ZZnuo0oOmUV4mwlgaX86jXQiieO3U7DazFWQeuOnvGQysVYM9BMNWeMcxCdRiZeK14teUpvws7HnYkIjHUTD3EOy8saaUq7Id2yBV0H9n6TICcOblCkzo2JbEX7llhzxgUCMxoghV5TcWPnoWKoW5oj9CcQbHePHc_lK_7gouhFAj-_k4yO-M_9FioUBVB-IRvE_UjQLiiceCgL-QI30ZpuUL9Tw---soSIGLpEWvRJgWv8okoraB2ZH8aq3-0g',
-        'lokasi': 'Area Mixing B',
-        'judul': 'Mesin Banbury #MB-003',
-        'jenis': 'Perbaikan Mendesak',
-        'statusColor': Colors.red,
-        'statusText': 'Menunggu Dikerjakan',
-      },
-    ];
+    return FutureBuilder<List<dynamic>>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        final tasks = snapshot.data ?? [];
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: tasks
-            .map((t) => _TaskCard(
-                  imageUrl: t['image'] as String,
-                  lokasi: t['lokasi'] as String,
-                  judul: t['judul'] as String,
-                  jenis: t['jenis'] as String,
-                  statusColor: t['statusColor'] as Color,
-                  statusText: t['statusText'] as String,
-                  primary: primary,
-                  textLight: textLight,
-                  cardLight: cardLight,
-                  textSubtle: textSubtle,
-                ))
-            .toList(),
-      ),
+        if (tasks.isEmpty) {
+          return Center(
+            child: Text(
+              'Tidak ada tugas hari ini',
+              style: TextStyle(color: textSubtle),
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: onRefresh,
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: tasks.length,
+            itemBuilder: (context, index) {
+              final task = tasks[index];
+              return _buildTaskCard(task);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTaskCard(dynamic task) {
+    String imageUrl = 'https://via.placeholder.com/300'; // Default
+    String lokasi = 'Unknown Location';
+    String judul = 'Unknown Task';
+    String jenis = 'Unknown Type';
+    String? tanggal;
+    Color statusColor = Colors.grey;
+    String statusText = 'Unknown';
+
+    if (task is MtSchedule) {
+      imageUrl = task.asset?['foto'] ?? imageUrl;
+      lokasi = task.asset?['jenis_assets'] ?? 'Unknown Category';
+      judul = task.asset?['nama_assets'] ?? 'Unknown Asset';
+      jenis = 'Perawatan Terjadwal';
+      tanggal =
+          task.tglJadwal != null
+              ? '${task.tglJadwal!.day}/${task.tglJadwal!.month}/${task.tglJadwal!.year}'
+              : null;
+      statusColor = Colors.blue;
+      statusText = task.status;
+    } else if (task is MaintenanceRequest) {
+      imageUrl = task.asset?['foto'] ?? imageUrl;
+      lokasi = task.asset?['jenis_assets'] ?? 'Unknown Category';
+      judul = task.asset?['nama_assets'] ?? 'Unknown Asset';
+      jenis = 'Perbaikan Mendesak';
+      statusColor = Colors.red;
+      statusText = task.status;
+    } else if (task is CekSheetSchedule) {
+      // Cek Sheet doesn't have direct asset link in model yet, maybe via template -> komponen -> asset?
+      // For now, use template title
+      judul = task.title ?? 'Check Sheet';
+      jenis = 'Cek Sheet';
+      tanggal =
+          task.tglJadwal != null
+              ? '${task.tglJadwal!.day}/${task.tglJadwal!.month}/${task.tglJadwal!.year}'
+              : null;
+      statusColor = Colors.orange;
+      statusText = 'Scheduled';
+    }
+
+    return _TaskCard(
+      imageUrl: imageUrl,
+      lokasi: lokasi,
+      judul: judul,
+      jenis: jenis,
+      tanggal: tanggal,
+      statusColor: statusColor,
+      statusText: statusText,
+      primary: primary,
+      textLight: textLight,
+      cardLight: cardLight,
+      textSubtle: textSubtle,
     );
   }
 }
 
 class _UpcomingList extends StatelessWidget {
+  final Future<List<dynamic>> future;
+  final RefreshCallback onRefresh;
   final Color primary;
   final Color textLight;
   final Color cardLight;
@@ -182,6 +294,8 @@ class _UpcomingList extends StatelessWidget {
 
   const _UpcomingList({
     Key? key,
+    required this.future,
+    required this.onRefresh,
     required this.primary,
     required this.textLight,
     required this.cardLight,
@@ -190,36 +304,84 @@ class _UpcomingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final upcoming = [
-      {
-        'image':
-            'https://images.unsplash.com/photo-1581094794329-c67549b38d6e?q=80&w=1935&auto=format&fit=crop',
-        'lokasi': 'Area Extruder C',
-        'judul': 'Extruder #EX-020',
-        'jenis': 'Perawatan Terjadwal',
-        'statusColor': Colors.blue,
-        'statusText': 'Dijadwalkan',
-      },
-    ];
+    return FutureBuilder<List<dynamic>>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        final tasks = snapshot.data ?? [];
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: upcoming
-            .map((t) => _TaskCard(
-                  imageUrl: t['image'] as String,
-                  lokasi: t['lokasi'] as String,
-                  judul: t['judul'] as String,
-                  jenis: t['jenis'] as String,
-                  statusColor: t['statusColor'] as Color,
-                  statusText: t['statusText'] as String,
-                  primary: primary,
-                  textLight: textLight,
-                  cardLight: cardLight,
-                  textSubtle: textSubtle,
-                ))
-            .toList(),
-      ),
+        if (tasks.isEmpty) {
+          return Center(
+            child: Text(
+              'Tidak ada jadwal mendatang',
+              style: TextStyle(color: textSubtle),
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: onRefresh,
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: tasks.length,
+            itemBuilder: (context, index) {
+              final task = tasks[index];
+              return _buildTaskCard(task);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTaskCard(dynamic task) {
+    String imageUrl = 'https://via.placeholder.com/300'; // Default
+    String lokasi = 'Unknown Location';
+    String judul = 'Unknown Task';
+    String jenis = 'Unknown Type';
+    String? tanggal;
+    Color statusColor = Colors.grey;
+    String statusText = 'Unknown';
+
+    if (task is MtSchedule) {
+      imageUrl = task.asset?['foto'] ?? imageUrl;
+      lokasi = task.asset?['jenis_assets'] ?? 'Unknown Category';
+      judul = task.asset?['nama_assets'] ?? 'Unknown Asset';
+      jenis = 'Perawatan Terjadwal';
+      tanggal =
+          task.tglJadwal != null
+              ? '${task.tglJadwal!.day}/${task.tglJadwal!.month}/${task.tglJadwal!.year}'
+              : null;
+      statusColor = Colors.blue;
+      statusText = task.status;
+    } else if (task is CekSheetSchedule) {
+      judul = task.title ?? 'Check Sheet';
+      jenis = 'Cek Sheet';
+      tanggal =
+          task.tglJadwal != null
+              ? '${task.tglJadwal!.day}/${task.tglJadwal!.month}/${task.tglJadwal!.year}'
+              : null;
+      statusColor = Colors.orange;
+      statusText = 'Scheduled';
+    }
+
+    return _TaskCard(
+      imageUrl: imageUrl,
+      lokasi: lokasi,
+      judul: judul,
+      jenis: jenis,
+      tanggal: tanggal,
+      statusColor: statusColor,
+      statusText: statusText,
+      primary: primary,
+      textLight: textLight,
+      cardLight: cardLight,
+      textSubtle: textSubtle,
     );
   }
 }
@@ -229,6 +391,7 @@ class _TaskCard extends StatelessWidget {
   final String lokasi;
   final String judul;
   final String jenis;
+  final String? tanggal;
   final Color statusColor;
   final String statusText;
   final Color primary;
@@ -242,6 +405,7 @@ class _TaskCard extends StatelessWidget {
     required this.lokasi,
     required this.judul,
     required this.jenis,
+    this.tanggal,
     required this.statusColor,
     required this.statusText,
     required this.primary,
@@ -262,7 +426,7 @@ class _TaskCard extends StatelessWidget {
             color: Colors.black.withOpacity(0.05),
             blurRadius: 12,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -275,7 +439,22 @@ class _TaskCard extends StatelessWidget {
             ),
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: Image.network(imageUrl, fit: BoxFit.cover),
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[300],
+                    child: const Center(
+                      child: Icon(
+                        Icons.image_not_supported,
+                        size: 50,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
           Padding(
@@ -298,54 +477,61 @@ class _TaskCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Text(
+                      'Jenis: $jenis',
+                      style: TextStyle(color: textSubtle, fontSize: 16),
+                    ),
+                    if (tanggal != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tanggal: $tanggal',
+                        style: TextStyle(color: textSubtle, fontSize: 14),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Row(
                       children: [
-                        Text(
-                          'Jenis: $jenis',
-                          style: TextStyle(color: textSubtle, fontSize: 16),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: statusColor,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              statusText,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(width: 6),
+                        Text(
+                          statusText,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                      ),
-                      onPressed: () {},
-                      child: const Text('Mulai Kerjakan'),
-                    ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    onPressed: () {},
+                    child: const Text('Mulai Kerjakan'),
+                  ),
                 ),
               ],
             ),
@@ -355,4 +541,3 @@ class _TaskCard extends StatelessWidget {
     );
   }
 }
-
