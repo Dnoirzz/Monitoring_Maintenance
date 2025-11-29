@@ -1,0 +1,344 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:bcrypt/bcrypt.dart';
+import '../services/supabase_service.dart';
+import 'user_assets_repository.dart';
+
+/// Repository untuk CRUD karyawan dengan integrasi user_assets
+class KaryawanRepository {
+  final SupabaseClient _client = SupabaseService.instance.client;
+  final UserAssetsRepository _userAssetsRepo = UserAssetsRepository();
+
+  /// Get semua karyawan dengan assets mereka (hanya department Maintenance)
+  /// Hanya menampilkan karyawan dengan role "Teknisi" atau "KASIE Teknisi" di aplikasi MT
+  Future<List<Map<String, dynamic>>> getAllKaryawan() async {
+    try {
+      // Ambil semua karyawan Maintenance dengan assets
+      final response = await _client
+          .from('karyawan')
+          .select('''
+            *,
+            user_assets (
+              assets (
+                id,
+                nama_assets,
+                kode_assets
+              )
+            ),
+            karyawan_aplikasi (
+              role,
+              aplikasi:aplikasi_id (
+                kode_aplikasi
+              )
+            )
+          ''')
+          .eq('department', 'Maintenance')
+          .order('created_at', ascending: false);
+
+      final allKaryawan = (response as List).map((e) => e as Map<String, dynamic>).toList();
+
+      // Filter hanya karyawan dengan role "Teknisi" atau "KASIE Teknisi" di aplikasi MT
+      final filteredKaryawan = allKaryawan.where((karyawan) {
+        final karyawanAplikasi = karyawan['karyawan_aplikasi'] as List<dynamic>? ?? [];
+        
+        // Cek apakah ada akses ke aplikasi MT dengan role "Teknisi" atau "KASIE Teknisi"
+        for (var ka in karyawanAplikasi) {
+          final aplikasi = ka['aplikasi'] as Map<String, dynamic>?;
+          final kodeAplikasi = aplikasi?['kode_aplikasi'] as String?;
+          final role = ka['role'] as String?;
+          
+          if (kodeAplikasi == 'MT' && (role == 'Teknisi' || role == 'KASIE Teknisi')) {
+            return true;
+          }
+        }
+        
+        return false;
+      }).toList();
+
+      // Hapus karyawan_aplikasi dari hasil karena tidak diperlukan di UI
+      return filteredKaryawan.map((karyawan) {
+        final filtered = Map<String, dynamic>.from(karyawan);
+        filtered.remove('karyawan_aplikasi');
+        return filtered;
+      }).toList();
+    } catch (e) {
+      throw Exception('Gagal mengambil data karyawan: $e');
+    }
+  }
+
+  /// Get karyawan by ID dengan assets
+  Future<Map<String, dynamic>?> getKaryawanById(String id) async {
+    try {
+      final response = await _client
+          .from('karyawan')
+          .select('''
+            *,
+            user_assets (
+              assets (
+                id,
+                nama_assets,
+                kode_assets
+              )
+            )
+          ''')
+          .eq('id', id)
+          .maybeSingle();
+
+      return response;
+    } catch (e) {
+      throw Exception('Gagal mengambil data karyawan: $e');
+    }
+  }
+
+  /// Create karyawan baru dengan assets
+  Future<Map<String, dynamic>> createKaryawan({
+    required String email,
+    required String password,
+    required String fullName,
+    String? phone,
+    List<String>? assetIds, // List asset IDs untuk multi-select
+    String? department,
+    String? jabatan,
+  }) async {
+    try {
+      // Hash password dengan bcrypt (default rounds: 10)
+      final salt = BCrypt.gensalt();
+      final passwordHash = BCrypt.hashpw(password, salt);
+
+      // Insert karyawan
+      final karyawanResponse = await _client
+          .from('karyawan')
+          .insert({
+            'email': email,
+            'password_hash': passwordHash, // Password sudah di-hash dengan bcrypt
+            'full_name': fullName,
+            'phone': phone,
+            'department': department,
+            'jabatan': jabatan,
+            'is_active': true,
+          })
+          .select()
+          .single();
+
+      final karyawanId = karyawanResponse['id'] as String;
+
+      // Berikan akses ke aplikasi MT secara otomatis
+      // Ambil ID aplikasi MT
+      final aplikasiResponse = await _client
+          .from('aplikasi')
+          .select('id')
+          .eq('kode_aplikasi', 'MT')
+          .maybeSingle();
+
+      if (aplikasiResponse != null) {
+        final aplikasiMtId = aplikasiResponse['id'] as String;
+        // Tentukan role berdasarkan jabatan (default: Teknisi)
+        final role = jabatan ?? 'Teknisi';
+        
+        // Insert ke karyawan_aplikasi untuk memberikan akses MT
+        await _client
+            .from('karyawan_aplikasi')
+            .insert({
+              'karyawan_id': karyawanId,
+              'aplikasi_id': aplikasiMtId,
+              'role': role,
+            });
+      }
+
+      // Assign assets jika ada
+      if (assetIds != null && assetIds.isNotEmpty) {
+        await _userAssetsRepo.updateKaryawanAssets(
+          karyawanId: karyawanId,
+          assetIds: assetIds,
+        );
+      }
+
+      // Return karyawan dengan assets
+      return await getKaryawanById(karyawanId) ?? karyawanResponse;
+    } catch (e) {
+      throw Exception('Gagal membuat karyawan: $e');
+    }
+  }
+
+  /// Update karyawan dengan assets
+  Future<Map<String, dynamic>> updateKaryawan({
+    required String id,
+    String? email,
+    String? password,
+    String? fullName,
+    String? phone,
+    List<String>? assetIds, // List asset IDs untuk multi-select
+    String? department,
+    String? jabatan,
+  }) async {
+    try {
+      final updateData = <String, dynamic>{};
+      
+      if (email != null) updateData['email'] = email;
+      if (fullName != null) updateData['full_name'] = fullName;
+      if (phone != null) updateData['phone'] = phone;
+      if (department != null) updateData['department'] = department;
+      if (jabatan != null) updateData['jabatan'] = jabatan;
+      
+      // Hash password dengan bcrypt jika ada
+      if (password != null && password.isNotEmpty) {
+        final salt = BCrypt.gensalt();
+        final passwordHash = BCrypt.hashpw(password, salt);
+        updateData['password_hash'] = passwordHash; // Password sudah di-hash dengan bcrypt
+      }
+
+      // Update karyawan
+      if (updateData.isNotEmpty) {
+        await _client
+            .from('karyawan')
+            .update(updateData)
+            .eq('id', id);
+      }
+
+      // Update role di karyawan_aplikasi jika jabatan berubah
+      if (jabatan != null) {
+        // Ambil ID aplikasi MT
+        final aplikasiResponse = await _client
+            .from('aplikasi')
+            .select('id')
+            .eq('kode_aplikasi', 'MT')
+            .maybeSingle();
+
+        if (aplikasiResponse != null) {
+          final aplikasiMtId = aplikasiResponse['id'] as String;
+          
+          // Cek apakah entry sudah ada
+          final existingEntry = await _client
+              .from('karyawan_aplikasi')
+              .select('id')
+              .eq('karyawan_id', id)
+              .eq('aplikasi_id', aplikasiMtId)
+              .maybeSingle();
+
+          if (existingEntry != null) {
+            // Update role jika entry sudah ada
+            await _client
+                .from('karyawan_aplikasi')
+                .update({'role': jabatan})
+                .eq('karyawan_id', id)
+                .eq('aplikasi_id', aplikasiMtId);
+          } else {
+            // Insert entry baru jika belum ada
+            await _client
+                .from('karyawan_aplikasi')
+                .insert({
+                  'karyawan_id': id,
+                  'aplikasi_id': aplikasiMtId,
+                  'role': jabatan,
+                });
+          }
+        }
+      }
+
+      // Update assets jika ada
+      if (assetIds != null) {
+        await _userAssetsRepo.updateKaryawanAssets(
+          karyawanId: id,
+          assetIds: assetIds,
+        );
+      }
+
+      // Return updated karyawan dengan assets
+      return await getKaryawanById(id) ?? {};
+    } catch (e) {
+      throw Exception('Gagal mengupdate karyawan: $e');
+    }
+  }
+
+  /// Delete karyawan (hard delete)
+  Future<void> deleteKaryawan(String id) async {
+    try {
+      // Hard delete: hapus dari user_assets dulu (cascade)
+      await _client
+          .from('user_assets')
+          .delete()
+          .eq('karyawan_id', id);
+      
+      // Hapus karyawan
+      await _client
+          .from('karyawan')
+          .delete()
+          .eq('id', id);
+    } catch (e) {
+      throw Exception('Gagal menghapus karyawan: $e');
+    }
+  }
+
+  /// Get nama-nama assets sebagai string (untuk display di UI)
+  /// Format: "Mesin 1, Mesin 2, Mesin 3"
+  String getAssetNamesString(Map<String, dynamic> karyawan) {
+    final userAssets = karyawan['user_assets'] as List<dynamic>? ?? [];
+    if (userAssets.isEmpty) return '-';
+    
+    final assetNames = userAssets
+        .map((ua) {
+          final asset = ua['assets'] as Map<String, dynamic>?;
+          return asset?['nama_assets'] as String? ?? '';
+        })
+        .where((name) => name.isNotEmpty)
+        .toList();
+    
+    return assetNames.join(', ');
+  }
+
+  /// Get list asset IDs dari karyawan
+  List<String> getAssetIds(Map<String, dynamic> karyawan) {
+    final userAssets = karyawan['user_assets'] as List<dynamic>? ?? [];
+    return userAssets
+        .map((ua) {
+          final asset = ua['assets'] as Map<String, dynamic>?;
+          return asset?['id']?.toString() ?? '';
+        })
+        .where((id) => id.isNotEmpty)
+        .toList();
+  }
+
+  /// Hitung total karyawan yang memiliki akses ke aplikasi sistem maintenance (MT)
+  /// Hanya menghitung karyawan dengan role "Teknisi" atau "KASIE Teknisi" (konsisten dengan getAllKaryawan)
+  Future<int> getTotalMaintenanceUsers() async {
+    try {
+      // Ambil semua karyawan Maintenance dengan akses aplikasi
+      final response = await _client
+          .from('karyawan')
+          .select('''
+            id,
+            karyawan_aplikasi (
+              role,
+              aplikasi:aplikasi_id (
+                kode_aplikasi
+              )
+            )
+          ''')
+          .eq('department', 'Maintenance');
+
+      final allKaryawan = (response as List).map((e) => e as Map<String, dynamic>).toList();
+
+      // Hitung hanya karyawan dengan role "Teknisi" atau "KASIE Teknisi" di aplikasi MT
+      int count = 0;
+      for (var karyawan in allKaryawan) {
+        final karyawanAplikasi = karyawan['karyawan_aplikasi'] as List<dynamic>? ?? [];
+        
+        // Cek apakah ada akses ke aplikasi MT dengan role "Teknisi" atau "KASIE Teknisi"
+        for (var ka in karyawanAplikasi) {
+          final aplikasi = ka['aplikasi'] as Map<String, dynamic>?;
+          final kodeAplikasi = aplikasi?['kode_aplikasi'] as String?;
+          final role = ka['role'] as String?;
+          
+          if (kodeAplikasi == 'MT' && (role == 'Teknisi' || role == 'KASIE Teknisi')) {
+            count++;
+            break; // Hanya hitung sekali per karyawan
+          }
+        }
+      }
+
+      return count;
+    } catch (e) {
+      throw Exception('Gagal menghitung total karyawan maintenance: $e');
+    }
+  }
+}
+
