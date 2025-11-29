@@ -22,3 +22,4 @@ flutter build web
 
 Output: `build/web/`
 
+
