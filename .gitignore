@@ -27,8 +27,8 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
+# .flutter-plugins - Keep this file in root to prevent android platform creation
+# .flutter-plugins-dependencies - Keep this file in root to prevent android platform creation
 .pub-cache/
 .pub/
 /build/
