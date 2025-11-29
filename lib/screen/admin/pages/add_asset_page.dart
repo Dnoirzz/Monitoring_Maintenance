@@ -278,9 +278,11 @@ class _AddAssetPageState extends State<AddAssetPage> {
         bagianList: bagianList,
       );
 
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
 
       // Show success message
       if (mounted) {
@@ -293,9 +295,11 @@ class _AddAssetPageState extends State<AddAssetPage> {
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
       _showErrorDialog('Gagal menambahkan asset: $e');
     }
   }

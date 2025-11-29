@@ -40,6 +40,8 @@ class _MaintenanceSchedulePageState extends State<MaintenanceSchedulePage> {
   }
 
   Future<void> _loadSchedules() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
     });

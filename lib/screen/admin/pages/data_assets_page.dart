@@ -9,8 +9,13 @@ import '../widgets/mdl_edit_asset.dart';
 
 class DataMesinPage extends StatefulWidget {
   final AssetController assetController;
+  final VoidCallback? onDataChanged; // Callback untuk refresh dashboard saat data berubah
 
-  const DataMesinPage({super.key, required this.assetController});
+  const DataMesinPage({
+    super.key, 
+    required this.assetController,
+    this.onDataChanged,
+  });
 
   @override
   _DataMesinPageState createState() => _DataMesinPageState();
@@ -66,6 +71,8 @@ class _DataMesinPageState extends State<DataMesinPage> {
   }
 
   Future<void> _fetchData() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
     });
@@ -1169,9 +1176,17 @@ class _DataMesinPageState extends State<DataMesinPage> {
   void _showAddAssetForm(BuildContext context) {
     ModalTambahAsset.show(
       context,
-      onSave: (newData) {
+      onSave: (newData) async {
+        // Tunggu sedikit untuk memastikan dialog modal tertutup
+        await Future.delayed(Duration(milliseconds: 100));
         // Panggil ulang fetch data dari DB
-        _fetchData();
+        if (mounted) {
+          await _fetchData();
+          // Refresh dashboard stats
+          if (widget.onDataChanged != null && mounted) {
+            widget.onDataChanged!();
+          }
+        }
       },
     );
   }
@@ -1251,6 +1266,9 @@ class _DataMesinPageState extends State<DataMesinPage> {
       // Close loading dialog
       if (mounted) Navigator.of(context).pop();
 
+      // Tunggu dialog benar-benar tertutup sebelum refresh
+      await Future.delayed(Duration(milliseconds: 100));
+
       // Show success message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1262,8 +1280,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
         );
       }
 
-      // Refresh data
-      await _fetchData();
+      // Refresh data hanya jika widget masih mounted
+      if (mounted) {
+        await _fetchData();
+        // Refresh dashboard stats
+        if (widget.onDataChanged != null && mounted) {
+          widget.onDataChanged!();
+        }
+      }
     } catch (e) {
       // Close loading dialog
       if (mounted) Navigator.of(context).pop();
@@ -1408,7 +1432,11 @@ class _DataMesinPageState extends State<DataMesinPage> {
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                await _deleteAsset(item["nama_aset"]);
+                // Tunggu dialog konfirmasi benar-benar tertutup
+                await Future.delayed(Duration(milliseconds: 100));
+                if (mounted) {
+                  await _deleteAsset(item["nama_aset"]);
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -1439,6 +1467,9 @@ class _DataMesinPageState extends State<DataMesinPage> {
       // Close loading dialog
       if (mounted) Navigator.of(context).pop();
 
+      // Tunggu dialog benar-benar tertutup sebelum refresh
+      await Future.delayed(Duration(milliseconds: 100));
+
       // Show success message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1450,8 +1481,14 @@ class _DataMesinPageState extends State<DataMesinPage> {
         );
       }
 
-      // Refresh data
-      await _fetchData();
+      // Refresh data hanya jika widget masih mounted
+      if (mounted) {
+        await _fetchData();
+        // Refresh dashboard stats
+        if (widget.onDataChanged != null && mounted) {
+          widget.onDataChanged!();
+        }
+      }
     } catch (e) {
       // Close loading dialog
       if (mounted) Navigator.of(context).pop();

@@ -46,6 +46,7 @@ class _AdminTemplateState extends ConsumerState<AdminTemplate>
   late DashboardController _dashboardController;
   late AnimationController _animationController;
   late Animation<double> _animation;
+  final GlobalKey<State<BerandaPage>> _berandaKey = GlobalKey<State<BerandaPage>>();
 
   @override
   void initState() {
@@ -133,12 +134,28 @@ class _AdminTemplateState extends ConsumerState<AdminTemplate>
   }
 
   Future<void> _performLogout() async {
+    if (!mounted) return;
+    
     try {
       // Close sidebar
       setState(() {
         _adminController.isSidebarOpen = false;
         _animationController.reverse();
       });
+
+      // Navigate to login page TERLEBIH DAHULU (sebelum mengubah state)
+      // Ini memastikan user tetap di menu yang sedang dibuka sampai navigasi selesai
+      // Gunakan unawaited untuk navigasi agar tidak blocking, tapi tetap execute
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+          (route) => false, // Remove all previous routes
+        );
+      }
+
+      // Tunggu navigasi selesai sebelum mengubah state
+      // Ini memastikan user sudah di LoginPage sebelum MaterialApp rebuild
+      await Future.delayed(Duration(milliseconds: 200));
 
       // Sign out from Supabase (if using Supabase auth)
       try {
@@ -148,15 +165,9 @@ class _AdminTemplateState extends ConsumerState<AdminTemplate>
       }
 
       // Logout from auth provider (clears storage and resets state)
+      // Panggil setelah navigasi untuk menghindari konflik dengan MaterialApp rebuild
+      // State akan berubah setelah user sudah di LoginPage
       await ref.read(authProvider.notifier).logout();
-
-      // Navigate to login page
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-          (route) => false, // Remove all previous routes
-        );
-      }
     } catch (e) {
       // Show error if logout fails
       if (mounted) {
@@ -233,7 +244,16 @@ class _AdminTemplateState extends ConsumerState<AdminTemplate>
   Widget getSelectedPage() {
     switch (_adminController.selectedIndex) {
       case 1:
-        return DataMesinPage(assetController: _assetController);
+        return DataMesinPage(
+          assetController: _assetController,
+          onDataChanged: () {
+            // Refresh dashboard stats saat data mesin berubah
+            final berandaState = _berandaKey.currentState;
+            if (berandaState != null) {
+              (berandaState as dynamic).refreshStats();
+            }
+          },
+        );
       case 2:
         return DaftarKaryawanPage(
           karyawanController: _karyawanController,
@@ -252,7 +272,7 @@ class _AdminTemplateState extends ConsumerState<AdminTemplate>
         }
       default:
         return BerandaPage(
-          key: ValueKey('beranda'), // Key tetap untuk memungkinkan refresh
+          key: _berandaKey, // Key untuk akses method refreshStats()
           dashboardController: _dashboardController,
           onNavigateToDataMesin: () {
             setState(() {

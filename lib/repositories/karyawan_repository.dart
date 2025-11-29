@@ -9,8 +9,10 @@ class KaryawanRepository {
   final UserAssetsRepository _userAssetsRepo = UserAssetsRepository();
 
   /// Get semua karyawan dengan assets mereka (hanya department Maintenance)
+  /// Hanya menampilkan karyawan dengan role "Teknisi" atau "KASIE Teknisi" di aplikasi MT
   Future<List<Map<String, dynamic>>> getAllKaryawan() async {
     try {
+      // Ambil semua karyawan Maintenance dengan assets
       final response = await _client
           .from('karyawan')
           .select('''
@@ -21,12 +23,43 @@ class KaryawanRepository {
                 nama_assets,
                 kode_assets
               )
+            ),
+            karyawan_aplikasi (
+              role,
+              aplikasi:aplikasi_id (
+                kode_aplikasi
+              )
             )
           ''')
           .eq('department', 'Maintenance')
           .order('created_at', ascending: false);
 
-      return (response as List).map((e) => e as Map<String, dynamic>).toList();
+      final allKaryawan = (response as List).map((e) => e as Map<String, dynamic>).toList();
+
+      // Filter hanya karyawan dengan role "Teknisi" atau "KASIE Teknisi" di aplikasi MT
+      final filteredKaryawan = allKaryawan.where((karyawan) {
+        final karyawanAplikasi = karyawan['karyawan_aplikasi'] as List<dynamic>? ?? [];
+        
+        // Cek apakah ada akses ke aplikasi MT dengan role "Teknisi" atau "KASIE Teknisi"
+        for (var ka in karyawanAplikasi) {
+          final aplikasi = ka['aplikasi'] as Map<String, dynamic>?;
+          final kodeAplikasi = aplikasi?['kode_aplikasi'] as String?;
+          final role = ka['role'] as String?;
+          
+          if (kodeAplikasi == 'MT' && (role == 'Teknisi' || role == 'KASIE Teknisi')) {
+            return true;
+          }
+        }
+        
+        return false;
+      }).toList();
+
+      // Hapus karyawan_aplikasi dari hasil karena tidak diperlukan di UI
+      return filteredKaryawan.map((karyawan) {
+        final filtered = Map<String, dynamic>.from(karyawan);
+        filtered.remove('karyawan_aplikasi');
+        return filtered;
+      }).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data karyawan: $e');
     }
@@ -265,16 +298,44 @@ class KaryawanRepository {
   }
 
   /// Hitung total karyawan yang memiliki akses ke aplikasi sistem maintenance (MT)
-  /// Hanya menghitung karyawan dengan department = 'Maintenance' agar konsisten dengan daftar karyawan
+  /// Hanya menghitung karyawan dengan role "Teknisi" atau "KASIE Teknisi" (konsisten dengan getAllKaryawan)
   Future<int> getTotalMaintenanceUsers() async {
     try {
-      // Hitung karyawan dengan department = 'Maintenance' (konsisten dengan getAllKaryawan)
-      final karyawanList = await _client
+      // Ambil semua karyawan Maintenance dengan akses aplikasi
+      final response = await _client
           .from('karyawan')
-          .select('id')
+          .select('''
+            id,
+            karyawan_aplikasi (
+              role,
+              aplikasi:aplikasi_id (
+                kode_aplikasi
+              )
+            )
+          ''')
           .eq('department', 'Maintenance');
 
-      return karyawanList.length;
+      final allKaryawan = (response as List).map((e) => e as Map<String, dynamic>).toList();
+
+      // Hitung hanya karyawan dengan role "Teknisi" atau "KASIE Teknisi" di aplikasi MT
+      int count = 0;
+      for (var karyawan in allKaryawan) {
+        final karyawanAplikasi = karyawan['karyawan_aplikasi'] as List<dynamic>? ?? [];
+        
+        // Cek apakah ada akses ke aplikasi MT dengan role "Teknisi" atau "KASIE Teknisi"
+        for (var ka in karyawanAplikasi) {
+          final aplikasi = ka['aplikasi'] as Map<String, dynamic>?;
+          final kodeAplikasi = aplikasi?['kode_aplikasi'] as String?;
+          final role = ka['role'] as String?;
+          
+          if (kodeAplikasi == 'MT' && (role == 'Teknisi' || role == 'KASIE Teknisi')) {
+            count++;
+            break; // Hanya hitung sekali per karyawan
+          }
+        }
+      }
+
+      return count;
     } catch (e) {
       throw Exception('Gagal menghitung total karyawan maintenance: $e');
     }

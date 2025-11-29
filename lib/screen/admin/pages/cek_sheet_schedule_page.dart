@@ -51,6 +51,8 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
     });
@@ -757,15 +759,17 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
                   try {
                     await widget.checkSheetController.updateSchedule(updatedSchedule);
                     if (mounted) {
-        setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Bagian ${updatedSchedule.bagian} berhasil diupdate",
-            ),
-            backgroundColor: Color(0xFF2196F3),
-          ),
-        );
+                      setState(() {});
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "Bagian ${updatedSchedule.bagian} berhasil diupdate",
+                            ),
+                            backgroundColor: Color(0xFF2196F3),
+                          ),
+                        );
+                      }
                     }
                   } catch (e) {
                     if (mounted) {
@@ -811,24 +815,36 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
               );
 
               if (confirmed == true) {
+                if (!mounted) return;
+                
                 try {
                   await widget.checkSheetController.deleteSchedule(item.no);
-                  setState(() {});
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-            content: Text(
-                        '${item.namaInfrastruktur} - ${item.bagian} berhasil dihapus',
-                      ),
-                      backgroundColor: Color(0xFF0A9C5D),
-                    ),
-                  );
+                  
+                  // Tunggu sedikit untuk memastikan operasi delete selesai
+                  await Future.delayed(Duration(milliseconds: 100));
+                  
+                  if (mounted) {
+                    setState(() {});
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '${item.namaInfrastruktur} - ${item.bagian} berhasil dihapus',
+                          ),
+                          backgroundColor: Color(0xFF0A9C5D),
+                        ),
+                      );
+                    }
+                  }
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Gagal menghapus: $e'),
-                      backgroundColor: Color(0xFFF44336),
-                    ),
-                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Gagal menghapus: $e'),
+                        backgroundColor: Color(0xFFF44336),
+                      ),
+                    );
+                  }
                 }
               }
             },
@@ -867,7 +883,11 @@ class _CekSheetSchedulePageState extends State<CekSheetSchedulePage> {
       context: context,
       checkSheetController: widget.checkSheetController,
       onSuccess: () async {
-        await _loadData();
+        // Tunggu sedikit untuk memastikan modal tertutup
+        await Future.delayed(Duration(milliseconds: 100));
+        if (mounted) {
+          await _loadData();
+        }
       },
     );
   }

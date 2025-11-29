@@ -67,14 +67,19 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
+    
     setState(() => _isLoading = true);
     try {
       await widget.karyawanController.loadKaryawan();
       final mesinList = await widget.karyawanController.getMesinList();
-      setState(() {
-        _karyawan = widget.karyawanController.getAllKaryawan();
-        _mesinList = mesinList;
-      });
+      
+      if (mounted) {
+        setState(() {
+          _karyawan = widget.karyawanController.getAllKaryawan();
+          _mesinList = mesinList;
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1058,20 +1063,30 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                   );
                                   
                                   if (mounted) {
+                                    // Tutup dialog terlebih dahulu
                                     Navigator.of(dialogContext).pop();
-                                    await _loadData();
                                     
-                                    // Refresh dashboard setelah menambah karyawan
-                                    await _refreshDashboard();
+                                    // Tunggu dialog benar-benar tertutup
+                                    await Future.delayed(Duration(milliseconds: 100));
                                     
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          "${selectedJabatan} ${namaController.text.trim()} berhasil ditambahkan ke Department Maintenance",
-                                        ),
-                                        backgroundColor: Color(0xFF0A9C5D),
-                                      ),
-                                    );
+                                    // Refresh data dan dashboard hanya jika widget masih mounted
+                                    if (mounted) {
+                                      await _loadData();
+                                      
+                                      // Refresh dashboard setelah menambah karyawan
+                                      await _refreshDashboard();
+                                      
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              "${selectedJabatan} ${namaController.text.trim()} berhasil ditambahkan ke Department Maintenance",
+                                            ),
+                                            backgroundColor: Color(0xFF0A9C5D),
+                                          ),
+                                        );
+                                      }
+                                    }
                                   }
                                 } catch (e) {
                                   if (mounted) {
@@ -1427,18 +1442,28 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
                                   );
                                   
                                   if (mounted) {
+                                    // Tutup dialog terlebih dahulu
                                     Navigator.of(dialogContext).pop();
-                                    await _loadData();
                                     
-                                    // Refresh dashboard setelah update karyawan
-                                    await _refreshDashboard();
+                                    // Tunggu dialog benar-benar tertutup
+                                    await Future.delayed(Duration(milliseconds: 100));
                                     
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Karyawan berhasil diupdate'),
-                                        backgroundColor: Color(0xFF0A9C5D),
-                                      ),
-                                    );
+                                    // Refresh data dan dashboard hanya jika widget masih mounted
+                                    if (mounted) {
+                                      await _loadData();
+                                      
+                                      // Refresh dashboard setelah update karyawan
+                                      await _refreshDashboard();
+                                      
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Karyawan berhasil diupdate'),
+                                            backgroundColor: Color(0xFF0A9C5D),
+                                          ),
+                                        );
+                                      }
+                                    }
                                   }
                                 } catch (e) {
                                   if (mounted) {
@@ -1675,20 +1700,30 @@ class _DaftarKaryawanPageState extends State<DaftarKaryawanPage> {
               );
 
               if (confirmed == true) {
+                if (!mounted) return;
+                
                 try {
                   await widget.karyawanController.deleteKaryawan(id);
-                  await _loadData();
                   
-                  // Refresh dashboard setelah menghapus karyawan
-                  await _refreshDashboard();
+                  // Tunggu sedikit untuk memastikan operasi delete selesai
+                  await Future.delayed(Duration(milliseconds: 100));
                   
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text("Karyawan $nama berhasil dihapus"),
-                        backgroundColor: Color(0xFF0A9C5D),
-                      ),
-                    );
+                    await _loadData();
+                    
+                    // Refresh dashboard setelah menghapus karyawan
+                    if (mounted) {
+                      await _refreshDashboard();
+                      
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Karyawan $nama berhasil dihapus"),
+                            backgroundColor: Color(0xFF0A9C5D),
+                          ),
+                        );
+                      }
+                    }
                   }
                 } catch (e) {
                   if (mounted) {

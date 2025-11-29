@@ -32,11 +32,8 @@ class _BerandaPageState extends State<BerandaPage> {
     _loadStats();
   }
 
-  @override
-  void didUpdateWidget(BerandaPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Refresh stats saat widget diupdate (misalnya saat kembali dari halaman lain)
-    // Refresh setiap kali widget diupdate untuk memastikan data terbaru
+  // Method public untuk refresh stats dari luar (dipanggil saat add mesin/karyawan atau refresh manual)
+  void refreshStats() {
     _loadStats();
   }
 
