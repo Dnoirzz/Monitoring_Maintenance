@@ -79,16 +79,91 @@ class AssetSupabaseRepository {
   }
 
   /// Delete asset berdasarkan ID
-  /// Akan otomatis menghapus bg_mesin dan komponen_assets (cascade delete)
+  /// Akan menghapus semua data terkait sebelum menghapus asset
+  /// Urutan penghapusan mengikuti foreign key dependencies
   Future<void> deleteAsset(String assetId) async {
     try {
-      // Hapus komponen terlebih dahulu
+      // 1. Hapus maintenance_request yang terkait dengan asset ini (langsung ke assets)
+      await _client.from('maintenance_request').delete().eq('assets_id', assetId);
+
+      // 2. Hapus mt_schedule yang terkait dengan asset ini (langsung ke assets)
+      await _client.from('mt_schedule').delete().eq('assets_id', assetId);
+
+      // 3. Hapus user_assets yang terkait dengan asset ini (langsung ke assets)
+      await _client.from('user_assets').delete().eq('assets_id', assetId);
+
+      // 4. Ambil semua bg_mesin yang terkait untuk menghapus mt_template
+      final bgMesinList = await _client
+          .from('bg_mesin')
+          .select('id')
+          .eq('assets_id', assetId);
+
+      // 5. Hapus mt_template yang terkait dengan bg_mesin
+      for (var bgMesin in bgMesinList) {
+        final bgMesinId = bgMesin['id'] as String;
+        await _client
+            .from('mt_template')
+            .delete()
+            .eq('bg_mesin_id', bgMesinId);
+      }
+
+      // 6. Ambil semua komponen_assets yang terkait untuk menghapus cek_sheet_template
+      final komponenList = await _client
+          .from('komponen_assets')
+          .select('id')
+          .eq('assets_id', assetId);
+
+      // 7. Hapus cek_sheet_schedule dan notifikasi yang terkait dengan cek_sheet_template
+      //    (notifikasi -> cek_sheet_schedule -> cek_sheet_template -> komponen_assets)
+      for (var komponen in komponenList) {
+        final komponenId = komponen['id'] as String;
+        
+        // Ambil semua cek_sheet_template yang terkait
+        final cekSheetTemplateList = await _client
+            .from('cek_sheet_template')
+            .select('id')
+            .eq('komponen_assets_id', komponenId);
+
+        // Hapus cek_sheet_schedule dan notifikasi yang terkait dengan template
+        for (var template in cekSheetTemplateList) {
+          final templateId = template['id'] as String;
+          
+          // Ambil semua cek_sheet_schedule yang terkait dengan template
+          final cekSheetScheduleList = await _client
+              .from('cek_sheet_schedule')
+              .select('id')
+              .eq('template_id', templateId);
+          
+          // Hapus notifikasi yang terkait dengan cek_sheet_schedule
+          for (var schedule in cekSheetScheduleList) {
+            final scheduleId = schedule['id'] as String;
+            await _client
+                .from('notifikasi')
+                .delete()
+                .eq('jadwal_id', scheduleId);
+          }
+          
+          // Hapus cek_sheet_schedule
+          await _client
+              .from('cek_sheet_schedule')
+              .delete()
+              .eq('template_id', templateId);
+        }
+
+        // Hapus cek_sheet_template
+        await _client
+            .from('cek_sheet_template')
+            .delete()
+            .eq('komponen_assets_id', komponenId);
+      }
+
+      // 8. Hapus komponen_assets
       await _client.from('komponen_assets').delete().eq('assets_id', assetId);
 
-      // Hapus bagian mesin
+      // 9. Hapus bagian mesin
       await _client.from('bg_mesin').delete().eq('assets_id', assetId);
 
-      // Hapus asset
+      // 10. Hapus asset (harus terakhir)
       await _client.from('assets').delete().eq('id', assetId);
 
       print('✅ Asset berhasil dihapus: $assetId');
@@ -155,6 +230,8 @@ class AssetSupabaseRepository {
     required String namaAssetBaru,
     required String jenisAsset,
     String? foto,
+    String? kodeAssets,
+    String? mtPriority,
     required List<Map<String, dynamic>> bagianList,
   }) async {
     try {
@@ -172,12 +249,20 @@ class AssetSupabaseRepository {
 
       final String assetId = assetResponse['id'];
 
-      // 2. Update data asset (nama, jenis, foto)
+      // 2. Update data asset (nama, jenis, foto, kode_assets, mt_priority)
       final Map<String, dynamic> updateAssetData = {
         'nama_assets': namaAssetBaru,
         'jenis_assets': jenisAsset,
       };
       if (foto != null) updateAssetData['foto'] = foto;
+      // Handle kode_assets: jika null atau empty string, set ke null
+      if (kodeAssets != null && kodeAssets.trim().isNotEmpty) {
+        updateAssetData['kode_assets'] = kodeAssets.trim();
+      } else {
+        updateAssetData['kode_assets'] = null; // Set ke null jika empty
+      }
+      // Handle mt_priority: bisa null (optional)
+      updateAssetData['mt_priority'] = mtPriority;
 
       await _client.from('assets').update(updateAssetData).eq('id', assetId);
 

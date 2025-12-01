@@ -8,24 +8,24 @@ Dengan sistem ini, pihak teknisi dan kepala teknisi dapat memantau status mesin,
 Tujuan utamanya adalah meminimalkan keterlambatan perawatan dan mengurangi risiko kerusakan mendadak (breakdown). Di bagian dashboard digunakan untuk menampilkan daftar mesin yang perlu dimaintenance (yang terjadwal memiliki status "perlu dimaintenance" secara otomatis mengikuti jadwal maintenance dan yang tidak terjadwal memiliki status "breakdown" yang diatur sendiri oleh teknisi dan kepala teknisi)
 
 🚀 Fitur Utama
-1. Manajemen User
-a. Tiga jenis role: Teknisi, Kepala Teknisi, Admin
+1. Manajemen User <br>
+a. Tiga jenis role: Teknisi, Kepala Teknisi, Admin <br>
 b. Login, autentikasi, dan hak akses berdasarkan peran
 
-2. Data Mesin
-a. Menyimpan informasi mesin, kode aset, dan status (Active, Breakdown, Perlu Maintenance)
-b. Jadwal Maintenance
-c. Mencatat jadwal perawatan terakhir dan berikutnya
+2. Data Mesin <br>
+a. Menyimpan informasi mesin, kode aset, dan status (Active, Breakdown, Perlu Maintenance) <br>
+b. Jadwal Maintenance <br>
+c. Mencatat jadwal perawatan terakhir dan berikutnya <br>
 d. Cek harian mesin yg menampilkan nama mesin, bagian mesin berupa dropdown, jenis pekerjaan text input, catatan, tanggal, bukti foto, dan nama petugas.
 
-3. Notifikasi Otomatis
-a. Mengingatkan user 7 hari sebelum tanggal maintenance berikutnya
+3. Notifikasi Otomatis <br>
+a. Mengingatkan user 7 hari sebelum tanggal maintenance berikutnya <br>
 b. Ditampilkan di halaman dashboard dan memunculkan popup dari luar aplikasi
 
-4. Menu Riwayat
+4. Menu Riwayat <br>
 a. Menampilkan riwayat maintenance mesin berdasarkan periode waktu atau status
 
-5. Multi-Lokasi
+5. Multi-Lokasi <br>
 a. Setiap user dan mesin terhubung ke lokasi tertentu di pabrik
 
 ## Getting Started

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 
 /// API Configuration
 /// Base URL untuk backend API
@@ -8,59 +9,54 @@ class ApiConfig {
   // ============================================
 
   // ============================================
-  // PILIHAN KONFIGURASI:
+  // KONFIGURASI UNTUK ANDROID DEVICE FISIK (via WiFi):
   // ============================================
-  // Opsi 1: USB Debugging dengan ADB Port Forwarding (MUDAH!)
-  //   - Tidak perlu WiFi yang sama
-  //   - Gunakan 'localhost' atau '127.0.0.1'
-  //   - Jalankan: adb reverse tcp:3000 tcp:3000
-  //
-  // Opsi 2: WiFi (Perlu WiFi yang sama)
-  //   - HP dan komputer harus di WiFi yang sama
-  //   - Gunakan IP komputer (dapatkan dengan: ipconfig / ifconfig)
-  //   - Contoh: '192.168.1.100'
-  // ============================================
-
-  // Untuk USB Debugging dengan ADB Port Forwarding:
-  // Set ke true jika menggunakan ADB reverse port forwarding
-  // Jalankan: adb reverse tcp:3000 tcp:3000
-  static const bool useAdbPortForwarding =
-      false; // ⚠️ Set false untuk menggunakan WiFi
-
-  // Untuk WiFi (jika useAdbPortForwarding = false):
   // GANTI DENGAN IP ADDRESS KOMPUTER ANDA di WiFi yang sama dengan HP
   // Cara mendapatkan IP:
   // Windows: buka CMD, ketik: ipconfig (cari IPv4 Address di WiFi adapter)
   // Mac/Linux: buka Terminal, ketik: ifconfig (cari inet)
   //
-  // IP yang terdeteksi di komputer Anda:
-  // - 192.168.83.188 (kemungkinan WiFi utama)
-  // - 192.168.56.1 (VirtualBox, abaikan)
-  // - 10.5.0.2 (VPN/network lain, abaikan)
-  //
-  // Gunakan IP WiFi yang sama dengan HP Anda!
-  static const String localNetworkIp =
-      '192.168.83.188'; // ⚠️ GANTI INI dengan IP WiFi Anda!
+  // Contoh: '192.168.1.100'
+  // Hanya digunakan jika menggunakan Android device fisik via WiFi
+  // ============================================
+  static const String _hostIpForPhysicalDevice =
+      '192.168.83.188'; // ⚠️ GANTI INI dengan IP WiFi Anda (hanya untuk device fisik via WiFi)
+
+  /// Port backend server
+  static const int _port = 3000;
 
   static String get baseUrl {
     if (kIsWeb) {
       // Jika dijalankan di Web Browser -> pakai localhost
-      return 'http://localhost:3000';
+      return 'http://localhost:$_port';
     } else if (defaultTargetPlatform == TargetPlatform.android) {
       // Untuk Android:
-      if (useAdbPortForwarding) {
-        // Opsi 1: USB Debugging dengan ADB Port Forwarding
-        // ADB akan forward port 3000 dari HP ke komputer
-        // HP akan mengakses localhost:3000 yang di-forward ke komputer
-        return 'http://localhost:3000';
-      } else {
-        // Opsi 2: WiFi (HP dan komputer di network yang sama)
-        // Gunakan IP komputer di network yang sama
-        return 'http://$localNetworkIp:3000';
-      }
+      // - Emulator: gunakan 10.0.2.2 (alias khusus untuk localhost host machine)
+      // - Device Fisik via USB: gunakan 10.0.2.2 atau ADB port forwarding
+      // - Device Fisik via WiFi: gunakan IP komputer di network yang sama
+      
+      // Deteksi apakah emulator atau device fisik
+      // Untuk development, default anggap emulator (10.0.2.2)
+      // Jika menggunakan device fisik via WiFi, set _hostIpForPhysicalDevice
+      
+      // Untuk emulator Android, selalu gunakan 10.0.2.2
+      // Ini adalah alias khusus yang Android emulator sediakan untuk mengakses localhost host machine
+      return 'http://10.0.2.2:$_port';
+      
+      // Jika menggunakan device fisik via WiFi (bukan emulator):
+      // Uncomment baris di bawah dan comment baris di atas:
+      // return 'http://$_hostIpForPhysicalDevice:$_port';
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      // iOS Simulator -> pakai localhost
+      // iOS Device Fisik -> pakai IP address komputer host
+      // Untuk development, default anggap simulator
+      return 'http://localhost:$_port';
+      
+      // Jika menggunakan iOS device fisik via WiFi:
+      // return 'http://$_hostIpForPhysicalDevice:$_port';
     } else {
-      // iOS / Desktop / Lainnya -> pakai localhost
-      return 'http://localhost:3000';
+      // Desktop / Lainnya -> pakai localhost
+      return 'http://localhost:$_port';
     }
   }
 

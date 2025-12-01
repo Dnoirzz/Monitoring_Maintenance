@@ -13,10 +13,14 @@ class ModalEditAsset {
     if (asetRows.isEmpty) return;
 
     final _formKey = GlobalKey<FormState>();
+    final _kodeMesinController = TextEditingController(
+      text: asetRows.first["kode_assets"] ?? '',
+    );
 
     String _namaAset = asetRows.first["nama_aset"];
     String _jenisAset = asetRows.first["jenis_aset"];
     String? _gambarAset = asetRows.first["gambar_aset"];
+    String? _prioritas = asetRows.first["mt_priority"];
 
     Map<String, List<Map<String, dynamic>>> grouped = _groupByBagian(asetRows);
     List<Map<String, dynamic>> bagianList =
@@ -59,14 +63,33 @@ class ModalEditAsset {
                           key: _formKey,
                           child: Column(
                             children: [
-                              _buildNamaAsetField(
-                                _namaAset,
-                                (v) => _namaAset = v,
+                              // Row untuk Nama Aset dan Kode Mesin
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildNamaAsetField(
+                                      _namaAset,
+                                      (v) => _namaAset = v,
+                                    ),
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: _buildKodeMesinField(
+                                      _kodeMesinController,
+                                    ),
+                                  ),
+                                ],
                               ),
                               SizedBox(height: 16),
                               _buildJenisAsetField(
                                 _jenisAset,
                                 (v) => _jenisAset = v!,
+                              ),
+                              SizedBox(height: 16),
+                              _buildPrioritasField(
+                                _prioritas,
+                                (v) => _prioritas = v,
+                                setDialogState,
                               ),
                               SizedBox(height: 20),
                               _buildBagianKomponenSection(
@@ -91,7 +114,9 @@ class ModalEditAsset {
                       ctx,
                       _formKey,
                       _namaAset,
+                      _kodeMesinController,
                       _jenisAset,
+                      _prioritas,
                       _gambarAset,
                       newImage,
                       bagianList,
@@ -171,6 +196,19 @@ class ModalEditAsset {
     );
   }
 
+  static Widget _buildKodeMesinField(TextEditingController controller) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: 'Kode Mesin',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.qr_code),
+        hintText: 'Contoh: MP-001',
+      ),
+      // Kode mesin tidak wajib (optional)
+    );
+  }
+
   static Widget _buildJenisAsetField(
     String jenisAset,
     Function(String?) onChanged,
@@ -191,6 +229,38 @@ class ModalEditAsset {
             "Lainnya",
           ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
       onChanged: onChanged,
+    );
+  }
+
+  static Widget _buildPrioritasField(
+    String? selectedPrioritas,
+    Function(String?) onChanged,
+    StateSetter setDialogState,
+  ) {
+    return DropdownButtonFormField<String>(
+      value: selectedPrioritas,
+      decoration: InputDecoration(
+        labelText: 'Prioritas Maintenance',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.priority_high),
+        helperText: 'Prioritas untuk maintenance schedule',
+      ),
+      items: [
+        'Low',
+        'Medium',
+        'High',
+      ].map((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setDialogState(() {
+          onChanged(value);
+        });
+      },
+      // Prioritas optional (bisa null)
     );
   }
 
@@ -417,7 +487,9 @@ class ModalEditAsset {
     BuildContext ctx,
     GlobalKey<FormState> formKey,
     String namaAset,
+    TextEditingController kodeMesinController,
     String jenisAset,
+    String? prioritas,
     String? gambarAset,
     XFile? newImage,
     List<Map<String, dynamic>> bagianList,
@@ -441,26 +513,43 @@ class ModalEditAsset {
             onPressed: () {
               if (!formKey.currentState!.validate()) return;
 
+              // Capture variables untuk digunakan di closure
+              final currentNamaAset = namaAset;
+              final currentKodeMesin = kodeMesinController.text.trim();
+              final currentJenisAset = jenisAset;
+              final currentPrioritas = prioritas;
+              final currentGambarAset = gambarAset;
+              final currentNewImage = newImage;
+              final currentBagianList = bagianList;
+              final currentAsetRows = asetRows;
+              final currentOriginalNamaAset = originalNamaAset;
+
               List<Map<String, dynamic>> newData = [];
-              for (var bagian in bagianList) {
+              for (var bagian in currentBagianList) {
                 for (var komponen in bagian["komponen"]) {
                   newData.add({
-                    "nama_aset": namaAset,
-                    "jenis_aset": jenisAset,
+                    "id": currentAsetRows.first["id"], // Include ID untuk update
+                    "nama_aset": currentNamaAset,
+                    "kode_assets": currentKodeMesin.isEmpty 
+                        ? null 
+                        : currentKodeMesin,
+                    "jenis_aset": currentJenisAset,
+                    "status": currentAsetRows.first["status"] ?? 'Aktif', // Keep existing status
+                    "mt_priority": currentPrioritas,
                     "maintenance_terakhir":
-                        asetRows.first["maintenance_terakhir"],
+                        currentAsetRows.first["maintenance_terakhir"],
                     "maintenance_selanjutnya":
-                        asetRows.first["maintenance_selanjutnya"],
+                        currentAsetRows.first["maintenance_selanjutnya"],
                     "bagian_aset": bagian["namaBagian"],
                     "komponen_aset": komponen["namaKomponen"],
                     "produk_yang_digunakan": komponen["spesifikasi"],
                     "gambar_aset":
-                        newImage != null ? newImage.path : gambarAset,
+                        currentNewImage != null ? currentNewImage.path : currentGambarAset,
                   });
                 }
               }
 
-              onSave(newData, {"nama_aset": originalNamaAset});
+              onSave(newData, {"nama_aset": currentOriginalNamaAset});
               Navigator.pop(ctx);
 
               ScaffoldMessenger.of(context).showSnackBar(

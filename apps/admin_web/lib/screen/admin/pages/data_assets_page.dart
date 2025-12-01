@@ -86,8 +86,12 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
       for (var asset in rawAssets) {
         String namaAset = asset['nama_assets'] ?? '-';
+        String? kodeAssets = asset['kode_assets'];
         String jenisAset = asset['jenis_assets'] ?? '-';
         String? foto = asset['foto'];
+        String status = asset['status'] ?? 'Aktif';
+        String? mtPriority = asset['mt_priority'];
+        String? assetId = asset['id'];
 
         // Data bagian mesin
         List<dynamic> bagianList = asset['bg_mesin'] ?? [];
@@ -95,8 +99,12 @@ class _DataMesinPageState extends State<DataMesinPage> {
         if (bagianList.isEmpty) {
           // Jika tidak ada bagian/komponen, tetap tampilkan assetnya
           flatData.add({
+            "id": assetId,
             "nama_aset": namaAset,
+            "kode_assets": kodeAssets,
             "jenis_aset": jenisAset,
+            "status": status,
+            "mt_priority": mtPriority,
             "maintenance_terakhir": "-", // Belum ada data maintenance
             "maintenance_selanjutnya": "-",
             "bagian_aset": "-",
@@ -111,8 +119,12 @@ class _DataMesinPageState extends State<DataMesinPage> {
 
             if (komponenList.isEmpty) {
               flatData.add({
+                "id": assetId,
                 "nama_aset": namaAset,
+                "kode_assets": kodeAssets,
                 "jenis_aset": jenisAset,
+                "status": status,
+                "mt_priority": mtPriority,
                 "maintenance_terakhir": "-",
                 "maintenance_selanjutnya": "-",
                 "bagian_aset": namaBagian,
@@ -128,8 +140,12 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 String spesifikasi = komponen['spesifikasi'] ?? '-';
 
                 flatData.add({
+                  "id": assetId,
                   "nama_aset": namaAset,
+                  "kode_assets": kodeAssets,
                   "jenis_aset": jenisAset,
+                  "status": status,
+                  "mt_priority": mtPriority,
                   "maintenance_terakhir":
                       "-", // TODO: Ambil dari tabel maintenance
                   "maintenance_selanjutnya": "-",
@@ -206,7 +222,19 @@ class _DataMesinPageState extends State<DataMesinPage> {
                       _searchQuery,
                     ) ==
                     true ||
+                item["kode_assets"]?.toString().toLowerCase().contains(
+                      _searchQuery,
+                    ) ==
+                    true ||
                 item["jenis_aset"]?.toString().toLowerCase().contains(
+                      _searchQuery,
+                    ) ==
+                    true ||
+                item["status"]?.toString().toLowerCase().contains(
+                      _searchQuery,
+                    ) ==
+                    true ||
+                item["mt_priority"]?.toString().toLowerCase().contains(
                       _searchQuery,
                     ) ==
                     true ||
@@ -511,8 +539,11 @@ class _DataMesinPageState extends State<DataMesinPage> {
         horizontalScrollbarThickness + 8.0;
 
     const double colNo = 60.0;
-    const double col1 = 180.0;
-    const double col2 = 150.0;
+    const double col1 = 180.0; // Nama Aset
+    const double col1a = 120.0; // Kode Aset
+    const double col2 = 150.0; // Jenis Aset
+    const double col2a = 100.0; // Status
+    const double col2b = 100.0; // Prioritas
     const double col3 = 200.0;
     const double col4 = 200.0;
     const double col5 = 150.0;
@@ -532,11 +563,32 @@ class _DataMesinPageState extends State<DataMesinPage> {
           "nama_aset",
         ),
         _sortableHeaderCell(
+          "KODE ASET",
+          col1a,
+          rowHeight,
+          headerStyle,
+          "kode_assets",
+        ),
+        _sortableHeaderCell(
           "JENIS ASET",
           col2,
           rowHeight,
           headerStyle,
           "jenis_aset",
+        ),
+        _sortableHeaderCell(
+          "STATUS",
+          col2a,
+          rowHeight,
+          headerStyle,
+          "status",
+        ),
+        _sortableHeaderCell(
+          "PRIORITAS",
+          col2b,
+          rowHeight,
+          headerStyle,
+          "mt_priority",
         ),
         _sortableHeaderCell(
           "MAINTENANCE TERAKHIR",
@@ -640,8 +692,11 @@ class _DataMesinPageState extends State<DataMesinPage> {
     const double rowHeight = 65.0;
 
     const double colNo = 60.0;
-    const double col1 = 180.0;
-    const double col2 = 150.0;
+    const double col1 = 180.0; // Nama Aset
+    const double col1a = 120.0; // Kode Aset
+    const double col2 = 150.0; // Jenis Aset
+    const double col2a = 100.0; // Status
+    const double col2b = 100.0; // Prioritas
     const double col3 = 200.0;
     const double col4 = 200.0;
     const double col5 = 150.0;
@@ -653,7 +708,7 @@ class _DataMesinPageState extends State<DataMesinPage> {
     Map<String, List<Map<String, dynamic>>> grouped = _groupByAset();
 
     const double totalWidth =
-        colNo + col1 + col2 + col3 + col4 + col5 + col6 + col7 + col8 + col9;
+        colNo + col1 + col1a + col2 + col2a + col2b + col3 + col4 + col5 + col6 + col7 + col8 + col9;
 
     if (grouped.isEmpty) {
       return Container(
@@ -851,10 +906,32 @@ class _DataMesinPageState extends State<DataMesinPage> {
                 isHovered: isHovered,
               ),
               _cellCenter(
+                firstItem["kode_assets"] ?? "-",
+                col1a,
+                mergedHeight,
+                null,
+                isEvenRow: isEvenRow,
+                isHovered: isHovered,
+              ),
+              _cellCenter(
                 firstItem["jenis_aset"],
                 col2,
                 mergedHeight,
                 null,
+                isEvenRow: isEvenRow,
+                isHovered: isHovered,
+              ),
+              _cellWidget(
+                _buildStatusBadge(firstItem["status"] ?? "Aktif"),
+                col2a,
+                mergedHeight,
+                isEvenRow: isEvenRow,
+                isHovered: isHovered,
+              ),
+              _cellWidget(
+                _buildPriorityBadge(firstItem["mt_priority"]),
+                col2b,
+                mergedHeight,
                 isEvenRow: isEvenRow,
                 isHovered: isHovered,
               ),
@@ -1012,6 +1089,121 @@ class _DataMesinPageState extends State<DataMesinPage> {
         textAlign: TextAlign.center,
         maxLines: null,
         overflow: TextOverflow.visible,
+      ),
+    );
+  }
+
+  Widget _cellWidget(
+    Widget child,
+    double width,
+    double height, {
+    bool isEvenRow = true,
+    bool isHovered = false,
+  }) {
+    Color backgroundColor;
+    if (isHovered) {
+      backgroundColor = Color(0xFF0A9C5D).withOpacity(0.1);
+    } else {
+      backgroundColor = Colors.white;
+    }
+
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        border: Border(
+          right: BorderSide(color: Colors.grey[300]!, width: 0.5),
+          bottom: BorderSide(color: Colors.grey[300]!, width: 0.5),
+        ),
+      ),
+      padding: const EdgeInsets.all(8),
+      alignment: Alignment.center,
+      child: child,
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    Color badgeColor;
+    Color textColor;
+    
+    switch (status.toLowerCase()) {
+      case 'aktif':
+        badgeColor = Colors.green;
+        textColor = Colors.white;
+        break;
+      case 'breakdown':
+        badgeColor = Colors.red;
+        textColor = Colors.white;
+        break;
+      case 'perlu maintenance':
+        badgeColor = Colors.orange;
+        textColor = Colors.white;
+        break;
+      default:
+        badgeColor = Colors.grey;
+        textColor = Colors.white;
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityBadge(String? priority) {
+    if (priority == null || priority.isEmpty) {
+      return Text(
+        '-',
+        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+      );
+    }
+
+    Color badgeColor;
+    Color textColor;
+    
+    switch (priority.toLowerCase()) {
+      case 'low':
+        badgeColor = Colors.blue;
+        textColor = Colors.white;
+        break;
+      case 'medium':
+        badgeColor = Colors.orange;
+        textColor = Colors.white;
+        break;
+      case 'high':
+        badgeColor = Colors.red.shade400;
+        textColor = Colors.white;
+        break;
+      default:
+        badgeColor = Colors.grey;
+        textColor = Colors.white;
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        priority.toUpperCase(),
+        style: TextStyle(
+          color: textColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -1228,6 +1420,8 @@ class _DataMesinPageState extends State<DataMesinPage> {
       final String namaAssetBaru = firstRow["nama_aset"];
       final String jenisAsset = firstRow["jenis_aset"];
       final String? foto = firstRow["gambar_aset"];
+      final String? kodeAssets = firstRow["kode_assets"];
+      final String? mtPriority = firstRow["mt_priority"];
 
       // Group data by bagian
       Map<String, List<Map<String, dynamic>>> groupedByBagian = {};
@@ -1260,6 +1454,8 @@ class _DataMesinPageState extends State<DataMesinPage> {
         namaAssetBaru: namaAssetBaru,
         jenisAsset: jenisAsset,
         foto: foto,
+        kodeAssets: kodeAssets,
+        mtPriority: mtPriority,
         bagianList: bagianList,
       );
 

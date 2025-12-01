@@ -13,9 +13,11 @@ class ModalTambahAsset {
   }) {
     final _formKey = GlobalKey<FormState>();
     final _namaAsetController = TextEditingController();
+    final _kodeMesinController = TextEditingController();
     final ImagePicker _imagePicker = ImagePicker();
 
     String? _selectedJenisAset;
+    String? _selectedPrioritas;
     XFile? _selectedImage;
 
     List<Map<String, dynamic>> bagianAsetList = [
@@ -40,8 +42,10 @@ class ModalTambahAsset {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildHeader(dialogContext, _namaAsetController, () {
+                    _buildHeader(dialogContext, () {
                       _selectedImage = null;
+                      _namaAsetController.dispose();
+                      _kodeMesinController.dispose();
                     }),
                     Flexible(
                       child: SingleChildScrollView(
@@ -52,12 +56,29 @@ class ModalTambahAsset {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              _buildNamaAsetField(_namaAsetController),
+                              // Row untuk Nama Aset dan Kode Mesin
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildNamaAsetField(_namaAsetController),
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: _buildKodeMesinField(_kodeMesinController),
+                                  ),
+                                ],
+                              ),
                               SizedBox(height: 16),
                               _buildJenisAsetField(
                                 _selectedJenisAset,
                                 setDialogState,
                                 (value) => _selectedJenisAset = value,
+                              ),
+                              SizedBox(height: 16),
+                              _buildPrioritasField(
+                                _selectedPrioritas,
+                                setDialogState,
+                                (value) => _selectedPrioritas = value,
                               ),
                               SizedBox(height: 24),
                               Divider(thickness: 2, color: Colors.grey[300]),
@@ -95,7 +116,9 @@ class ModalTambahAsset {
                       dialogContext,
                       _formKey,
                       _namaAsetController,
+                      _kodeMesinController,
                       _selectedJenisAset,
+                      _selectedPrioritas,
                       _selectedImage,
                       bagianAsetList,
                       onSave,
@@ -115,7 +138,6 @@ class ModalTambahAsset {
 
   static Widget _buildHeader(
     BuildContext dialogContext,
-    TextEditingController controller,
     VoidCallback onClose,
   ) {
     return Container(
@@ -144,7 +166,6 @@ class ModalTambahAsset {
             icon: Icon(Icons.close, color: Colors.white),
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              controller.dispose();
               onClose();
             },
           ),
@@ -167,6 +188,19 @@ class ModalTambahAsset {
         }
         return null;
       },
+    );
+  }
+
+  static Widget _buildKodeMesinField(TextEditingController controller) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: 'Kode Mesin',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        prefixIcon: Icon(Icons.qr_code),
+        hintText: 'Contoh: MP-001',
+      ),
+      // Kode mesin tidak wajib (optional)
     );
   }
 
@@ -203,6 +237,38 @@ class ModalTambahAsset {
         }
         return null;
       },
+    );
+  }
+
+  static Widget _buildPrioritasField(
+    String? selectedPrioritas,
+    StateSetter setDialogState,
+    Function(String?) onChanged,
+  ) {
+    return DropdownButtonFormField<String>(
+      value: selectedPrioritas,
+      decoration: InputDecoration(
+        labelText: 'Prioritas Maintenance',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        prefixIcon: Icon(Icons.priority_high),
+        helperText: 'Prioritas untuk maintenance schedule',
+      ),
+      items: [
+        'Low',
+        'Medium',
+        'High',
+      ].map((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setDialogState(() {
+          onChanged(value);
+        });
+      },
+      // Prioritas optional (bisa null)
     );
   }
 
@@ -587,7 +653,9 @@ class ModalTambahAsset {
     BuildContext dialogContext,
     GlobalKey<FormState> formKey,
     TextEditingController namaAsetController,
+    TextEditingController kodeMesinController,
     String? selectedJenisAset,
+    String? selectedPrioritas,
     XFile? selectedImage,
     List<Map<String, dynamic>> bagianAsetList,
     Function(List<Map<String, dynamic>>) onSave,
@@ -609,6 +677,7 @@ class ModalTambahAsset {
             onPressed: () {
               Navigator.of(dialogContext).pop();
               namaAsetController.dispose();
+              kodeMesinController.dispose();
               onClose();
             },
             child: Text(
@@ -688,9 +757,13 @@ class ModalTambahAsset {
                   // 2. Buat Model Asset
                   final assetModel = AssetModelSupabase(
                     namaAssets: namaAsetController.text,
+                    kodeAssets: kodeMesinController.text.trim().isEmpty 
+                        ? null 
+                        : kodeMesinController.text.trim(),
                     jenisAssets: selectedJenisAset,
                     foto: imageUrl, // Simpan URL publik dari Supabase Storage
-                    status: 'Aktif',
+                    status: 'Aktif', // Default aktif (tidak perlu di form)
+                    mtPriority: selectedPrioritas,
                   );
 
                   // 3. Panggil Repository
@@ -728,6 +801,7 @@ class ModalTambahAsset {
                   // Tutup Dialog
                   Navigator.of(dialogContext).pop();
                   namaAsetController.dispose();
+                  kodeMesinController.dispose();
                   onClose();
 
                   ScaffoldMessenger.of(context).showSnackBar(
