@@ -4,7 +4,7 @@ import '../repositories/asset_supabase_repository.dart';
 class KaryawanController {
   final KaryawanRepository _repository = KaryawanRepository();
   final AssetSupabaseRepository _assetRepo = AssetSupabaseRepository();
-  
+
   List<Map<String, dynamic>> _karyawan = [];
   bool _isLoading = false;
 
@@ -26,13 +26,20 @@ class KaryawanController {
   List<Map<String, String>> getAllKaryawan() {
     return _karyawan.map((k) {
       // Convert ke format yang diharapkan UI
+      // CATATAN: Password tidak bisa ditampilkan dalam bentuk asli karena sudah di-hash dengan bcrypt (one-way hashing)
+      // Ini adalah praktik keamanan standar - password yang sudah di-hash TIDAK BISA dikembalikan ke bentuk aslinya
+      final hasPassword = (k['password_hash'] as String? ?? '').isNotEmpty;
+
       return {
         "id": k['id']?.toString() ?? '',
         "nama": k['full_name'] as String? ?? '',
         "mesin": _repository.getAssetNamesString(k), // Multi mesin dipisah koma
         "telp": k['phone'] as String? ?? '',
         "email": k['email'] as String? ?? '',
-        "password": k['password_hash'] as String? ?? '', // Password hash ditampilkan
+        "password":
+            hasPassword
+                ? "••••••••"
+                : "Belum di-set", // Placeholder untuk keamanan
         "department": k['department'] as String? ?? '-',
         "jabatan": k['jabatan'] as String? ?? '-',
       };
@@ -48,21 +55,23 @@ class KaryawanController {
 
     // Filter by mesin
     if (mesin != null && mesin.isNotEmpty) {
-      filtered = filtered.where((k) {
-        final mesinStr = k["mesin"] ?? '';
-        return mesinStr.contains(mesin);
-      }).toList();
+      filtered =
+          filtered.where((k) {
+            final mesinStr = k["mesin"] ?? '';
+            return mesinStr.contains(mesin);
+          }).toList();
     }
 
     // Filter by search query
     if (searchQuery != null && searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
-      filtered = filtered.where((k) {
-        return (k["nama"] ?? '').toLowerCase().contains(query) ||
-            (k["mesin"] ?? '').toLowerCase().contains(query) ||
-            (k["telp"] ?? '').toLowerCase().contains(query) ||
-            (k["email"] ?? '').toLowerCase().contains(query);
-      }).toList();
+      filtered =
+          filtered.where((k) {
+            return (k["nama"] ?? '').toLowerCase().contains(query) ||
+                (k["mesin"] ?? '').toLowerCase().contains(query) ||
+                (k["telp"] ?? '').toLowerCase().contains(query) ||
+                (k["email"] ?? '').toLowerCase().contains(query);
+          }).toList();
     }
 
     return filtered;
@@ -113,7 +122,7 @@ class KaryawanController {
         department: department,
         jabatan: jabatan,
       );
-      
+
       // Reload data
       await loadKaryawan();
     } catch (e) {
@@ -144,7 +153,7 @@ class KaryawanController {
         department: department,
         jabatan: jabatan,
       );
-      
+
       // Reload data
       await loadKaryawan();
     } catch (e) {
@@ -157,7 +166,7 @@ class KaryawanController {
   Future<void> deleteKaryawan(String id) async {
     try {
       await _repository.deleteKaryawan(id);
-      
+
       // Reload data
       await loadKaryawan();
     } catch (e) {

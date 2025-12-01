@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Permission untuk camera (diperlukan untuk scan QR) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    
     <application
         android:label="Monitoring Maintenance"
         android:name="${applicationName}"
