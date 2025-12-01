@@ -1,0 +1,14 @@
+# Flutter Run Configuration
+# File ini membantu Flutter mengetahui bahwa ini adalah project development
+# Gunakan 'flutter run' untuk development, bukan 'flutter build apk'
+
+# Untuk development, jalankan:
+# flutter run --debug
+# atau
+# flutter run
+
+# Hot reload tersedia setelah aplikasi berjalan:
+# - Tekan 'r' untuk hot reload
+# - Tekan 'R' untuk hot restart
+# - Tekan 'q' untuk quit
+
