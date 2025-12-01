@@ -5,8 +5,10 @@ allprojects {
     }
 }
 
-// Removed custom build directory configuration to fix plugin conflicts
-// Build directory will use default location (android/build/)
+rootProject.layout.buildDirectory.set(File(rootProject.projectDir, "../build"))
+subprojects {
+    project.layout.buildDirectory.set(File(rootProject.layout.buildDirectory.asFile.get(), project.name))
+}
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)

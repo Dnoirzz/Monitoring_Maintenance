@@ -471,10 +471,13 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+// Listen di 0.0.0.0 agar bisa diakses dari device lain di network yang sama
+app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('='.repeat(50));
-  console.log('🚀 Server running on http://localhost:' + PORT);
+  console.log('🚀 Server running on http://0.0.0.0:' + PORT);
+  console.log('📱 Untuk akses dari device, gunakan IP komputer Anda');
+  console.log('   Contoh: http://192.168.1.100:' + PORT);
   console.log('='.repeat(50));
   console.log('');
   console.log('📌 API Endpoints:');
