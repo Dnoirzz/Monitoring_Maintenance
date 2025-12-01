@@ -30,6 +30,3 @@ flutter build appbundle
 # iOS
 flutter build ios
 ```
-
-
-
