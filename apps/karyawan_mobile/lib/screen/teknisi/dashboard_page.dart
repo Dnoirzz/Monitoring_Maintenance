@@ -4,6 +4,7 @@ import 'package:shared/providers/auth_provider.dart';
 import 'package:shared/utils/name_helper.dart';
 import '../../widget/teknisi_sidebar.dart';
 import 'pages/scan_qr_page.dart';
+import '../login_page.dart';
 
 class TeknisiDashboardPage extends ConsumerStatefulWidget {
   const TeknisiDashboardPage({super.key});
@@ -46,8 +47,7 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage> {
           // }
         },
         onLogout: () {
-          // TODO: Implement logout
-          // ref.read(authProvider.notifier).logout();
+          _showLogoutConfirmation(context);
         },
       ),
       body: Column(
@@ -277,6 +277,162 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage> {
         ),
       ),
     );
+  }
+
+  /// Menampilkan modal konfirmasi logout
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.logout,
+                color: Colors.red,
+                size: 28,
+              ),
+              SizedBox(width: 12),
+              Text(
+                'Konfirmasi Logout',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Apakah Anda yakin ingin keluar dari aplikasi?',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text(
+                'Batal',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await _handleLogout(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Logout',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Handle proses logout
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      // Tampilkan loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(
+            child: Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    color: Color(0xFF0A9C5D),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Logging out...',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
+      // Panggil logout dari auth provider
+      await ref.read(authProvider.notifier).logout();
+
+      // Tutup loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Navigate ke login page dan clear navigation stack
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginPage()),
+          (route) => false,
+        );
+      }
+
+      // Tampilkan snackbar konfirmasi
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Anda telah berhasil logout'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      // Tutup loading dialog jika ada error
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Tampilkan error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal logout: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 }
 
