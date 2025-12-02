@@ -20,7 +20,7 @@ class ApiConfig {
   // Hanya digunakan jika menggunakan Android device fisik via WiFi
   // ============================================
   static const String _hostIpForPhysicalDevice =
-      '192.168.83.188'; // ⚠️ GANTI INI dengan IP WiFi Anda (hanya untuk device fisik via WiFi)
+      '192.168.76.188'; // ⚠️ GANTI INI dengan IP WiFi Anda (hanya untuk device fisik via WiFi)
 
   /// Port backend server
   static const int _port = 3000;
@@ -34,24 +34,24 @@ class ApiConfig {
       // - Emulator: gunakan 10.0.2.2 (alias khusus untuk localhost host machine)
       // - Device Fisik via USB: gunakan 10.0.2.2 atau ADB port forwarding
       // - Device Fisik via WiFi: gunakan IP komputer di network yang sama
-      
+
       // Deteksi apakah emulator atau device fisik
       // Untuk development, default anggap emulator (10.0.2.2)
       // Jika menggunakan device fisik via WiFi, set _hostIpForPhysicalDevice
-      
+
       // Untuk emulator Android, selalu gunakan 10.0.2.2
       // Ini adalah alias khusus yang Android emulator sediakan untuk mengakses localhost host machine
-      return 'http://10.0.2.2:$_port';
-      
+      // return 'http://10.0.2.2:$_port';
+
       // Jika menggunakan device fisik via WiFi (bukan emulator):
       // Uncomment baris di bawah dan comment baris di atas:
-      // return 'http://$_hostIpForPhysicalDevice:$_port';
+      return 'http://$_hostIpForPhysicalDevice:$_port';
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       // iOS Simulator -> pakai localhost
       // iOS Device Fisik -> pakai IP address komputer host
       // Untuk development, default anggap simulator
       return 'http://localhost:$_port';
-      
+
       // Jika menggunakan iOS device fisik via WiFi:
       // return 'http://$_hostIpForPhysicalDevice:$_port';
     } else {

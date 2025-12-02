@@ -8,6 +8,7 @@ import 'screen/login_page.dart';
 import 'screen/teknisi/dashboard_page.dart';
 import 'screen/teknisi/pages/mt_request.dart';
 import 'screen/teknisi/pages/menu_assets/asset_list_page.dart';
+import 'screen/teknisi/pages/maintenance_schedule_list_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,29 +42,44 @@ class KaryawanMobileApp extends ConsumerWidget {
         ),
         useMaterial3: true,
       ),
-      home: authState.isAuthenticated && RouteHelper.isTeknisiRole(authState.userRole)
-          ? const TeknisiDashboardPage()
-          : const LoginPage(),
+      home:
+          authState.isAuthenticated &&
+                  RouteHelper.isTeknisiRole(authState.userRole)
+              ? const TeknisiDashboardPage()
+              : const LoginPage(),
       routes: {
         '/dashboard': (context) => const TeknisiDashboardPage(),
-        '/permintaan-maintenance': (context) => const LaporanKerusakanPage(),
-        '/assets/mesin-produksi': (context) => const AssetListPage(
-          title: 'Mesin Produksi',
-          assetType: 'production_machine',
-        ),
-        '/assets/alat-berat': (context) => const AssetListPage(
-          title: 'Alat Berat',
-          assetType: 'heavy_equipment',
-        ),
-        '/assets/listrik': (context) => const AssetListPage(
-          title: 'Listrik',
-          assetType: 'electrical',
-        ),
+        '/permintaan-maintenance':
+            (context) => const MaintenanceRequestListPage(),
+        '/assets/mesin-produksi':
+            (context) => const AssetListPage(
+              title: 'Mesin Produksi',
+              assetType: 'production_machine',
+            ),
+        '/assets/alat-berat':
+            (context) => const AssetListPage(
+              title: 'Alat Berat',
+              assetType: 'heavy_equipment',
+            ),
+        '/assets/listrik':
+            (context) =>
+                const AssetListPage(title: 'Listrik', assetType: 'electrical'),
+        '/jadwal/mesin-produksi':
+            (context) => const MaintenanceScheduleListPage(
+              title: 'Jadwal Mesin Produksi',
+              assetType: 'production_machine',
+            ),
+        '/jadwal/alat-berat':
+            (context) => const MaintenanceScheduleListPage(
+              title: 'Jadwal Alat Berat',
+              assetType: 'heavy_equipment',
+            ),
+        '/jadwal/listrik':
+            (context) => const MaintenanceScheduleListPage(
+              title: 'Jadwal Listrik',
+              assetType: 'electrical',
+            ),
       },
     );
   }
 }
-
-
-
-

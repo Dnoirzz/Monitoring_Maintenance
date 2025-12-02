@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared/repositories/asset_supabase_repository.dart';
 import 'asset_detail_page.dart';
 
 class AssetListPage extends StatefulWidget {
@@ -19,138 +20,58 @@ class _AssetListPageState extends State<AssetListPage> {
   final Color _primaryColor = const Color(0xFF0A9C5D);
   final Color _backgroundLight = const Color(0xFFF6F8F7);
   final TextEditingController _searchController = TextEditingController();
+  final AssetSupabaseRepository _assetRepository = AssetSupabaseRepository();
   
-  // Mock data - in a real app this would come from a provider/API based on widget.assetType
-  late List<Map<String, dynamic>> _allAssets;
+  List<Map<String, dynamic>> _allAssets = [];
   List<Map<String, dynamic>> _filteredAssets = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _initializeMockData();
-    _filteredAssets = _allAssets;
+    _loadAssets();
   }
 
-  void _initializeMockData() {
-    // Generate different data based on assetType
-    if (widget.assetType == 'production_machine') {
-      _allAssets = [
-        {
-          'id': '1',
-          'name': 'Mesin CNC Milling',
-          'code': 'CNC-001',
-          'location': 'Gedung A, Lantai 1',
-          'status': 'Operational',
-          'last_maintenance': '2024-10-20',
-          'type': 'Mesin Produksi',
-          'mt_priority': 'High',
-          'foto': 'https://images.unsplash.com/photo-1565439398532-39c2e0078d4d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-          'next_maintenance': '2024-11-20',
-        },
-        {
-          'id': '2',
-          'name': 'Mesin Bubut Manual',
-          'code': 'LATHE-002',
-          'location': 'Gedung A, Lantai 1',
-          'status': 'Maintenance',
-          'last_maintenance': '2024-10-25',
-          'type': 'Mesin Produksi',
-          'mt_priority': 'Medium',
-          'foto': 'https://images.unsplash.com/photo-1612630553424-42cdd445037d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-          'next_maintenance': '2024-11-25',
-        },
-        {
-          'id': '3',
-          'name': 'Mesin Injection Molding',
-          'code': 'INJ-003',
-          'location': 'Gedung B, Lantai 1',
-          'status': 'Rusak',
-          'last_maintenance': '2024-09-15',
-          'type': 'Mesin Produksi',
-          'mt_priority': 'High',
-          'foto': null,
-          'next_maintenance': '2024-11-15',
-        },
-        {
-          'id': '4',
-          'name': 'Mesin Press Hidrolik',
-          'code': 'PRS-004',
-          'location': 'Gedung B, Lantai 1',
-          'status': 'Operational',
-          'last_maintenance': '2024-10-28',
-          'type': 'Mesin Produksi',
-          'mt_priority': 'Low',
-          'foto': null,
-          'next_maintenance': '2024-11-28',
-        },
-      ];
-    } else if (widget.assetType == 'heavy_equipment') {
-      _allAssets = [
-        {
-          'id': '5',
-          'name': 'Forklift Toyota 3T',
-          'code': 'FL-001',
-          'location': 'Warehouse',
-          'status': 'Operational',
-          'last_maintenance': '2024-10-10',
-          'type': 'Alat Berat',
-          'mt_priority': 'Medium',
-          'foto': 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-          'next_maintenance': '2024-11-10',
-        },
-        {
-          'id': '6',
-          'name': 'Excavator Mini',
-          'code': 'EXC-002',
-          'location': 'Area Luar',
-          'status': 'Maintenance',
-          'last_maintenance': '2024-10-22',
-          'type': 'Alat Berat',
-          'mt_priority': 'High',
-          'foto': 'https://images.unsplash.com/photo-1579623879203-5df5955684ee?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-          'next_maintenance': '2024-11-22',
-        },
-      ];
-    } else {
-      // Electrical
-      _allAssets = [
-        {
-          'id': '7',
-          'name': 'Panel Distribusi Utama',
-          'code': 'PNL-001',
-          'location': 'Ruang Panel',
-          'status': 'Operational',
-          'last_maintenance': '2024-10-01',
-          'type': 'Listrik',
-          'mt_priority': 'High',
-          'foto': null,
-          'next_maintenance': '2024-11-01',
-        },
-        {
-          'id': '8',
-          'name': 'Genset 500kVA',
-          'code': 'GEN-001',
-          'location': 'Power House',
-          'status': 'Operational',
-          'last_maintenance': '2024-09-30',
-          'type': 'Listrik',
-          'mt_priority': 'High',
-          'foto': null,
-          'next_maintenance': '2024-10-30',
-        },
-        {
-          'id': '9',
-          'name': 'Trafo Step Down',
-          'code': 'TRF-001',
-          'location': 'Substation',
-          'status': 'Rusak',
-          'last_maintenance': '2024-10-15',
-          'type': 'Listrik',
-          'mt_priority': 'High',
-          'foto': null,
-          'next_maintenance': '2024-11-15',
-        },
-      ];
+  Future<void> _loadAssets() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final allAssets = await _assetRepository.getAllAssets();
+      
+      // Filter by asset type
+      final jenisAsset = _getJenisAssetFromType(widget.assetType);
+      final filteredByType = allAssets.where((asset) {
+        final jenis = asset['jenis_assets'] as String?;
+        return jenis != null && jenis.toLowerCase().contains(jenisAsset.toLowerCase());
+      }).toList();
+
+      setState(() {
+        _allAssets = filteredByType;
+        _filteredAssets = filteredByType;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Gagal memuat data: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _getJenisAssetFromType(String type) {
+    switch (type) {
+      case 'production_machine':
+        return 'Mesin Produksi';
+      case 'heavy_equipment':
+        return 'Alat Berat';
+      case 'electrical':
+        return 'Listrik';
+      default:
+        return '';
     }
   }
 
@@ -160,8 +81,10 @@ class _AssetListPageState extends State<AssetListPage> {
         _filteredAssets = _allAssets;
       } else {
         _filteredAssets = _allAssets.where((asset) {
-          return asset['name'].toLowerCase().contains(query.toLowerCase()) ||
-                 asset['code'].toLowerCase().contains(query.toLowerCase());
+          final name = (asset['nama_assets'] as String? ?? '').toLowerCase();
+          final code = (asset['kode_assets'] as String? ?? '').toLowerCase();
+          final searchQuery = query.toLowerCase();
+          return name.contains(searchQuery) || code.contains(searchQuery);
         }).toList();
       }
     });
@@ -202,15 +125,19 @@ class _AssetListPageState extends State<AssetListPage> {
         children: [
           _buildSearchBar(),
           Expanded(
-            child: _filteredAssets.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _filteredAssets.length,
-                    itemBuilder: (context, index) {
-                      return _buildAssetCard(_filteredAssets[index]);
-                    },
-                  ),
+            child: _isLoading
+                ? _buildLoadingState()
+                : _errorMessage != null
+                    ? _buildErrorState()
+                    : _filteredAssets.isEmpty
+                        ? _buildEmptyState()
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _filteredAssets.length,
+                            itemBuilder: (context, index) {
+                              return _buildAssetCard(_filteredAssets[index]);
+                            },
+                          ),
           ),
         ],
       ),
@@ -240,19 +167,28 @@ class _AssetListPageState extends State<AssetListPage> {
   }
 
   Widget _buildAssetCard(Map<String, dynamic> asset) {
+    // Map Supabase field names to UI
+    final String name = asset['nama_assets'] ?? 'Unknown Asset';
+    final String code = asset['kode_assets'] ?? '-';
+    final String status = asset['status'] ?? 'Aktif';
+    final String? mtPriority = asset['mt_priority'];
+    
     Color statusColor;
     Color statusBgColor;
     
-    switch (asset['status']) {
+    switch (status) {
+      case 'Aktif':
       case 'Operational':
         statusColor = const Color(0xFF0A9C5D); // Green
         statusBgColor = const Color(0xFFE7F5EE);
         break;
       case 'Maintenance':
+      case 'Dalam Perbaikan':
         statusColor = const Color(0xFFF59E0B); // Amber
         statusBgColor = const Color(0xFFFEF3C7);
         break;
       case 'Rusak':
+      case 'Tidak Aktif':
         statusColor = const Color(0xFFEF4444); // Red
         statusBgColor = const Color(0xFFFEE2E2);
         break;
@@ -279,7 +215,10 @@ class _AssetListPageState extends State<AssetListPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AssetDetailPage(assetData: asset),
+              builder: (context) => AssetDetailPage(
+                assetId: asset['id'],
+                assetData: asset,
+              ),
             ),
           );
         },
@@ -307,7 +246,7 @@ class _AssetListPageState extends State<AssetListPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      asset['name'],
+                      name,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -316,27 +255,30 @@ class _AssetListPageState extends State<AssetListPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      asset['code'],
+                      code,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade500,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.location_on_outlined, size: 14, color: Colors.grey.shade500),
-                        const SizedBox(width: 4),
-                        Text(
-                          asset['location'],
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade500,
+                    if (mtPriority != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.priority_high, size: 14, color: _getPriorityColor(mtPriority)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Priority: $mtPriority',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _getPriorityColor(mtPriority),
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -350,7 +292,7 @@ class _AssetListPageState extends State<AssetListPage> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      asset['status'],
+                      status,
                       style: TextStyle(
                         color: statusColor,
                         fontSize: 12,
@@ -367,6 +309,19 @@ class _AssetListPageState extends State<AssetListPage> {
     );
   }
 
+  Color _getPriorityColor(String? priority) {
+    switch (priority) {
+      case 'High':
+        return Colors.red;
+      case 'Medium':
+        return Colors.orange;
+      case 'Low':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
   IconData _getIconForType(String type) {
     switch (type) {
       case 'production_machine':
@@ -378,6 +333,68 @@ class _AssetListPageState extends State<AssetListPage> {
       default:
         return Icons.precision_manufacturing;
     }
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: _primaryColor),
+          const SizedBox(height: 16),
+          Text(
+            'Memuat data asset...',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+          const SizedBox(height: 16),
+          Text(
+            'Gagal memuat data',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              _errorMessage ?? 'Terjadi kesalahan',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _loadAssets,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Coba Lagi'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildEmptyState() {

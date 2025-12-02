@@ -43,8 +43,10 @@ class ModalTambahChecksheet {
               try {
                 // Gunakan method khusus untuk mengambil komponen berdasarkan asset ID
                 final filtered = await repository.getKomponenByAssetId(assetId);
-                print('✅ Ditemukan ${filtered.length} komponen untuk asset $assetId');
-                
+                print(
+                  '✅ Ditemukan ${filtered.length} komponen untuk asset $assetId',
+                );
+
                 // Otomatis tambahkan semua komponen ke list
                 setModalState(() {
                   for (var komponen in filtered) {
@@ -138,12 +140,15 @@ class ModalTambahChecksheet {
                               FutureBuilder<List<Map<String, dynamic>>>(
                                 future: loadAssets(),
                                 builder: (context, snapshot) {
-                                  if (snapshot.connectionState == ConnectionState.waiting) {
-                                    return Center(child: CircularProgressIndicator());
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Center(
+                                      child: CircularProgressIndicator(),
+                                    );
                                   }
-                                  
+
                                   final assets = snapshot.data ?? [];
-                                  
+
                                   return DropdownButtonFormField<String>(
                                     value: selectedAssetId,
                                     decoration: _modalInputDecoration(
@@ -151,24 +156,28 @@ class ModalTambahChecksheet {
                                       icon: Icons.precision_manufacturing,
                                     ),
                                     hint: Text("Pilih asset"),
-                                    items: assets.map((asset) {
-                                      final id = asset['id']?.toString() ?? '';
-                                      final nama = asset['nama_assets'] as String? ?? 
-                                                   asset['nama_aset'] as String? ?? 
-                                                   'Unknown';
-                                      return DropdownMenuItem(
-                                        value: id,
-                                        child: Text(nama),
-                                      );
-                                    }).toList(),
+                                    items:
+                                        assets.map((asset) {
+                                          final id =
+                                              asset['id']?.toString() ?? '';
+                                          final nama =
+                                              asset['nama_assets'] as String? ??
+                                              asset['nama_aset'] as String? ??
+                                              'Unknown';
+                                          return DropdownMenuItem(
+                                            value: id,
+                                            child: Text(nama),
+                                          );
+                                        }).toList(),
                                     onChanged: (value) async {
                                       if (value != null) {
                                         final asset = assets.firstWhere(
                                           (a) => a['id']?.toString() == value,
                                         );
-                                        final nama = asset['nama_assets'] as String? ?? 
-                                                     asset['nama_aset'] as String? ?? 
-                                                     'Unknown';
+                                        final nama =
+                                            asset['nama_assets'] as String? ??
+                                            asset['nama_aset'] as String? ??
+                                            'Unknown';
                                         setModalState(() {
                                           selectedAssetId = value;
                                           selectedAssetName = nama;
@@ -196,11 +205,15 @@ class ModalTambahChecksheet {
                                       padding: EdgeInsets.all(20),
                                       child: Column(
                                         children: [
-                                          CircularProgressIndicator(color: Color(0xFF0A9C5D)),
+                                          CircularProgressIndicator(
+                                            color: Color(0xFF0A9C5D),
+                                          ),
                                           SizedBox(height: 12),
                                           Text(
                                             'Memuat komponen dari asset...',
-                                            style: TextStyle(color: Colors.grey[600]),
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -212,16 +225,23 @@ class ModalTambahChecksheet {
                                     decoration: BoxDecoration(
                                       color: Colors.orange[50],
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.orange[200]!),
+                                      border: Border.all(
+                                        color: Colors.orange[200]!,
+                                      ),
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(Icons.info_outline, color: Colors.orange[700]),
+                                        Icon(
+                                          Icons.info_outline,
+                                          color: Colors.orange[700],
+                                        ),
                                         SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             'Asset ini belum memiliki komponen. Silakan tambahkan komponen terlebih dahulu di menu Data Assets.',
-                                            style: TextStyle(color: Colors.orange[900]),
+                                            style: TextStyle(
+                                              color: Colors.orange[900],
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -229,7 +249,8 @@ class ModalTambahChecksheet {
                                   )
                                 else ...[
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         "Komponen dan Detail Pekerjaan (${komponenList.length} komponen)",
@@ -248,210 +269,506 @@ class ModalTambahChecksheet {
                                     future: repository.getKomponenAssets(),
                                     builder: (context, komponenSnapshot) {
                                       if (!komponenSnapshot.hasData) {
-                                        return Center(child: CircularProgressIndicator());
+                                        return Center(
+                                          child: CircularProgressIndicator(),
+                                        );
                                       }
-                                      
-                                      final allKomponen = komponenSnapshot.data ?? [];
-                                      
+
+                                      final allKomponen =
+                                          komponenSnapshot.data ?? [];
+
                                       return Column(
-                                        children: komponenList.asMap().entries.map((entry) {
-                                          int index = entry.key;
-                                          KomponenScheduleItem komponenItem = entry.value;
-                                          
-                                          // Cari data komponen berdasarkan ID
-                                          final komponenData = allKomponen.firstWhere(
-                                            (k) => k['id']?.toString() == komponenItem.selectedKomponenId,
-                                            orElse: () => <String, dynamic>{},
-                                          );
-                                          
-                                          // Ambil nama komponen dari komponen_assets
-                                          // Field di komponen_assets adalah 'nama_bagian' (bukan 'nama_komponen')
-                                          final namaKomponen = komponenData['nama_bagian'] as String? ?? 
-                                                               komponenData['nama_komponen'] as String? ?? 
-                                                               'Unknown';
-                                          final bgMesin = komponenData['bg_mesin'] as Map<String, dynamic>?;
-                                          final namaBagianMesin = bgMesin?['nama_bagian'] as String? ?? '';
-                                          
-                                          return Container(
-                                            margin: EdgeInsets.only(bottom: 16),
-                                            padding: EdgeInsets.all(16),
-                                            decoration: BoxDecoration(
-                                              color: Color(0xFFF7F9FB),
-                                              borderRadius: BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: Colors.grey.shade300,
-                                                width: 1,
-                                              ),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
+                                        children:
+                                            komponenList.asMap().entries.map((
+                                              entry,
+                                            ) {
+                                              int index = entry.key;
+                                              KomponenScheduleItem
+                                              komponenItem = entry.value;
+
+                                              // Cari data komponen berdasarkan ID
+                                              final komponenData = allKomponen
+                                                  .firstWhere(
+                                                    (k) =>
+                                                        k['id']?.toString() ==
+                                                        komponenItem
+                                                            .selectedKomponenId,
+                                                    orElse:
+                                                        () =>
+                                                            <String, dynamic>{},
+                                                  );
+
+                                              // Ambil nama komponen dari komponen_assets
+                                              // Field di komponen_assets adalah 'nama_bagian' (bukan 'nama_komponen')
+                                              final namaKomponen =
+                                                  komponenData['nama_bagian']
+                                                      as String? ??
+                                                  komponenData['nama_komponen']
+                                                      as String? ??
+                                                  'Unknown';
+                                              final bgMesin =
+                                                  komponenData['bg_mesin']
+                                                      as Map<String, dynamic>?;
+                                              final namaBagianMesin =
+                                                  bgMesin?['nama_bagian']
+                                                      as String? ??
+                                                  '';
+
+                                              return Container(
+                                                margin: EdgeInsets.only(
+                                                  bottom: 16,
+                                                ),
+                                                padding: EdgeInsets.all(16),
+                                                decoration: BoxDecoration(
+                                                  color: Color(0xFFF7F9FB),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: Colors.grey.shade300,
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
+                                                    Row(
+                                                      children: [
+                                                        Container(
+                                                          padding:
+                                                              EdgeInsets.symmetric(
+                                                                horizontal: 10,
+                                                                vertical: 4,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color: Color(
+                                                              0xFF0A9C5D,
+                                                            ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  6,
+                                                                ),
+                                                          ),
+                                                          child: Text(
+                                                            "Komponen ${index + 1}",
+                                                            style: TextStyle(
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 12,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        Spacer(),
+                                                        if (komponenList
+                                                                .length >
+                                                            1)
+                                                          IconButton(
+                                                            icon: Icon(
+                                                              Icons
+                                                                  .remove_circle,
+                                                              color: Colors.red,
+                                                              size: 20,
+                                                            ),
+                                                            onPressed: () {
+                                                              setModalState(() {
+                                                                komponenItem
+                                                                    .dispose();
+                                                                komponenList
+                                                                    .removeAt(
+                                                                      index,
+                                                                    );
+                                                              });
+                                                            },
+                                                          ),
+                                                      ],
+                                                    ),
+                                                    SizedBox(height: 12),
+
+                                                    // Display Nama Komponen (read-only)
                                                     Container(
-                                                      padding: EdgeInsets.symmetric(
-                                                        horizontal: 10,
-                                                        vertical: 4,
+                                                      padding: EdgeInsets.all(
+                                                        12,
                                                       ),
                                                       decoration: BoxDecoration(
-                                                        color: Color(0xFF0A9C5D),
-                                                        borderRadius: BorderRadius.circular(6),
-                                                      ),
-                                                      child: Text(
-                                                        "Komponen ${index + 1}",
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 12,
-                                                          fontWeight: FontWeight.bold,
+                                                        color: Colors.grey[100],
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                        border: Border.all(
+                                                          color:
+                                                              Colors.grey[300]!,
                                                         ),
+                                                      ),
+                                                      child: Row(
+                                                        children: [
+                                                          Icon(
+                                                            Icons.category,
+                                                            color:
+                                                                Colors
+                                                                    .grey[600],
+                                                            size: 20,
+                                                          ),
+                                                          SizedBox(width: 12),
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                Text(
+                                                                  'Nama Komponen',
+                                                                  style: TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color:
+                                                                        Colors
+                                                                            .grey[600],
+                                                                  ),
+                                                                ),
+                                                                SizedBox(
+                                                                  height: 4,
+                                                                ),
+                                                                Text(
+                                                                  namaBagianMesin
+                                                                          .isNotEmpty
+                                                                      ? '$namaBagianMesin - $namaKomponen'
+                                                                      : namaKomponen,
+                                                                  style: TextStyle(
+                                                                    fontSize:
+                                                                        14,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w600,
+                                                                    color:
+                                                                        Colors
+                                                                            .grey[800],
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ],
                                                       ),
                                                     ),
-                                                    Spacer(),
-                                                    if (komponenList.length > 1)
-                                                      IconButton(
-                                                        icon: Icon(
-                                                          Icons.remove_circle,
-                                                          color: Colors.red,
-                                                          size: 20,
-                                                        ),
-                                                        onPressed: () {
-                                                          setModalState(() {
-                                                            komponenItem.dispose();
-                                                            komponenList.removeAt(index);
-                                                          });
-                                                        },
-                                                      ),
-                                                  ],
-                                                ),
-                                                SizedBox(height: 12),
+                                                    SizedBox(height: 16),
 
-                                                // Display Nama Komponen (read-only)
-                                                Container(
-                                                  padding: EdgeInsets.all(12),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.grey[100],
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    border: Border.all(color: Colors.grey[300]!),
-                                                  ),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(Icons.category, color: Colors.grey[600], size: 20),
-                                                      SizedBox(width: 12),
-                                                      Expanded(
+                                                    // Work Types Section with Add Button
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          'Jenis Pekerjaan (${komponenItem.workTypes.length})',
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color:
+                                                                Colors
+                                                                    .grey[700],
+                                                          ),
+                                                        ),
+                                                        TextButton.icon(
+                                                          onPressed: () {
+                                                            setModalState(() {
+                                                              komponenItem
+                                                                  .addWorkType();
+                                                            });
+                                                          },
+                                                          icon: Icon(
+                                                            Icons.add_circle,
+                                                            size: 18,
+                                                          ),
+                                                          label: Text(
+                                                            'Tambah Jenis Pekerjaan',
+                                                          ),
+                                                          style: TextButton.styleFrom(
+                                                            foregroundColor:
+                                                                Color(
+                                                                  0xFF0A9C5D,
+                                                                ),
+                                                            padding:
+                                                                EdgeInsets.symmetric(
+                                                                  horizontal:
+                                                                      12,
+                                                                  vertical: 8,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    SizedBox(height: 12),
+
+                                                    // Loop through all work types
+                                                    ...komponenItem.workTypes.asMap().entries.map((
+                                                      workTypeEntry,
+                                                    ) {
+                                                      int workTypeIndex =
+                                                          workTypeEntry.key;
+                                                      WorkTypeItem workType =
+                                                          workTypeEntry.value;
+
+                                                      return Container(
+                                                        margin: EdgeInsets.only(
+                                                          bottom: 12,
+                                                        ),
+                                                        padding: EdgeInsets.all(
+                                                          14,
+                                                        ),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.white,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                          border: Border.all(
+                                                            color: Color(
+                                                              0xFF0A9C5D,
+                                                            ).withOpacity(0.3),
+                                                          ),
+                                                        ),
                                                         child: Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
                                                           children: [
-                                                            Text(
-                                                              'Nama Komponen',
-                                                              style: TextStyle(
-                                                                fontSize: 12,
-                                                                color: Colors.grey[600],
-                                                              ),
+                                                            // Work Type Header with Badge and Delete Button
+                                                            Row(
+                                                              children: [
+                                                                Container(
+                                                                  padding:
+                                                                      EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            8,
+                                                                        vertical:
+                                                                            4,
+                                                                      ),
+                                                                  decoration: BoxDecoration(
+                                                                    color: Color(
+                                                                      0xFF0A9C5D,
+                                                                    ).withOpacity(
+                                                                      0.15,
+                                                                    ),
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          6,
+                                                                        ),
+                                                                  ),
+                                                                  child: Text(
+                                                                    'Pekerjaan ${workTypeIndex + 1}',
+                                                                    style: TextStyle(
+                                                                      fontSize:
+                                                                          11,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                      color: Color(
+                                                                        0xFF0A9C5D,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                Spacer(),
+                                                                if (komponenItem
+                                                                        .workTypes
+                                                                        .length >
+                                                                    1)
+                                                                  IconButton(
+                                                                    icon: Icon(
+                                                                      Icons
+                                                                          .delete_outline,
+                                                                      size: 18,
+                                                                    ),
+                                                                    color:
+                                                                        Colors
+                                                                            .red[400],
+                                                                    onPressed: () {
+                                                                      setModalState(() {
+                                                                        komponenItem.removeWorkType(
+                                                                          workTypeIndex,
+                                                                        );
+                                                                      });
+                                                                    },
+                                                                    padding:
+                                                                        EdgeInsets.all(
+                                                                          4,
+                                                                        ),
+                                                                    constraints:
+                                                                        BoxConstraints(),
+                                                                  ),
+                                                              ],
                                                             ),
-                                                            SizedBox(height: 4),
-                                                            Text(
-                                                              namaBagianMesin.isNotEmpty 
-                                                                  ? '$namaBagianMesin - $namaKomponen'
-                                                                  : namaKomponen,
-                                                              style: TextStyle(
-                                                                fontSize: 14,
-                                                                fontWeight: FontWeight.w600,
-                                                                color: Colors.grey[800],
+                                                            SizedBox(
+                                                              height: 12,
+                                                            ),
+
+                                                            // Periode Dropdown
+                                                            DropdownButtonFormField<
+                                                              String
+                                                            >(
+                                                              value:
+                                                                  workType
+                                                                      .selectedPeriode,
+                                                              decoration:
+                                                                  _modalInputDecoration(
+                                                                    label:
+                                                                        "Periode",
+                                                                    icon:
+                                                                        Icons
+                                                                            .calendar_today,
+                                                                  ),
+                                                              items: [
+                                                                DropdownMenuItem(
+                                                                  value:
+                                                                      "Harian",
+                                                                  child: Text(
+                                                                    "Harian",
+                                                                  ),
+                                                                ),
+                                                                DropdownMenuItem(
+                                                                  value:
+                                                                      "Mingguan",
+                                                                  child: Text(
+                                                                    "Mingguan",
+                                                                  ),
+                                                                ),
+                                                                DropdownMenuItem(
+                                                                  value:
+                                                                      "Bulanan",
+                                                                  child: Text(
+                                                                    "Bulanan",
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                              onChanged: (
+                                                                value,
+                                                              ) {
+                                                                setModalState(() {
+                                                                  workType.selectedPeriode =
+                                                                      value;
+                                                                });
+                                                              },
+                                                              validator: (
+                                                                value,
+                                                              ) {
+                                                                if (value ==
+                                                                        null ||
+                                                                    value
+                                                                        .isEmpty) {
+                                                                  return "Periode wajib dipilih";
+                                                                }
+                                                                return null;
+                                                              },
+                                                            ),
+                                                            SizedBox(
+                                                              height: 12,
+                                                            ),
+
+                                                            // Interval Spinbox
+                                                            if (workType
+                                                                    .selectedPeriode !=
+                                                                null) ...[
+                                                              _buildIntervalSpinBox(
+                                                                bagian:
+                                                                    workType,
+                                                                setModalState:
+                                                                    setModalState,
                                                               ),
+                                                              SizedBox(
+                                                                height: 12,
+                                                              ),
+                                                            ],
+
+                                                            // Jenis Pekerjaan
+                                                            _modalTextField(
+                                                              controller:
+                                                                  workType
+                                                                      .jenisPekerjaanController,
+                                                              label:
+                                                                  "Jenis Pekerjaan",
+                                                              icon:
+                                                                  Icons
+                                                                      .work_outline,
+                                                              validator: (
+                                                                value,
+                                                              ) {
+                                                                if (value ==
+                                                                        null ||
+                                                                    value
+                                                                        .trim()
+                                                                        .isEmpty) {
+                                                                  return "Jenis pekerjaan wajib diisi";
+                                                                }
+                                                                return null;
+                                                              },
+                                                            ),
+                                                            SizedBox(
+                                                              height: 12,
+                                                            ),
+
+                                                            // Standar Perawatan
+                                                            _modalTextField(
+                                                              controller:
+                                                                  workType
+                                                                      .standarPerawatanController,
+                                                              label:
+                                                                  "Standar Perawatan",
+                                                              icon:
+                                                                  Icons
+                                                                      .checklist,
+                                                              maxLines: 2,
+                                                              validator: (
+                                                                value,
+                                                              ) {
+                                                                if (value ==
+                                                                        null ||
+                                                                    value
+                                                                        .trim()
+                                                                        .isEmpty) {
+                                                                  return "Standar perawatan wajib diisi";
+                                                                }
+                                                                return null;
+                                                              },
+                                                            ),
+                                                            SizedBox(
+                                                              height: 12,
+                                                            ),
+
+                                                            // Alat dan Bahan
+                                                            _modalTextField(
+                                                              controller:
+                                                                  workType
+                                                                      .alatBahanController,
+                                                              label:
+                                                                  "Alat dan Bahan",
+                                                              icon: Icons.build,
+                                                              maxLines: 2,
+                                                              validator: (
+                                                                value,
+                                                              ) {
+                                                                if (value ==
+                                                                        null ||
+                                                                    value
+                                                                        .trim()
+                                                                        .isEmpty) {
+                                                                  return "Alat dan bahan wajib diisi";
+                                                                }
+                                                                return null;
+                                                              },
                                                             ),
                                                           ],
                                                         ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                SizedBox(height: 12),
-
-                                                DropdownButtonFormField<String>(
-                                                  value: komponenItem.selectedPeriode,
-                                                  decoration: _modalInputDecoration(
-                                                    label: "Periode",
-                                                    icon: Icons.calendar_today,
-                                                  ),
-                                                  items: [
-                                                    DropdownMenuItem(
-                                                      value: "Harian",
-                                                      child: Text("Harian"),
-                                                    ),
-                                                    DropdownMenuItem(
-                                                      value: "Mingguan",
-                                                      child: Text("Mingguan"),
-                                                    ),
-                                                    DropdownMenuItem(
-                                                      value: "Bulanan",
-                                                      child: Text("Bulanan"),
-                                                    ),
+                                                      );
+                                                    }).toList(),
                                                   ],
-                                                  onChanged: (value) {
-                                                    setModalState(() {
-                                                      komponenItem.selectedPeriode = value;
-                                                    });
-                                                  },
-                                                  validator: (value) {
-                                                    if (value == null || value.isEmpty) {
-                                                      return "Periode wajib dipilih";
-                                                    }
-                                                    return null;
-                                                  },
                                                 ),
-                                                SizedBox(height: 12),
-
-                                                if (komponenItem.selectedPeriode != null) ...[
-                                                  _buildIntervalSpinBox(
-                                                    bagian: komponenItem,
-                                                    setModalState: setModalState,
-                                                  ),
-                                                  SizedBox(height: 12),
-                                                ],
-
-                                                _modalTextField(
-                                                  controller: komponenItem.jenisPekerjaanController,
-                                                  label: "Jenis Pekerjaan",
-                                                  icon: Icons.work_outline,
-                                                  validator: (value) {
-                                                    if (value == null || value.trim().isEmpty) {
-                                                      return "Jenis pekerjaan wajib diisi";
-                                                    }
-                                                    return null;
-                                                  },
-                                                ),
-                                                SizedBox(height: 12),
-
-                                                _modalTextField(
-                                                  controller: komponenItem.standarPerawatanController,
-                                                  label: "Standar Perawatan",
-                                                  icon: Icons.checklist,
-                                                  maxLines: 2,
-                                                  validator: (value) {
-                                                    if (value == null || value.trim().isEmpty) {
-                                                      return "Standar perawatan wajib diisi";
-                                                    }
-                                                    return null;
-                                                  },
-                                                ),
-                                                SizedBox(height: 12),
-
-                                                _modalTextField(
-                                                  controller: komponenItem.alatBahanController,
-                                                  label: "Alat dan Bahan",
-                                                  icon: Icons.build,
-                                                  maxLines: 2,
-                                                  validator: (value) {
-                                                    if (value == null || value.trim().isEmpty) {
-                                                      return "Alat dan bahan wajib diisi";
-                                                    }
-                                                    return null;
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                        }).toList(),
+                                              );
+                                            }).toList(),
                                       );
                                     },
                                   ),
@@ -476,122 +793,172 @@ class ModalTambahChecksheet {
                           const SizedBox(width: 12),
                           isLoadingKomponen
                               ? Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                       ),
-                                      SizedBox(width: 12),
-                                      Text("Menyimpan..."),
-                                    ],
-                                  ),
-                                )
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text("Menyimpan..."),
+                                  ],
+                                ),
+                              )
                               : ElevatedButton.icon(
-                                  onPressed: () async {
-                                    if (!(formKey.currentState?.validate() ?? false)) {
-                                      return;
-                                    }
+                                onPressed: () async {
+                                  if (!(formKey.currentState?.validate() ??
+                                      false)) {
+                                    return;
+                                  }
 
-                                    if (selectedAssetId == null || selectedAssetName == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Pilih asset terlebih dahulu'),
-                                          backgroundColor: Color(0xFFF44336),
+                                  if (selectedAssetId == null ||
+                                      selectedAssetName == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Pilih asset terlebih dahulu',
                                         ),
-                                      );
-                                      return;
-                                    }
+                                        backgroundColor: Color(0xFFF44336),
+                                      ),
+                                    );
+                                    return;
+                                  }
 
-                                    // Set loading state
-                                    setModalState(() {
-                                      isLoadingKomponen = true;
-                                    });
+                                  // Set loading state
+                                  setModalState(() {
+                                    isLoadingKomponen = true;
+                                  });
 
-                                    try {
-                                      int savedCount = 0;
-                                      // Simpan setiap komponen sebagai cek sheet template terpisah
-                                      for (var komponenItem in komponenList) {
-                                        if (komponenItem.selectedKomponenId == null) {
-                                          continue;
-                                        }
-                                        
-                                        final interval = int.tryParse(komponenItem.intervalController.text.trim()) ?? 1;
-                                        final periodeEnum = komponenItem.selectedPeriode ?? 'Harian';
+                                  try {
+                                    int savedCount = 0;
+                                    // Simpan setiap komponen + work type sebagai cek sheet template terpisah
+                                    for (var komponenItem in komponenList) {
+                                      if (komponenItem.selectedKomponenId ==
+                                          null) {
+                                        continue;
+                                      }
+
+                                      // Loop through all work types untuk komponen ini
+                                      for (var workType
+                                          in komponenItem.workTypes) {
+                                        final interval =
+                                            int.tryParse(
+                                              workType.intervalController.text
+                                                  .trim(),
+                                            ) ??
+                                            1;
+                                        final periodeEnum =
+                                            workType.selectedPeriode ??
+                                            'Harian';
 
                                         try {
-                                          await checkSheetController.addCheckSheetTemplate(
-                                            komponenAssetsId: komponenItem.selectedKomponenId!,
-                                            periode: periodeEnum,
-                                            intervalPeriode: interval,
-                                            jenisPekerjaan: komponenItem.jenisPekerjaanController.text.trim(),
-                                            stdPrwtn: komponenItem.standarPerawatanController.text.trim(),
-                                            alatBahan: komponenItem.alatBahanController.text.trim(),
-                                          );
+                                          await checkSheetController
+                                              .addCheckSheetTemplate(
+                                                komponenAssetsId:
+                                                    komponenItem
+                                                        .selectedKomponenId!,
+                                                periode: periodeEnum,
+                                                intervalPeriode: interval,
+                                                jenisPekerjaan:
+                                                    workType
+                                                        .jenisPekerjaanController
+                                                        .text
+                                                        .trim(),
+                                                stdPrwtn:
+                                                    workType
+                                                        .standarPerawatanController
+                                                        .text
+                                                        .trim(),
+                                                alatBahan:
+                                                    workType
+                                                        .alatBahanController
+                                                        .text
+                                                        .trim(),
+                                              );
                                           savedCount++;
-                                          print('✅ Komponen ${savedCount} berhasil disimpan');
+                                          print(
+                                            '✅ Work type ${savedCount} berhasil disimpan',
+                                          );
                                         } catch (e) {
-                                          print('❌ Error menyimpan komponen: $e');
-                                          // Continue dengan komponen berikutnya
+                                          print(
+                                            '❌ Error menyimpan work type: $e',
+                                          );
+                                          // Continue dengan work type berikutnya
                                         }
                                       }
-
-                                      // Close dialog first before reloading data
-                                      if (context.mounted) {
-                                        Navigator.of(dialogContext).pop();
-                                        
-                                        // Show success message
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              "Cek sheet untuk ${selectedAssetName} berhasil ditambahkan dengan $savedCount komponen",
-                                            ),
-                                            backgroundColor: Color(0xFF0A9C5D),
-                                            duration: Duration(seconds: 2),
-                                          ),
-                                        );
-
-                                        // Reload data after a short delay to avoid freeze
-                                        Future.delayed(Duration(milliseconds: 300), () {
-                                          onSuccess();
-                                        });
-                                      }
-                                    } catch (e, stackTrace) {
-                                      print('❌ Error menyimpan cek sheet: $e');
-                                      print('Stack trace: $stackTrace');
-                                      
-                                      setModalState(() {
-                                        isLoadingKomponen = false;
-                                      });
-                                      
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Gagal menyimpan: ${e.toString()}'),
-                                            backgroundColor: Color(0xFFF44336),
-                                            duration: Duration(seconds: 4),
-                                          ),
-                                        );
-                                      }
                                     }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF0A9C5D),
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                      vertical: 12,
-                                    ),
+
+                                    // Close dialog first before reloading data
+                                    if (context.mounted) {
+                                      Navigator.of(dialogContext).pop();
+
+                                      // Show success message
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            "Cek sheet untuk ${selectedAssetName} berhasil ditambahkan dengan $savedCount komponen",
+                                          ),
+                                          backgroundColor: Color(0xFF0A9C5D),
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+
+                                      // Reload data after a short delay to avoid freeze
+                                      Future.delayed(
+                                        Duration(milliseconds: 300),
+                                        () {
+                                          onSuccess();
+                                        },
+                                      );
+                                    }
+                                  } catch (e, stackTrace) {
+                                    print('❌ Error menyimpan cek sheet: $e');
+                                    print('Stack trace: $stackTrace');
+
+                                    setModalState(() {
+                                      isLoadingKomponen = false;
+                                    });
+
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Gagal menyimpan: ${e.toString()}',
+                                          ),
+                                          backgroundColor: Color(0xFFF44336),
+                                          duration: Duration(seconds: 4),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0A9C5D),
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
                                   ),
-                                  icon: Icon(Icons.save),
-                                  label: const Text("Simpan"),
                                 ),
+                                icon: Icon(Icons.save),
+                                label: const Text("Simpan"),
+                              ),
                         ],
                       ),
                     ],
@@ -692,13 +1059,17 @@ class ModalTambahChecksheet {
                     children: [
                       Material(
                         color:
-                            (int.tryParse(bagian.intervalController.text) ?? 1) > 1
+                            (int.tryParse(bagian.intervalController.text) ??
+                                        1) >
+                                    1
                                 ? Color(0xFFF44336)
                                 : Colors.grey[300],
                         borderRadius: BorderRadius.circular(8),
                         child: InkWell(
                           onTap:
-                              (int.tryParse(bagian.intervalController.text) ?? 1) > 1
+                              (int.tryParse(bagian.intervalController.text) ??
+                                          1) >
+                                      1
                                   ? () {
                                     setModalState(() {
                                       int currentValue =
@@ -708,7 +1079,9 @@ class ModalTambahChecksheet {
                                           1;
                                       bagian.intervalController.text =
                                           (currentValue - 1).toString();
-                                      formFieldState.didChange(currentValue - 1);
+                                      formFieldState.didChange(
+                                        currentValue - 1,
+                                      );
                                     });
                                   }
                                   : null,
@@ -720,7 +1093,9 @@ class ModalTambahChecksheet {
                             child: Icon(
                               Icons.remove,
                               color:
-                                  (int.tryParse(bagian.intervalController.text) ??
+                                  (int.tryParse(
+                                                bagian.intervalController.text,
+                                              ) ??
                                               1) >
                                           1
                                       ? Colors.white
@@ -750,11 +1125,15 @@ class ModalTambahChecksheet {
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade300,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -779,7 +1158,10 @@ class ModalTambahChecksheet {
                           onTap: () {
                             setModalState(() {
                               int currentValue =
-                                  int.tryParse(bagian.intervalController.text) ?? 1;
+                                  int.tryParse(
+                                    bagian.intervalController.text,
+                                  ) ??
+                                  1;
                               bagian.intervalController.text =
                                   (currentValue + 1).toString();
                               formFieldState.didChange(currentValue + 1);
@@ -790,7 +1172,11 @@ class ModalTambahChecksheet {
                             width: 36,
                             height: 36,
                             alignment: Alignment.center,
-                            child: Icon(Icons.add, color: Colors.white, size: 20),
+                            child: Icon(
+                              Icons.add,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
@@ -822,7 +1208,7 @@ class ModalTambahChecksheet {
     int maxLines = 1,
     String? Function(String?)? validator,
   }) {
-return TextFormField(
+    return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
@@ -873,12 +1259,16 @@ return TextFormField(
   }
 }
 
-class KomponenScheduleItem {
-  String? selectedKomponenId;
+// Class untuk menyimpan detail satu jenis pekerjaan
+class WorkTypeItem {
   String? selectedPeriode;
-  final TextEditingController intervalController = TextEditingController();
-  final TextEditingController jenisPekerjaanController = TextEditingController();
-  final TextEditingController standarPerawatanController = TextEditingController();
+  final TextEditingController intervalController = TextEditingController(
+    text: '1',
+  );
+  final TextEditingController jenisPekerjaanController =
+      TextEditingController();
+  final TextEditingController standarPerawatanController =
+      TextEditingController();
   final TextEditingController alatBahanController = TextEditingController();
 
   void dispose() {
@@ -886,5 +1276,34 @@ class KomponenScheduleItem {
     jenisPekerjaanController.dispose();
     standarPerawatanController.dispose();
     alatBahanController.dispose();
+  }
+}
+
+// Class untuk komponen yang bisa memiliki multiple work types
+class KomponenScheduleItem {
+  String? selectedKomponenId;
+  final List<WorkTypeItem> workTypes = [];
+
+  KomponenScheduleItem() {
+    // Default: tambahkan satu work type
+    addWorkType();
+  }
+
+  void addWorkType() {
+    workTypes.add(WorkTypeItem());
+  }
+
+  void removeWorkType(int index) {
+    if (index >= 0 && index < workTypes.length) {
+      workTypes[index].dispose();
+      workTypes.removeAt(index);
+    }
+  }
+
+  void dispose() {
+    for (var workType in workTypes) {
+      workType.dispose();
+    }
+    workTypes.clear();
   }
 }

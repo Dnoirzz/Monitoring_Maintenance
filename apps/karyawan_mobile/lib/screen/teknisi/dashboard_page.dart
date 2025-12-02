@@ -4,6 +4,7 @@ import 'package:shared/providers/auth_provider.dart';
 import 'package:shared/utils/name_helper.dart';
 import '../../widget/teknisi_sidebar.dart';
 import 'pages/scan_qr_page.dart';
+import 'pages/check_sheet_list_page.dart';
 import '../login_page.dart';
 
 class TeknisiDashboardPage extends ConsumerStatefulWidget {
@@ -165,7 +166,16 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage> {
                               ),
                               const SizedBox(width: 12),
                               ElevatedButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) =>
+                                              const CheckSheetListPage(),
+                                    ),
+                                  );
+                                },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: primary,
                                   foregroundColor: Colors.white,
@@ -290,11 +300,7 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage> {
           ),
           title: Row(
             children: [
-              Icon(
-                Icons.logout,
-                color: Colors.red,
-                size: 28,
-              ),
+              Icon(Icons.logout, color: Colors.red, size: 28),
               SizedBox(width: 12),
               Text(
                 'Konfirmasi Logout',
@@ -308,10 +314,7 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage> {
           ),
           content: Text(
             'Apakah Anda yakin ingin keluar dari aplikasi?',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[700],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[700]),
           ),
           actions: [
             TextButton(
@@ -342,10 +345,7 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage> {
               ),
               child: Text(
                 'Logout',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -372,16 +372,11 @@ class _TeknisiDashboardPageState extends ConsumerState<TeknisiDashboardPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(
-                    color: Color(0xFF0A9C5D),
-                  ),
+                  CircularProgressIndicator(color: Color(0xFF0A9C5D)),
                   SizedBox(height: 16),
                   Text(
                     'Logging out...',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                   ),
                 ],
               ),

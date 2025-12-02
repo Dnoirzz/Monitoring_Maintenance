@@ -123,8 +123,25 @@ class TeknisiSidebar extends StatelessWidget {
       ),
       _MenuItemData(
         icon: Icons.calendar_month,
-        title: 'Jadwal Maintenance Penuh',
+        title: 'Jadwal Maintenance',
         route: '/jadwal-maintenance',
+        children: [
+          _MenuItemData(
+            icon: Icons.factory,
+            title: 'Mesin Produksi',
+            route: '/jadwal/mesin-produksi',
+          ),
+          _MenuItemData(
+            icon: Icons.construction,
+            title: 'Alat Berat',
+            route: '/jadwal/alat-berat',
+          ),
+          _MenuItemData(
+            icon: Icons.electric_bolt,
+            title: 'Listrik',
+            route: '/jadwal/listrik',
+          ),
+        ],
       ),
       _MenuItemData(
         icon: Icons.build,

@@ -1,19 +1,249 @@
 import 'package:flutter/material.dart';
 
-class LaporanKerusakanPage extends StatefulWidget {
-  const LaporanKerusakanPage({super.key});
+class MaintenanceRequestListPage extends StatefulWidget {
+  const MaintenanceRequestListPage({super.key});
 
   @override
-  State<LaporanKerusakanPage> createState() => _LaporanKerusakanPageState();
+  State<MaintenanceRequestListPage> createState() =>
+      _MaintenanceRequestListPageState();
 }
 
-class _LaporanKerusakanPageState extends State<LaporanKerusakanPage> {
+class _MaintenanceRequestListPageState
+    extends State<MaintenanceRequestListPage> {
+  final Color _primaryColor = const Color(0xFF0A9C5D);
+  final Color _bgColor = const Color(0xFFF6F8F7);
+
+  // Dummy data
+  final List<Map<String, dynamic>> _requests = [
+    {
+      'id': '1',
+      'machine_name': 'Mesin Press A',
+      'date': '25 Okt 2023',
+      'status': 'Pending',
+      'priority': 'Tinggi',
+      'description': 'Suara berisik pada motor saat operasi full speed.',
+    },
+    {
+      'id': '2',
+      'machine_name': 'Mesin Cutting C',
+      'date': '24 Okt 2023',
+      'status': 'Disetujui',
+      'priority': 'Sedang',
+      'description': 'Pisau tumpul, hasil potongan tidak rapi.',
+    },
+    {
+      'id': '3',
+      'machine_name': 'Mesin Mixing B',
+      'date': '20 Okt 2023',
+      'status': 'Selesai',
+      'priority': 'Rendah',
+      'description': 'Tombol start agak keras.',
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bgColor,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Maintenance Request',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body:
+          _requests.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.assignment_outlined,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Belum ada request',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                    ),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _requests.length,
+                itemBuilder: (context, index) {
+                  return _buildRequestCard(_requests[index]);
+                },
+              ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FormLaporanKerusakanPage(),
+            ),
+          );
+        },
+        backgroundColor: _primaryColor,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildRequestCard(Map<String, dynamic> item) {
+    Color statusColor;
+    Color statusBgColor;
+
+    switch (item['status']) {
+      case 'Pending':
+        statusColor = Colors.orange;
+        statusBgColor = Colors.orange.withOpacity(0.1);
+        break;
+      case 'Disetujui':
+        statusColor = Colors.blue;
+        statusBgColor = Colors.blue.withOpacity(0.1);
+        break;
+      case 'Selesai':
+        statusColor = Colors.green;
+        statusBgColor = Colors.green.withOpacity(0.1);
+        break;
+      default:
+        statusColor = Colors.grey;
+        statusBgColor = Colors.grey.withOpacity(0.1);
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () {
+            // Detail view if needed
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusBgColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        item['status'],
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      item['date'],
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  item['machine_name'],
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item['description'],
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.flag,
+                      size: 16,
+                      color:
+                          item['priority'] == 'Tinggi'
+                              ? Colors.red
+                              : Colors.grey,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Prioritas: ${item['priority']}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FormLaporanKerusakanPage extends StatefulWidget {
+  final Map<String, dynamic>? initialAsset;
+
+  const FormLaporanKerusakanPage({super.key, this.initialAsset});
+
+  @override
+  State<FormLaporanKerusakanPage> createState() =>
+      _FormLaporanKerusakanPageState();
+}
+
+class _FormLaporanKerusakanPageState extends State<FormLaporanKerusakanPage> {
   final Color _primaryColor = const Color(0xFF0A9C5D);
   final Color _backgroundLight = const Color(0xFFF6F8F7);
 
   // Form State
   String? _selectedAssetId; // Changed from _selectedMachine
   String _priority = 'Sedang';
+  String _requestType = 'Preventive';
+  final TextEditingController _reportTitleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
   // Mock data for assets (dropdown) - matching assets table
@@ -24,7 +254,24 @@ class _LaporanKerusakanPageState extends State<LaporanKerusakanPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialAsset != null) {
+      final exists = _assets.any((a) => a['id'] == widget.initialAsset!['id']);
+      if (!exists) {
+        _assets.add({
+          'id': widget.initialAsset!['id'],
+          'nama_assets': widget.initialAsset!['nama_assets'] ?? 'Unknown Asset',
+          'kode_assets': widget.initialAsset!['kode_assets'] ?? '-',
+        });
+      }
+      _selectedAssetId = widget.initialAsset!['id'];
+    }
+  }
+
+  @override
   void dispose() {
+    _reportTitleController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -60,6 +307,10 @@ class _LaporanKerusakanPageState extends State<LaporanKerusakanPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildMachineDropdown(),
+            const SizedBox(height: 24),
+            _buildReportTitleField(),
+            const SizedBox(height: 24),
+            _buildRequestTypeDropdown(),
             const SizedBox(height: 24),
             _buildDescriptionField(),
             const SizedBox(height: 24),
@@ -98,7 +349,10 @@ class _LaporanKerusakanPageState extends State<LaporanKerusakanPage> {
           decoration: InputDecoration(
             hintText: 'Pilih mesin yang rusak',
             filled: true,
-            fillColor: Colors.white,
+            fillColor:
+                widget.initialAsset != null
+                    ? Colors.grey.shade200
+                    : Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
@@ -123,9 +377,107 @@ class _LaporanKerusakanPageState extends State<LaporanKerusakanPage> {
                   child: Text(asset['nama_assets']!),
                 );
               }).toList(),
+          onChanged:
+              widget.initialAsset != null
+                  ? null
+                  : (value) {
+                    setState(() {
+                      _selectedAssetId = value;
+                    });
+                  },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReportTitleField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Judul Laporan',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _reportTitleController,
+          decoration: InputDecoration(
+            hintText: 'Masukkan judul laporan...',
+            hintStyle: TextStyle(color: Colors.grey.shade400),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _primaryColor),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRequestTypeDropdown() {
+    final List<String> requestTypes = [
+      'Preventive',
+      'Breakdown',
+      'Inspection',
+      'Upgrade',
+      'Replacement',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Tipe Request',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _requestType,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _primaryColor),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+          ),
+          items:
+              requestTypes.map((type) {
+                return DropdownMenuItem<String>(value: type, child: Text(type));
+              }).toList(),
           onChanged: (value) {
             setState(() {
-              _selectedAssetId = value;
+              _requestType = value!;
             });
           },
         ),
