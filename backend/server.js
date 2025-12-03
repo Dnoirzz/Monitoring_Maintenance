@@ -63,7 +63,7 @@ app.post('/api/auth/login', async (req, res) => {
       // Debug: Coba list semua user untuk memastikan koneksi benar
       const { data: allUsers } = await supabase.from('karyawan').select('email').limit(5);
       console.log('📋 Users in DB (first 5):', allUsers ? allUsers.map(u => u.email) : 'None');
-      
+
       return res.status(401).json({
         message: 'Email atau password salah'
       });
@@ -79,7 +79,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     // 2. Verifikasi password
     const isPasswordValid = await bcrypt.compare(password, karyawan.password_hash);
-    
+
     if (!isPasswordValid) {
       console.log('❌ Password salah');
       return res.status(401).json({
@@ -130,7 +130,7 @@ app.post('/api/auth/login', async (req, res) => {
     };
 
     console.log('✅ Login berhasil untuk:', email);
-    
+
     return res.status(200).json(response);
 
   } catch (error) {
@@ -147,7 +147,7 @@ app.post('/api/auth/login', async (req, res) => {
 // ============================================
 const verifyToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1]; // Bearer <token>
-  
+
   if (!token) {
     return res.status(401).json({ message: 'Token tidak ditemukan' });
   }
@@ -199,7 +199,7 @@ app.put('/api/karyawan/:id', verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { email, full_name, phone, mesin, password } = req.body;
-    
+
     const updateData = { email, full_name, phone, mesin };
     if (password) {
       updateData.password_hash = await bcrypt.hash(password, 10);
@@ -360,6 +360,223 @@ app.delete('/api/maintenance/:id', verifyToken, async (req, res) => {
 // ============================================
 // CHECKSHEET ENDPOINTS
 // ============================================
+
+// GET list of checksheet schedules with machine info
+app.get('/api/checksheet/schedules', verifyToken, async (req, res) => {
+  try {
+    const { date, status } = req.query;
+
+    let query = supabase
+      .from('cek_sheet_schedule')
+      .select(`
+        id,
+        tgl_jadwal,
+        tgl_selesai,
+        catatan,
+        template:cek_sheet_template!template_id (
+          komponen:komponen_assets!komponen_assets_id (
+            asset:assets!assets_id (
+              nama_assets,
+              kode_assets
+            )
+          )
+        )
+      `)
+      .order('tgl_jadwal', { ascending: false });
+
+    if (date) {
+      query = query.eq('tgl_jadwal', date);
+    }
+
+    if (status === 'pending') {
+      query = query.is('tgl_selesai', null);
+    } else if (status === 'completed') {
+      query = query.not('tgl_selesai', 'is', null);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // Transform data for easier consumption
+    const schedules = (data || []).map(schedule => ({
+      id: schedule.id,
+      date: schedule.tgl_jadwal,
+      completed_date: schedule.tgl_selesai,
+      status: schedule.tgl_selesai ? 'completed' : 'pending',
+      machine_name: schedule.template?.komponen?.asset?.nama_assets || 'Unknown',
+      machine_code: schedule.template?.komponen?.asset?.kode_assets || '-',
+      notes: schedule.catatan
+    }));
+
+    res.json(schedules);
+  } catch (error) {
+    console.error('Error fetching checksheet schedules:', error);
+    res.status(500).json({ message: 'Error fetching checksheet schedules', error: error.message });
+  }
+});
+
+// GET schedule details with all template items
+app.get('/api/checksheet/schedule/:scheduleId', verifyToken, async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+
+    // Get schedule with machine info
+    const { data: schedule, error: scheduleError } = await supabase
+      .from('cek_sheet_schedule')
+      .select(`
+        id,
+        template_id,
+        tgl_jadwal,
+        tgl_selesai,
+        catatan,
+        foto_sblm,
+        foto_sesudah,
+        template:cek_sheet_template!template_id (
+          komponen:komponen_assets!komponen_assets_id (
+            assets_id,
+            asset:assets!assets_id (
+              nama_assets,
+              kode_assets
+            )
+          )
+        )
+      `)
+      .eq('id', scheduleId)
+      .single();
+
+    if (scheduleError) throw scheduleError;
+    if (!schedule) {
+      return res.status(404).json({ message: 'Schedule not found' });
+    }
+
+    // Get all templates for this asset
+    const assetsId = schedule.template?.komponen?.assets_id;
+
+    if (!assetsId) {
+      return res.status(400).json({ message: 'Asset information not found' });
+    }
+
+    const { data: templates, error: templatesError } = await supabase
+      .from('cek_sheet_template')
+      .select(`
+        id,
+        jenis_pekerjaan,
+        std_prwtn,
+        alat_bahan,
+        periode,
+        komponen:komponen_assets!komponen_assets_id (
+          assets_id
+        )
+      `)
+      .eq('komponen_assets_id', schedule.template.komponen_assets_id);
+
+    if (templatesError) throw templatesError;
+
+    // Get existing results if any
+    const { data: existingResults } = await supabase
+      .from('cek_sheet_results')
+      .select('*')
+      .eq('schedule_id', scheduleId);
+
+    // Map results to templates
+    const templatesWithResults = (templates || []).map(template => {
+      const result = (existingResults || []).find(r => r.template_id === template.id);
+      return {
+        id: template.id,
+        jenis_pekerjaan: template.jenis_pekerjaan,
+        std_prwtn: template.std_prwtn,
+        alat_bahan: template.alat_bahan || '-',
+        status: result?.status || null,
+        notes: result?.notes || null,
+        photo: result?.photo || null
+      };
+    });
+
+    const response = {
+      schedule: {
+        id: schedule.id,
+        tgl_jadwal: schedule.tgl_jadwal,
+        tgl_selesai: schedule.tgl_selesai,
+        catatan: schedule.catatan || '',
+        foto_sblm: schedule.foto_sblm,
+        foto_sesudah: schedule.foto_sesudah,
+        asset_name: schedule.template?.komponen?.asset?.nama_assets || 'Unknown',
+        asset_code: schedule.template?.komponen?.asset?.kode_assets || '-'
+      },
+      templates: templatesWithResults
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error fetching schedule details:', error);
+    res.status(500).json({ message: 'Error fetching schedule details', error: error.message });
+  }
+});
+
+// POST submit checksheet results
+app.post('/api/checksheet/submit', verifyToken, async (req, res) => {
+  try {
+    const { schedule_id, results, general_notes, foto_sblm, foto_sesudah } = req.body;
+
+    if (!schedule_id || !results || !Array.isArray(results)) {
+      return res.status(400).json({ message: 'Invalid request data' });
+    }
+
+    // Start transaction-like operations
+    // 1. Delete existing results for this schedule
+    const { error: deleteError } = await supabase
+      .from('cek_sheet_results')
+      .delete()
+      .eq('schedule_id', schedule_id);
+
+    if (deleteError) throw deleteError;
+
+    // 2. Insert new results
+    const resultsToInsert = results.map(result => ({
+      schedule_id: schedule_id,
+      template_id: result.template_id,
+      status: result.status,
+      notes: result.notes || null,
+      photo: result.photo || null
+    }));
+
+    const { error: insertError } = await supabase
+      .from('cek_sheet_results')
+      .insert(resultsToInsert);
+
+    if (insertError) throw insertError;
+
+    // 3. Update schedule with completion info
+    const updateData = {
+      tgl_selesai: new Date().toISOString().split('T')[0],
+      catatan: general_notes || '',
+      completed_by: req.user.userId
+    };
+
+    if (foto_sblm) updateData.foto_sblm = foto_sblm;
+    if (foto_sesudah) updateData.foto_sesudah = foto_sesudah;
+
+    const { data: updatedSchedule, error: updateError } = await supabase
+      .from('cek_sheet_schedule')
+      .update(updateData)
+      .eq('id', schedule_id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    res.json({
+      message: 'Checksheet submitted successfully',
+      schedule: updatedSchedule
+    });
+  } catch (error) {
+    console.error('Error submitting checksheet:', error);
+    res.status(500).json({ message: 'Error submitting checksheet', error: error.message });
+  }
+});
+
+// Legacy endpoints (kept for backward compatibility)
 app.get('/api/checksheet', verifyToken, async (req, res) => {
   try {
     const { data, error } = await supabase

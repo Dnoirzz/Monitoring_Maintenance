@@ -119,7 +119,24 @@ class TeknisiSidebar extends StatelessWidget {
       _MenuItemData(
         icon: Icons.checklist,
         title: 'Cek Sheet',
-        route: '/cek-harian',
+        route: '/cek-sheet',
+        children: [
+          _MenuItemData(
+            icon: Icons.factory,
+            title: 'Mesin Produksi',
+            route: '/cek-sheet/mesin-produksi',
+          ),
+          _MenuItemData(
+            icon: Icons.construction,
+            title: 'Alat Berat',
+            route: '/cek-sheet/alat-berat',
+          ),
+          _MenuItemData(
+            icon: Icons.electric_bolt,
+            title: 'Listrik',
+            route: '/cek-sheet/listrik',
+          ),
+        ],
       ),
       _MenuItemData(
         icon: Icons.calendar_month,

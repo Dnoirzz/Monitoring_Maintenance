@@ -9,6 +9,7 @@ import 'screen/teknisi/dashboard_page.dart';
 import 'screen/teknisi/pages/mt_request.dart';
 import 'screen/teknisi/pages/menu_assets/asset_list_page.dart';
 import 'screen/teknisi/pages/maintenance_schedule_list_page.dart';
+import 'screen/teknisi/pages/cek_sheet_asset_list_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,6 +78,21 @@ class KaryawanMobileApp extends ConsumerWidget {
         '/jadwal/listrik':
             (context) => const MaintenanceScheduleListPage(
               title: 'Jadwal Listrik',
+              assetType: 'electrical',
+            ),
+        '/cek-sheet/mesin-produksi':
+            (context) => const CekSheetAssetListPage(
+              title: 'Mesin Produksi',
+              assetType: 'production_machine',
+            ),
+        '/cek-sheet/alat-berat':
+            (context) => const CekSheetAssetListPage(
+              title: 'Alat Berat',
+              assetType: 'heavy_equipment',
+            ),
+        '/cek-sheet/listrik':
+            (context) => const CekSheetAssetListPage(
+              title: 'Listrik',
               assetType: 'electrical',
             ),
       },

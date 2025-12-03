@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
-import 'cek_harian.dart';
+import 'checksheet_page.dart';
+import '../../../models/checksheet_models.dart';
+import '../../../services/checksheet_service.dart';
 
 class CheckSheetListPage extends StatefulWidget {
-  const CheckSheetListPage({super.key});
+  final String? assetId; // Optional: filter by asset
+  final String? assetName; // Optional: display asset name in title
+
+  const CheckSheetListPage({super.key, this.assetId, this.assetName});
 
   @override
   State<CheckSheetListPage> createState() => _CheckSheetListPageState();
@@ -12,33 +17,38 @@ class _CheckSheetListPageState extends State<CheckSheetListPage> {
   final Color _primaryColor = const Color(0xFF0A9C5D);
   final Color _bgColor = const Color(0xFFF6F8F7);
 
-  // Dummy data for check sheets
-  final List<Map<String, dynamic>> _checkSheets = [
-    {
-      'id': '1',
-      'machine_name': 'Mesin CNC-01',
-      'machine_code': 'CNC-001',
-      'date': '2023-10-25',
-      'status': 'pending', // pending, completed
-      'shift': 'Pagi',
-    },
-    {
-      'id': '2',
-      'machine_name': 'Mesin Bubut-03',
-      'machine_code': 'BBT-003',
-      'date': '2023-10-25',
-      'status': 'pending',
-      'shift': 'Pagi',
-    },
-    {
-      'id': '3',
-      'machine_name': 'Mesin Press-02',
-      'machine_code': 'PRS-002',
-      'date': '2023-10-25',
-      'status': 'completed',
-      'shift': 'Siang',
-    },
-  ];
+  List<ChecksheetSchedule> _checkSheets = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChecksheets();
+  }
+
+  Future<void> _loadChecksheets() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final schedules = await ChecksheetService.getSchedules(
+        assetId: widget.assetId,
+      );
+
+      setState(() {
+        _checkSheets = schedules;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Gagal memuat data: $e';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,29 +61,88 @@ class _CheckSheetListPageState extends State<CheckSheetListPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Daftar Check Sheet',
-          style: TextStyle(
+        title: Text(
+          widget.assetName != null
+              ? 'Checksheet - ${widget.assetName}'
+              : 'Daftar Check Sheet',
+          style: const TextStyle(
             color: Colors.black87,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black87),
+            onPressed: _loadChecksheets,
+          ),
+        ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _checkSheets.length,
-        itemBuilder: (context, index) {
-          final item = _checkSheets[index];
-          return _buildCheckSheetCard(item);
-        },
-      ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _error!,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadChecksheets,
+                      child: const Text('Coba Lagi'),
+                    ),
+                  ],
+                ),
+              )
+              : _checkSheets.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.inbox_outlined,
+                      size: 64,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Tidak ada jadwal checksheet',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : RefreshIndicator(
+                onRefresh: _loadChecksheets,
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _checkSheets.length,
+                  itemBuilder: (context, index) {
+                    final item = _checkSheets[index];
+                    return _buildCheckSheetCard(item);
+                  },
+                ),
+              ),
     );
   }
 
-  Widget _buildCheckSheetCard(Map<String, dynamic> item) {
-    final bool isCompleted = item['status'] == 'completed';
+  Widget _buildCheckSheetCard(ChecksheetSchedule item) {
+    final bool isCompleted = item.status == 'completed';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -92,11 +161,18 @@ class _CheckSheetListPageState extends State<CheckSheetListPage> {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            final result = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const CekHarianPage()),
+              MaterialPageRoute(
+                builder: (context) => ChecksheetPage(scheduleId: item.id),
+              ),
             );
+
+            // Reload if checksheet was submitted
+            if (result == true) {
+              _loadChecksheets();
+            }
           },
           borderRadius: BorderRadius.circular(12),
           child: Padding(
@@ -129,7 +205,7 @@ class _CheckSheetListPageState extends State<CheckSheetListPage> {
                       ),
                     ),
                     Text(
-                      item['date'],
+                      item.date,
                       style: TextStyle(color: Colors.grey[600], fontSize: 12),
                     ),
                   ],
@@ -145,7 +221,7 @@ class _CheckSheetListPageState extends State<CheckSheetListPage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        Icons.precision_manufacturing,
+                        Icons.assignment_outlined,
                         color: _primaryColor,
                       ),
                     ),
@@ -155,7 +231,7 @@ class _CheckSheetListPageState extends State<CheckSheetListPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            item['machine_name'],
+                            item.machineName,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -164,7 +240,7 @@ class _CheckSheetListPageState extends State<CheckSheetListPage> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Kode: ${item['machine_code']} • Shift: ${item['shift']}',
+                            'Kode: ${item.machineCode}',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],

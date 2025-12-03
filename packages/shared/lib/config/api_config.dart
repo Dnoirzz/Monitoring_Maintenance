@@ -20,7 +20,7 @@ class ApiConfig {
   // Hanya digunakan jika menggunakan Android device fisik via WiFi
   // ============================================
   static const String _hostIpForPhysicalDevice =
-      '192.168.76.188'; // ⚠️ GANTI INI dengan IP WiFi Anda (hanya untuk device fisik via WiFi)
+      '192.168.144.188'; // ⚠️ GANTI INI dengan IP WiFi Anda (hanya untuk device fisik via WiFi)
 
   /// Port backend server
   static const int _port = 3000;

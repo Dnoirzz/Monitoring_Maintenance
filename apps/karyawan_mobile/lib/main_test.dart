@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'models/checksheet_models.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,553 +11,721 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dashboard Teknis',
+      title: 'Test Checksheet',
       theme: ThemeData(
         brightness: Brightness.light,
-        primaryColor: const Color(0xFF1392EC),
+        primaryColor: const Color(0xFF0A9E5E),
         scaffoldBackgroundColor: const Color(0xFFF6F7F8),
         fontFamily: 'Manrope',
       ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        primaryColor: const Color(0xFF1392EC),
-        scaffoldBackgroundColor: const Color(0xFF101A22),
-        fontFamily: 'Manrope',
-      ),
-      themeMode: ThemeMode.dark,
-      home: const DashboardPage(),
+      themeMode: ThemeMode.light,
+      home: const DummyChecksheetPage(),
     );
   }
 }
 
-class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+class DummyChecksheetPage extends StatefulWidget {
+  const DummyChecksheetPage({super.key});
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  State<DummyChecksheetPage> createState() => _DummyChecksheetPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+class _DummyChecksheetPageState extends State<DummyChecksheetPage> {
+  final Color _primaryColor = const Color(0xFF0A9E5E);
+  final TextEditingController _notesController = TextEditingController();
+
+  // DATA DUMMY
+  final String _machineName = 'Mesin CNC-01';
+  final String _machineCode = 'CNC-001';
+  final String _scheduleDate = '2025-12-03';
+
+  final List<ChecksheetTemplate> _checklistItems = [
+    ChecksheetTemplate(
+      id: '1',
+      jenisPekerjaan: 'Pemeriksaan Level Oli Hidrolik',
+      stdPrwtn:
+          'Level oli harus berada di antara garis MIN dan MAX pada sight glass',
+      alatBahan: 'Lap bersih, Catatan level',
+      status: null,
+      notes: null,
+      photo: null,
+    ),
+    ChecksheetTemplate(
+      id: '2',
+      jenisPekerjaan: 'Pengecekan Suhu Bearing Spindle',
+      stdPrwtn: 'Suhu bearing tidak boleh melebihi 60°C saat operasi normal',
+      alatBahan: 'Thermometer infrared, Catatan suhu',
+      status: null,
+      notes: null,
+      photo: null,
+    ),
+    ChecksheetTemplate(
+      id: '3',
+      jenisPekerjaan: 'Pemeriksaan Kebersihan Chip Conveyor',
+      stdPrwtn: 'Chip conveyor harus bersih dari serpihan logam berlebih',
+      alatBahan: 'Sapu, Lap, Vacuum cleaner',
+      status: null,
+      notes: null,
+      photo: null,
+    ),
+    ChecksheetTemplate(
+      id: '4',
+      jenisPekerjaan: 'Pengecekan Tekanan Udara Kompresor',
+      stdPrwtn: 'Tekanan udara harus 6-8 bar',
+      alatBahan: 'Pressure gauge',
+      status: null,
+      notes: null,
+      photo: null,
+    ),
+    ChecksheetTemplate(
+      id: '5',
+      jenisPekerjaan: 'Pemeriksaan Kondisi Coolant',
+      stdPrwtn: 'Coolant harus bersih, tidak berbau, dan level mencukupi',
+      alatBahan: 'Refractometer, pH meter, Catatan kualitas',
+      status: null,
+      notes: null,
+      photo: null,
+    ),
+    ChecksheetTemplate(
+      id: '6',
+      jenisPekerjaan: 'Pengecekan Getaran Abnormal',
+      stdPrwtn: 'Tidak ada getaran yang tidak normal saat mesin beroperasi',
+      alatBahan: 'Vibration meter (opsional)',
+      status: null,
+      notes: null,
+      photo: null,
+    ),
+    ChecksheetTemplate(
+      id: '7',
+      jenisPekerjaan: 'Pemeriksaan Kondisi Kabel dan Koneksi',
+      stdPrwtn:
+          'Semua kabel dan koneksi listrik dalam kondisi baik, tidak ada yang terkelupas',
+      alatBahan: 'Visual inspection',
+      status: null,
+      notes: null,
+      photo: null,
+    ),
+  ];
+
+  void _submitChecksheet() {
+    final incompleteItems =
+        _checklistItems
+            .where((item) => item.status == null || item.status!.isEmpty)
+            .toList();
+
+    if (incompleteItems.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mohon lengkapi semua pemeriksaan'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Checksheet Berhasil Dikirim!'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Mesin: $_machineName'),
+                  Text('Tanggal: $_scheduleDate'),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Hasil Pemeriksaan:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  ..._checklistItems.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            item.status == 'good'
+                                ? Icons.check_circle
+                                : item.status == 'repair'
+                                ? Icons.build
+                                : Icons.warning,
+                            size: 16,
+                            color:
+                                item.status == 'good'
+                                    ? Colors.green
+                                    : item.status == 'repair'
+                                    ? Colors.orange
+                                    : Colors.red,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${item.jenisPekerjaan}: ${item.status?.toUpperCase()}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (_notesController.text.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text('Catatan: ${_notesController.text}'),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    for (var item in _checklistItems) {
+                      item.status = null;
+                      item.notes = null;
+                      item.photo = null;
+                    }
+                    _notesController.clear();
+                  });
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF101A22) : const Color(0xFFF6F7F8);
-    final cardColor = isDark ? const Color(0xFF192833) : Colors.white;
-    final textPrimary = isDark ? Colors.white : const Color(0xFF1C1C1E);
-    final textSecondary =
-        isDark ? const Color(0xFF92B2C9) : const Color(0xFF6B7280);
-    final primaryColor = const Color(0xFF1392EC);
-
     return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: bgColor,
-      drawer: _buildDrawer(
-        context,
-        isDark,
-        cardColor,
-        textPrimary,
-        textSecondary,
-        primaryColor,
+      backgroundColor: const Color(0xFFF6F8F7),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF6F8F7).withOpacity(0.8),
+        elevation: 0,
+        title: Text(
+          'Checksheet $_machineName',
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey.withOpacity(0.2), height: 1.0),
+        ),
       ),
-      body: Column(
-        children: [
-          // Header
-          Container(
-            color: bgColor,
-            padding: const EdgeInsets.all(16.0),
-            child: SafeArea(
-              bottom: false,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  InkWell(
-                    onTap: () {
-                      _scaffoldKey.currentState?.openDrawer();
-                    },
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      alignment: Alignment.center,
-                      child: Icon(Icons.menu, color: textSecondary),
-                    ),
-                  ),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.notifications_outlined,
-                      color: textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Content
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Welcome Text
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(
-                      'Selamat datang, Budi Setiawan!',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: textPrimary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Check Sheet Card
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Check Sheet Harian',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '3 check sheet perlu diisi hari ini',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: textSecondary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Terakhir diperbarui: 10 menit lalu',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: textSecondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Lihat Daftar',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Section Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-                    child: Text(
-                      'Jadwal Maintenance (7 Hari Kedepan)',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: textPrimary,
-                      ),
-                    ),
-                  ),
-
-                  // Maintenance List
-                  MaintenanceItem(
-                    machineName: 'Mesin CNC-01',
-                    date: '25 Okt 2024, 08:00',
-                    type: 'Preventive Maintenance',
-                    cardColor: cardColor,
-                    textPrimary: textPrimary,
-                    textSecondary: textSecondary,
-                    primaryColor: primaryColor,
-                  ),
-                  MaintenanceItem(
-                    machineName: 'Mesin Bubut-03',
-                    date: '26 Okt 2024, 10:00',
-                    type: 'Corrective Maintenance',
-                    cardColor: cardColor,
-                    textPrimary: textPrimary,
-                    textSecondary: textSecondary,
-                    primaryColor: primaryColor,
-                  ),
-                  MaintenanceItem(
-                    machineName: 'Mesin Press-02',
-                    date: '28 Okt 2024, 14:00',
-                    type: 'Preventive Maintenance',
-                    cardColor: cardColor,
-                    textPrimary: textPrimary,
-                    textSecondary: textSecondary,
-                    primaryColor: primaryColor,
-                  ),
-                  const SizedBox(height: 80),
-                ],
-              ),
-            ),
-          ),
-        ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 100),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildMachineInfo(),
+            const SizedBox(height: 16),
+            _buildChecklistSection(),
+            _buildGeneralNotes(),
+          ],
+        ),
       ),
-      bottomNavigationBar: Container(
-        color: bgColor,
-        padding: const EdgeInsets.all(16),
-        child: SafeArea(
-          top: false,
-          child: ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              elevation: 4,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.qr_code_scanner, size: 24),
-                SizedBox(width: 8),
-                Text(
-                  'Scan QR Mesin',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
+      bottomNavigationBar: _buildFooter(),
+    );
+  }
+
+  Widget _buildMachineInfo() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          children: [
+            _buildInfoRow('Mesin', _machineName),
+            const SizedBox(height: 12),
+            _buildInfoRow('Kode Mesin', _machineCode),
+            const SizedBox(height: 12),
+            _buildInfoRow('Tanggal', _scheduleDate),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDrawer(
-    BuildContext context,
-    bool isDark,
-    Color cardColor,
-    Color textPrimary,
-    Color textSecondary,
-    Color primaryColor,
-  ) {
-    return Drawer(
-      backgroundColor: cardColor,
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChecklistSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Text(
+            'Daftar Pemeriksaan',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        ...List.generate(_checklistItems.length, (index) {
+          return _buildChecklistItem(_checklistItems[index], index + 1);
+        }),
+      ],
+    );
+  }
+
+  Widget _buildChecklistItem(ChecksheetTemplate item, int number) {
+    final hasIssue = item.status == 'repair' || item.status == 'replace';
+    final hasNoteOrPhoto =
+        (item.notes != null && item.notes!.isNotEmpty) || item.photo != null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6F8F7),
+        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+      ),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // User Profile Header
-          Container(
-            padding: const EdgeInsets.all(24),
-            child: SafeArea(
-              bottom: false,
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color:
-                          isDark
-                              ? const Color(0xFF101A22)
-                              : const Color(0xFFF6F7F8),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.person, size: 28, color: textSecondary),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Budi Setiawan',
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: _primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$number',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: textPrimary,
+                            color: _primaryColor,
                           ),
                         ),
-                        Text(
-                          'Teknisi',
-                          style: TextStyle(fontSize: 14, color: textSecondary),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Navigation Menu
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _buildMenuItem(
-                  icon: Icons.dashboard,
-                  title: 'Dashboard',
-                  isActive: true,
-                  textPrimary: textPrimary,
-                  textSecondary: textSecondary,
-                  primaryColor: primaryColor,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                const SizedBox(height: 4),
-                _buildMenuItem(
-                  icon: Icons.checklist,
-                  title: 'Formulir Cek Sheet Harian',
-                  isActive: false,
-                  textPrimary: textPrimary,
-                  textSecondary: textSecondary,
-                  primaryColor: primaryColor,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                const SizedBox(height: 4),
-                _buildMenuItem(
-                  icon: Icons.calendar_month,
-                  title: 'Jadwal Maintenance Penuh',
-                  isActive: false,
-                  textPrimary: textPrimary,
-                  textSecondary: textSecondary,
-                  primaryColor: primaryColor,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                const SizedBox(height: 4),
-                _buildMenuItem(
-                  icon: Icons.build,
-                  title: 'Permintaan Maintenance',
-                  isActive: false,
-                  textPrimary: textPrimary,
-                  textSecondary: textSecondary,
-                  primaryColor: primaryColor,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                const SizedBox(height: 4),
-                _buildMenuItem(
-                  icon: Icons.precision_manufacturing,
-                  title: 'Detail Mesin',
-                  isActive: false,
-                  textPrimary: textPrimary,
-                  textSecondary: textSecondary,
-                  primaryColor: primaryColor,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          // Logout Button
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: InkWell(
-              onTap: () {
-                Navigator.pop(context);
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.red.withOpacity(0.1),
-                ),
-                child: Row(
-                  children: const [
-                    Icon(Icons.logout, color: Colors.red),
-                    SizedBox(width: 12),
-                    Text(
-                      'Logout',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.red,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        item.jenisPekerjaan,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      item.notes != null && item.notes!.isNotEmpty
+                          ? Icons.edit_note
+                          : Icons.edit_note_outlined,
+                    ),
+                    color:
+                        item.notes != null && item.notes!.isNotEmpty
+                            ? _primaryColor
+                            : Colors.grey.shade600,
+                    onPressed: () => _showNotesDialog(item),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      item.photo != null
+                          ? Icons.camera_alt
+                          : Icons.camera_alt_outlined,
+                    ),
+                    color:
+                        item.photo != null
+                            ? _primaryColor
+                            : Colors.grey.shade600,
+                    onPressed: () => _showPhotoDialog(item),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            item.stdPrwtn,
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.build_outlined,
+                  size: 16,
+                  color: Colors.grey.shade600,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    item.alatBahan,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            children: [
+              _buildRadioButton('Good', 'good', item),
+              _buildRadioButton('Repair', 'repair', item, isWarning: true),
+              _buildRadioButton('Replace', 'replace', item, isError: true),
+            ],
+          ),
+          if (hasNoteOrPhoto) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: hasIssue ? Colors.orange.shade50 : Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color:
+                      hasIssue ? Colors.orange.shade200 : Colors.blue.shade200,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (item.notes != null && item.notes!.isNotEmpty)
+                    RichText(
+                      text: TextSpan(
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                        ),
+                        children: [
+                          const TextSpan(
+                            text: 'Catatan: ',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(text: item.notes),
+                        ],
+                      ),
+                    ),
+                  if (item.photo != null) ...[
+                    if (item.notes != null && item.notes!.isNotEmpty)
+                      const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.camera_alt,
+                          size: 16,
+                          color: Colors.grey.shade600,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Foto tersimpan',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required bool isActive,
-    required Color textPrimary,
-    required Color textSecondary,
-    required Color primaryColor,
-    required VoidCallback onTap,
+  Widget _buildRadioButton(
+    String label,
+    String value,
+    ChecksheetTemplate item, {
+    bool isError = false,
+    bool isWarning = false,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: isActive ? primaryColor.withOpacity(0.15) : Colors.transparent,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: isActive ? primaryColor : textSecondary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                  color: isActive ? primaryColor : textSecondary,
-                ),
+    final isSelected = value == item.status;
+    Color color = _primaryColor;
+    if (isError) color = Colors.red;
+    if (isWarning) color = Colors.orange;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          item.status = value;
+        });
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? color : Colors.grey.shade400,
+                width: 2,
               ),
             ),
-          ],
+            child:
+                isSelected
+                    ? Center(
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: color,
+                        ),
+                      ),
+                    )
+                    : null,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color:
+                  isSelected
+                      ? (isError
+                          ? Colors.red
+                          : isWarning
+                          ? Colors.orange
+                          : Colors.black87)
+                      : Colors.black87,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNotesDialog(ChecksheetTemplate item) {
+    final controller = TextEditingController(text: item.notes ?? '');
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Tambah Catatan'),
+            content: TextField(
+              controller: controller,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                hintText: 'Masukkan catatan...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    item.notes = controller.text;
+                  });
+                  Navigator.pop(context);
+                },
+                child: const Text('Simpan'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _showPhotoDialog(ChecksheetTemplate item) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Tambah Foto'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.camera_alt),
+                  title: const Text('Ambil Foto'),
+                  onTap: () {
+                    setState(() {
+                      item.photo = 'camera_photo_${item.id}.jpg';
+                    });
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Foto berhasil disimpan (simulasi)'),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Pilih dari Galeri'),
+                  onTap: () {
+                    setState(() {
+                      item.photo = 'gallery_photo_${item.id}.jpg';
+                    });
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Foto berhasil dipilih (simulasi)'),
+                      ),
+                    );
+                  },
+                ),
+                if (item.photo != null)
+                  ListTile(
+                    leading: const Icon(Icons.delete, color: Colors.red),
+                    title: const Text('Hapus Foto'),
+                    onTap: () {
+                      setState(() {
+                        item.photo = null;
+                      });
+                      Navigator.pop(context);
+                    },
+                  ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Widget _buildGeneralNotes() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Catatan Umum',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _notesController,
+            maxLines: 4,
+            decoration: InputDecoration(
+              hintText: 'Tambahkan catatan keseluruhan jika ada...',
+              hintStyle: TextStyle(color: Colors.grey.shade400),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: _primaryColor),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6F8F7).withOpacity(0.9),
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _submitChecksheet,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _primaryColor,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            elevation: 0,
+          ),
+          child: const Text(
+            'Kirim Laporan',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
         ),
       ),
     );
   }
-}
-
-class MaintenanceItem extends StatelessWidget {
-  final String machineName;
-  final String date;
-  final String type;
-  final Color cardColor;
-  final Color textPrimary;
-  final Color textSecondary;
-  final Color primaryColor;
-
-  const MaintenanceItem({
-    super.key,
-    required this.machineName,
-    required this.date,
-    required this.type,
-    required this.cardColor,
-    required this.textPrimary,
-    required this.textSecondary,
-    required this.primaryColor,
-  });
 
   @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.calendar_month, color: primaryColor),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    machineName,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    date,
-                    style: TextStyle(fontSize: 14, color: textSecondary),
-                  ),
-                  Text(
-                    type,
-                    style: TextStyle(fontSize: 14, color: textSecondary),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: textSecondary),
-          ],
-        ),
-      ),
-    );
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
   }
 }
