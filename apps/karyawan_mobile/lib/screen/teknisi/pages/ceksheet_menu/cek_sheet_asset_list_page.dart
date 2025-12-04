@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared/repositories/asset_supabase_repository.dart';
-import 'check_sheet_list_page.dart';
+import 'check_sheet_list_tab_page.dart';
 
 /// Halaman untuk menampilkan daftar asset berdasarkan jenis
 /// Untuk keperluan checksheet
@@ -245,7 +245,7 @@ class _CekSheetAssetListPageState extends State<CekSheetAssetListPage> {
               context,
               MaterialPageRoute(
                 builder:
-                    (context) => CheckSheetListPage(
+                    (context) => CheckSheetListTabPage(
                       assetId: asset['id'],
                       assetName: name,
                     ),

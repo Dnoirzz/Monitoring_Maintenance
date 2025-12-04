@@ -136,6 +136,11 @@ class TeknisiSidebar extends StatelessWidget {
             title: 'Listrik',
             route: '/cek-sheet/listrik',
           ),
+          _MenuItemData(
+            icon: Icons.history,
+            title: 'History Checksheet',
+            route: '/cek-sheet/history',
+          ),
         ],
       ),
       _MenuItemData(
@@ -159,6 +164,11 @@ class TeknisiSidebar extends StatelessWidget {
             route: '/jadwal/listrik',
           ),
         ],
+      ),
+      _MenuItemData(
+        icon: Icons.assignment,
+        title: 'Work Order',
+        route: '/work-order',
       ),
       _MenuItemData(
         icon: Icons.build,
@@ -287,7 +297,7 @@ class TeknisiSidebar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: Colors.red.withOpacity(0.1),
+            // color: Colors.red.withOpacity(0.1),
           ),
           child: const Row(
             children: [

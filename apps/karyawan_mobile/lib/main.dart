@@ -9,7 +9,9 @@ import 'screen/teknisi/dashboard_page.dart';
 import 'screen/teknisi/pages/mt_request.dart';
 import 'screen/teknisi/pages/menu_assets/asset_list_page.dart';
 import 'screen/teknisi/pages/maintenance_schedule_list_page.dart';
-import 'screen/teknisi/pages/cek_sheet_asset_list_page.dart';
+import 'screen/teknisi/pages/ceksheet_menu/cek_sheet_asset_list_page.dart';
+import 'screen/teknisi/pages/ceksheet_menu/checksheet_history_page.dart';
+import 'screen/teknisi/pages/work_order/work_order_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -95,6 +97,8 @@ class KaryawanMobileApp extends ConsumerWidget {
               title: 'Listrik',
               assetType: 'electrical',
             ),
+        '/cek-sheet/history': (context) => const ChecksheetHistoryPage(),
+        '/work-order': (context) => const WorkOrderPage(),
       },
     );
   }

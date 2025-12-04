@@ -8,6 +8,7 @@ class ChecksheetSchedule {
   final String machineName;
   final String machineCode;
   final String? notes;
+  final int? jobItemsCount; // Count of job items in this checksheet
 
   ChecksheetSchedule({
     required this.id,
@@ -17,6 +18,7 @@ class ChecksheetSchedule {
     required this.machineName,
     required this.machineCode,
     this.notes,
+    this.jobItemsCount,
   });
 
   factory ChecksheetSchedule.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class ChecksheetSchedule {
       machineName: json['machine_name'] ?? 'Unknown',
       machineCode: json['machine_code'] ?? '-',
       notes: json['notes'],
+      jobItemsCount: json['job_items_count'],
     );
   }
 
@@ -40,6 +43,7 @@ class ChecksheetSchedule {
       'machine_name': machineName,
       'machine_code': machineCode,
       'notes': notes,
+      'job_items_count': jobItemsCount,
     };
   }
 }
@@ -148,5 +152,82 @@ class ChecksheetSubmitRequest {
       'results': results.map((r) => r.toJson()).toList(),
       'general_notes': generalNotes,
     };
+  }
+}
+
+// New models for history feature
+class ChecksheetHistoryItem {
+  final String id;
+  final String scheduleDate;
+  final String? completedDate;
+  final String assetName;
+  final String assetCode;
+  final String? completedByName;
+  final int totalItems;
+  final int goodCount;
+  final int repairCount;
+  final int replaceCount;
+  final String? notes;
+
+  ChecksheetHistoryItem({
+    required this.id,
+    required this.scheduleDate,
+    this.completedDate,
+    required this.assetName,
+    required this.assetCode,
+    this.completedByName,
+    required this.totalItems,
+    required this.goodCount,
+    required this.repairCount,
+    required this.replaceCount,
+    this.notes,
+  });
+
+  factory ChecksheetHistoryItem.fromJson(Map<String, dynamic> json) {
+    return ChecksheetHistoryItem(
+      id: json['id'],
+      scheduleDate: json['schedule_date'],
+      completedDate: json['completed_date'],
+      assetName: json['asset_name'] ?? 'Unknown',
+      assetCode: json['asset_code'] ?? '-',
+      completedByName: json['completed_by_name'],
+      totalItems: json['total_items'] ?? 0,
+      goodCount: json['good_count'] ?? 0,
+      repairCount: json['repair_count'] ?? 0,
+      replaceCount: json['replace_count'] ?? 0,
+      notes: json['notes'],
+    );
+  }
+}
+
+class ChecksheetJobItem {
+  final String id;
+  final String jenisPekerjaan;
+  final String stdPrwtn;
+  final String alatBahan;
+  final String? status;
+  final String? notes;
+  final String? photo;
+
+  ChecksheetJobItem({
+    required this.id,
+    required this.jenisPekerjaan,
+    required this.stdPrwtn,
+    required this.alatBahan,
+    this.status,
+    this.notes,
+    this.photo,
+  });
+
+  factory ChecksheetJobItem.fromJson(Map<String, dynamic> json) {
+    return ChecksheetJobItem(
+      id: json['id'],
+      jenisPekerjaan: json['jenis_pekerjaan'] ?? '',
+      stdPrwtn: json['std_prwtn'] ?? '',
+      alatBahan: json['alat_bahan'] ?? '-',
+      status: json['status'],
+      notes: json['notes'],
+      photo: json['photo'],
+    );
   }
 }

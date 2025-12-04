@@ -6,12 +6,9 @@ class RouteHelper {
     return role != 'Teknisi';
   }
 
-  /// Cek apakah role adalah teknisi
+  /// Cek apakah role adalah teknisi atau kasie teknisi
   static bool isTeknisiRole(String? role) {
-    return role == 'Teknisi';
+    if (role == null) return false;
+    return role == 'Teknisi' || role == 'KASIE Teknisi';
   }
 }
-
-
-
-

@@ -206,4 +206,234 @@ class ChecksheetService {
       rethrow;
     }
   }
+
+  // Get checksheet history with filters
+  static Future<List<ChecksheetHistoryItem>> getChecksheetHistory({
+    String? assetId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      dynamic query = _client.from('cek_sheet_schedule').select('''
+            id,
+            tgl_jadwal,
+            tgl_selesai,
+            catatan,
+            assets_id,
+            completed_by,
+            asset:assets!assets_id (
+              nama_assets,
+              kode_assets
+            ),
+            karyawan:karyawan!completed_by (
+              full_name
+            )
+          ''');
+
+      // Only get completed checksheets
+      query = query.not('tgl_selesai', 'is', null);
+
+      if (assetId != null) {
+        query = query.eq('assets_id', assetId);
+      }
+
+      if (startDate != null) {
+        query = query.gte(
+          'tgl_selesai',
+          startDate.toIso8601String().split('T')[0],
+        );
+      }
+
+      if (endDate != null) {
+        query = query.lte(
+          'tgl_selesai',
+          endDate.toIso8601String().split('T')[0],
+        );
+      }
+
+      query = query.order('tgl_selesai', ascending: false);
+
+      final data = await query as List;
+
+      // Get statistics for each schedule
+      final historyItems = <ChecksheetHistoryItem>[];
+
+      for (final schedule in data) {
+        final scheduleId = schedule['id'];
+
+        // Get results statistics
+        final results =
+            await _client
+                    .from('cek_sheet_results')
+                    .select('status')
+                    .eq('schedule_id', scheduleId)
+                as List;
+
+        int goodCount = 0;
+        int repairCount = 0;
+        int replaceCount = 0;
+
+        for (final result in results) {
+          final status = result['status']?.toString().toLowerCase();
+          if (status == 'good') {
+            goodCount++;
+          } else if (status == 'repair') {
+            repairCount++;
+          } else if (status == 'replace') {
+            replaceCount++;
+          }
+        }
+
+        historyItems.add(
+          ChecksheetHistoryItem(
+            id: scheduleId,
+            scheduleDate: schedule['tgl_jadwal'],
+            completedDate: schedule['tgl_selesai'],
+            assetName: schedule['asset']?['nama_assets'] ?? 'Unknown',
+            assetCode: schedule['asset']?['kode_assets'] ?? '-',
+            completedByName: schedule['karyawan']?['full_name'],
+            totalItems: results.length,
+            goodCount: goodCount,
+            repairCount: repairCount,
+            replaceCount: replaceCount,
+            notes: schedule['catatan'],
+          ),
+        );
+      }
+
+      return historyItems;
+    } catch (e) {
+      print('Error fetching checksheet history: $e');
+      rethrow;
+    }
+  }
+
+  // Get history detail with all job items and results
+  static Future<Map<String, dynamic>> getHistoryDetail(
+    String scheduleId,
+  ) async {
+    try {
+      // Get schedule info with asset and completed by
+      final schedule =
+          await _client
+              .from('cek_sheet_schedule')
+              .select('''
+            id,
+            tgl_jadwal,
+            tgl_selesai,
+            catatan,
+            assets_id,
+            asset:assets!assets_id (
+              nama_assets,
+              kode_assets
+            ),
+            karyawan:karyawan!completed_by (
+              full_name
+            )
+          ''')
+              .eq('id', scheduleId)
+              .single();
+
+      // Get all results with template details
+      final results =
+          await _client
+                  .from('cek_sheet_results')
+                  .select('''
+            id,
+            template_id,
+            status,
+            notes,
+            photo,
+            template:cek_sheet_template!template_id (
+              jenis_pekerjaan,
+              std_prwtn,
+              alat_bahan
+            )
+          ''')
+                  .eq('schedule_id', scheduleId)
+              as List;
+
+      // Calculate statistics
+      int goodCount = 0;
+      int repairCount = 0;
+      int replaceCount = 0;
+
+      final jobItems =
+          results.map((result) {
+            final status = result['status']?.toString().toLowerCase();
+            if (status == 'good')
+              goodCount++;
+            else if (status == 'repair')
+              repairCount++;
+            else if (status == 'replace')
+              replaceCount++;
+
+            return ChecksheetJobItem(
+              id: result['template_id'],
+              jenisPekerjaan: result['template']?['jenis_pekerjaan'] ?? '',
+              stdPrwtn: result['template']?['std_prwtn'] ?? '',
+              alatBahan: result['template']?['alat_bahan'] ?? '-',
+              status: result['status'],
+              notes: result['notes'],
+              photo: result['photo'],
+            );
+          }).toList();
+
+      final historyInfo = ChecksheetHistoryItem(
+        id: schedule['id'],
+        scheduleDate: schedule['tgl_jadwal'],
+        completedDate: schedule['tgl_selesai'],
+        assetName: schedule['asset']?['nama_assets'] ?? 'Unknown',
+        assetCode: schedule['asset']?['kode_assets'] ?? '-',
+        completedByName: schedule['karyawan']?['full_name'],
+        totalItems: results.length,
+        goodCount: goodCount,
+        repairCount: repairCount,
+        replaceCount: replaceCount,
+        notes: schedule['catatan'],
+      );
+
+      return {'historyInfo': historyInfo, 'jobItems': jobItems};
+    } catch (e) {
+      print('Error fetching history detail: $e');
+      rethrow;
+    }
+  }
+
+  // Get job list summary for a schedule (for preview/expansion)
+  static Future<List<ChecksheetJobItem>> getJobListBySchedule(
+    String scheduleId,
+  ) async {
+    try {
+      final results =
+          await _client
+                  .from('cek_sheet_results')
+                  .select('''
+            template_id,
+            status,
+            template:cek_sheet_template!template_id (
+              jenis_pekerjaan,
+              std_prwtn,
+              alat_bahan
+            )
+          ''')
+                  .eq('schedule_id', scheduleId)
+              as List;
+
+      return results.map((result) {
+        return ChecksheetJobItem(
+          id: result['template_id'],
+          jenisPekerjaan: result['template']?['jenis_pekerjaan'] ?? '',
+          stdPrwtn: result['template']?['std_prwtn'] ?? '',
+          alatBahan: result['template']?['alat_bahan'] ?? '-',
+          status: result['status'],
+          notes: null,
+          photo: null,
+        );
+      }).toList();
+    } catch (e) {
+      print('Error fetching job list: $e');
+      rethrow;
+    }
+  }
 }

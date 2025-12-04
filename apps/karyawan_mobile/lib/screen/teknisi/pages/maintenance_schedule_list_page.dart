@@ -175,6 +175,8 @@ class _MaintenanceScheduleListPageState
                     children: [
                       Text(
                         asset['nama_assets'] ?? 'Unknown Asset',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -190,11 +192,15 @@ class _MaintenanceScheduleListPageState
                             color: Colors.grey[600],
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            'Terakhir MT: $lastMaintenanceDate',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                          Expanded(
+                            child: Text(
+                              'Terakhir MT: $lastMaintenanceDate',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],
@@ -208,11 +214,15 @@ class _MaintenanceScheduleListPageState
                             color: Colors.grey[600],
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            'MT Selanjutnya: $date',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                          Expanded(
+                            child: Text(
+                              'MT Selanjutnya: $date',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],

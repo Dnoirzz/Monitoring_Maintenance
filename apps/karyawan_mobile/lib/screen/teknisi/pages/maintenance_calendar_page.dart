@@ -118,6 +118,8 @@ class _MaintenanceCalendarPageState extends State<MaintenanceCalendarPage> {
                     children: [
                       Text(
                         widget.assetName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -293,6 +295,8 @@ class _MaintenanceCalendarPageState extends State<MaintenanceCalendarPage> {
                                 children: [
                                   Text(
                                     event.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,

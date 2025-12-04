@@ -273,7 +273,7 @@ class _AssetDetailPageState extends State<AssetDetailPage> {
             ),
           ),
           child: const Text(
-            'Buat Laporan Kerusakan',
+            'Buat Permintaan Maintenance',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,

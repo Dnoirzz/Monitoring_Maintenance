@@ -4,7 +4,7 @@ import 'package:shared/providers/auth_provider.dart';
 import 'package:shared/utils/name_helper.dart';
 import '../../widget/teknisi_sidebar.dart';
 import 'pages/scan_qr_page.dart';
-import 'pages/check_sheet_list_page.dart';
+import 'pages/ceksheet_menu/check_sheet_list_page.dart';
 import '../login_page.dart';
 
 class TeknisiDashboardPage extends ConsumerStatefulWidget {
