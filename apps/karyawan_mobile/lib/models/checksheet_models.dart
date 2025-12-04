@@ -231,3 +231,80 @@ class ChecksheetJobItem {
     );
   }
 }
+
+// Model for asset job details
+class AssetJobDetail {
+  final String templateId;
+  final String componentName;
+  final String jenisPekerjaan;
+  final String stdPrwtn;
+  final String alatBahan;
+  final String periode;
+  final int intervalPeriode;
+  final String? lastChecksheetDate;
+
+  AssetJobDetail({
+    required this.templateId,
+    required this.componentName,
+    required this.jenisPekerjaan,
+    required this.stdPrwtn,
+    required this.alatBahan,
+    required this.periode,
+    required this.intervalPeriode,
+    this.lastChecksheetDate,
+  });
+
+  factory AssetJobDetail.fromJson(Map<String, dynamic> json) {
+    return AssetJobDetail(
+      templateId: json['template_id'],
+      componentName: json['component_name'] ?? 'Unknown Component',
+      jenisPekerjaan: json['jenis_pekerjaan'] ?? '',
+      stdPrwtn: json['std_prwtn'] ?? '',
+      alatBahan: json['alat_bahan'] ?? '-',
+      periode: json['periode'] ?? '',
+      intervalPeriode: json['interval_periode'] ?? 0,
+      lastChecksheetDate: json['last_checksheet_date'],
+    );
+  }
+
+  // Get formatted interval string (e.g., "Per 1 Minggu", "Per 2 Hari")
+  String getIntervalString() {
+    if (intervalPeriode == 0) return '-';
+
+    String periodeText = periode;
+    switch (periode.toLowerCase()) {
+      case 'harian':
+        periodeText = 'Hari';
+        break;
+      case 'mingguan':
+        periodeText = 'Minggu';
+        break;
+      case 'bulanan':
+        periodeText = 'Bulan';
+        break;
+      case 'tahunan':
+        periodeText = 'Tahun';
+        break;
+    }
+
+    return 'Per $intervalPeriode $periodeText';
+  }
+}
+
+class AssetPendingSchedule {
+  final String scheduleId;
+  final String assetId;
+  final String assetName;
+  final String assetCode;
+  final String scheduleDate;
+  final int pendingItemsCount;
+
+  AssetPendingSchedule({
+    required this.scheduleId,
+    required this.assetId,
+    required this.assetName,
+    required this.assetCode,
+    required this.scheduleDate,
+    required this.pendingItemsCount,
+  });
+}

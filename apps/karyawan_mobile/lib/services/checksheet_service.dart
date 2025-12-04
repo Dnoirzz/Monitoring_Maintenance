@@ -436,4 +436,140 @@ class ChecksheetService {
       rethrow;
     }
   }
+
+  // Get all job templates for an asset with component information
+  static Future<List<AssetJobDetail>> getAssetJobTemplates(
+    String assetId,
+  ) async {
+    try {
+      // Get all templates for this asset via komponen_assets
+      final templates =
+          await _client
+                  .from('cek_sheet_template')
+                  .select('''
+            id,
+            jenis_pekerjaan,
+            std_prwtn,
+            alat_bahan,
+            periode,
+            interval_periode,
+            komponen:komponen_assets!komponen_assets_id (
+              nama_bagian,
+              assets_id
+            )
+          ''')
+                  .eq('komponen.assets_id', assetId)
+              as List;
+
+      // Get last checksheet dates for all templates
+      final jobDetails = <AssetJobDetail>[];
+
+      for (final template in templates) {
+        final templateId = template['id'];
+
+        // Get the last completed checksheet for this template
+        // Since cek_sheet_schedule now uses assets_id, we need to:
+        // 1. Find schedules for this asset that are completed
+        // 2. Find results for this template in those schedules
+        // 3. Get the most recent one
+
+        final lastResult =
+            await _client
+                    .from('cek_sheet_results')
+                    .select('''
+              *,
+              schedule:cek_sheet_schedule!schedule_id (
+                tgl_selesai,
+                assets_id
+              )
+            ''')
+                    .eq('template_id', templateId)
+                    .eq('schedule.assets_id', assetId)
+                    .not('schedule.tgl_selesai', 'is', null)
+                    .order('created_at', ascending: false)
+                    .limit(1)
+                as List;
+
+        String? lastDate;
+        if (lastResult.isNotEmpty) {
+          lastDate = lastResult[0]['schedule']?['tgl_selesai'];
+        }
+
+        jobDetails.add(
+          AssetJobDetail(
+            templateId: templateId,
+            componentName: template['komponen']?['nama_bagian'] ?? 'Unknown',
+            jenisPekerjaan: template['jenis_pekerjaan'] ?? '',
+            stdPrwtn: template['std_prwtn'] ?? '',
+            alatBahan: template['alat_bahan'] ?? '-',
+            periode: template['periode'] ?? '',
+            intervalPeriode: template['interval_periode'] ?? 0,
+            lastChecksheetDate: lastDate,
+          ),
+        );
+      }
+
+      return jobDetails;
+    } catch (e) {
+      print('Error fetching asset job templates: $e');
+      rethrow;
+    }
+  }
+
+  // Get pending checksheet schedules for today with item counts
+  static Future<List<AssetPendingSchedule>> getTodayPendingSchedules() async {
+    try {
+      final now = DateTime.now();
+      final today =
+          "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+      // Get schedules for today that are not completed
+      final schedules =
+          await _client
+                  .from('cek_sheet_schedule')
+                  .select('''
+            id,
+            tgl_jadwal,
+            assets_id,
+            asset:assets!assets_id (
+              nama_assets,
+              kode_assets
+            )
+          ''')
+                  .eq('tgl_jadwal', today)
+                  .isFilter('tgl_selesai', null)
+              as List;
+
+      final List<AssetPendingSchedule> pendingSchedules = [];
+
+      for (final schedule in schedules) {
+        final assetId = schedule['assets_id'];
+
+        // Count templates for this asset
+        // Note: This assumes all templates for the asset are included in the daily check
+        final templates =
+            await _client
+                    .from('cek_sheet_template')
+                    .select('id, komponen:komponen_assets!inner(assets_id)')
+                    .eq('komponen.assets_id', assetId)
+                as List;
+
+        pendingSchedules.add(
+          AssetPendingSchedule(
+            scheduleId: schedule['id'],
+            assetId: assetId,
+            assetName: schedule['asset']?['nama_assets'] ?? 'Unknown',
+            assetCode: schedule['asset']?['kode_assets'] ?? '-',
+            scheduleDate: schedule['tgl_jadwal'],
+            pendingItemsCount: templates.length,
+          ),
+        );
+      }
+
+      return pendingSchedules;
+    } catch (e) {
+      print('Error fetching today pending schedules: $e');
+      rethrow;
+    }
+  }
 }

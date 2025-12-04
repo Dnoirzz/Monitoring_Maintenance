@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared/repositories/asset_supabase_repository.dart';
-import 'check_sheet_list_tab_page.dart';
+import 'asset_job_detail_page.dart';
 
 /// Halaman untuk menampilkan daftar asset berdasarkan jenis
 /// Untuk keperluan checksheet
@@ -240,14 +240,15 @@ class _CekSheetAssetListPageState extends State<CekSheetAssetListPage> {
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: () {
-            // Navigate to checksheet list for this asset
+            // Navigate to asset job detail page
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder:
-                    (context) => CheckSheetListTabPage(
+                    (context) => AssetJobDetailPage(
                       assetId: asset['id'],
                       assetName: name,
+                      assetCode: code,
                     ),
               ),
             );
