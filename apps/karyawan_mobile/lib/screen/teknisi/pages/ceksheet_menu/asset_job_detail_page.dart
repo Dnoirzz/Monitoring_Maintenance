@@ -30,6 +30,28 @@ class _AssetJobDetailPageState extends State<AssetJobDetailPage> {
   bool _isLoading = true;
   String? _error;
 
+  // Get color for next schedule based on date
+  Color _getNextScheduleColor(String? nextDate) {
+    if (nextDate == null) return Colors.grey;
+
+    try {
+      final next = DateTime.parse(nextDate);
+      final today = DateTime.now();
+      final todayOnly = DateTime(today.year, today.month, today.day);
+      final nextOnly = DateTime(next.year, next.month, next.day);
+
+      if (nextOnly.isBefore(todayOnly)) {
+        return Colors.red; // Overdue
+      } else if (nextOnly.isAtSameMomentAs(todayOnly)) {
+        return Colors.orange; // Today
+      } else {
+        return Colors.blue; // Upcoming
+      }
+    } catch (e) {
+      return Colors.grey;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -263,15 +285,23 @@ class _AssetJobDetailPageState extends State<AssetJobDetailPage> {
                 const SizedBox(height: 12),
 
                 // Last Checksheet Date
-                // Last Checksheet Date
                 _buildInfoRow(
-                  icon: Icons.calendar_today,
+                  icon: Icons.history,
                   label: 'Terakhir Dilaksanakan',
                   value: job.lastChecksheetDate ?? 'Belum pernah dilakukan',
                   valueColor:
                       job.lastChecksheetDate != null
                           ? Colors.green
                           : Colors.orange,
+                ),
+                const SizedBox(height: 12),
+
+                // Next Schedule Date
+                _buildInfoRow(
+                  icon: Icons.event_available,
+                  label: 'Jadwal Selanjutnya',
+                  value: job.nextScheduleDate ?? 'Belum terjadwal',
+                  valueColor: _getNextScheduleColor(job.nextScheduleDate),
                 ),
               ],
             ),

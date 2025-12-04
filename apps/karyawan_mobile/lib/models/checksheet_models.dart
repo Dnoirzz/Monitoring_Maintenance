@@ -242,6 +242,7 @@ class AssetJobDetail {
   final String periode;
   final int intervalPeriode;
   final String? lastChecksheetDate;
+  final String? nextScheduleDate;
 
   AssetJobDetail({
     required this.templateId,
@@ -252,6 +253,7 @@ class AssetJobDetail {
     required this.periode,
     required this.intervalPeriode,
     this.lastChecksheetDate,
+    this.nextScheduleDate,
   });
 
   factory AssetJobDetail.fromJson(Map<String, dynamic> json) {
@@ -264,6 +266,7 @@ class AssetJobDetail {
       periode: json['periode'] ?? '',
       intervalPeriode: json['interval_periode'] ?? 0,
       lastChecksheetDate: json['last_checksheet_date'],
+      nextScheduleDate: json['next_schedule_date'],
     );
   }
 
@@ -288,6 +291,65 @@ class AssetJobDetail {
     }
 
     return 'Per $intervalPeriode $periodeText';
+  }
+
+  // Calculate next schedule date based on last checksheet and interval
+  static String? calculateNextSchedule(
+    String? lastDate,
+    String periode,
+    int interval,
+  ) {
+    print(
+      'calculateNextSchedule: lastDate=$lastDate, periode=$periode, interval=$interval',
+    );
+
+    if (lastDate == null) {
+      print('calculateNextSchedule: lastDate is null');
+      return null;
+    }
+
+    // Default interval to 1 if not set
+    final effectiveInterval = interval > 0 ? interval : 1;
+
+    try {
+      final last = DateTime.parse(lastDate);
+      DateTime next;
+
+      final periodeNormalized = periode.toLowerCase().trim();
+      print('calculateNextSchedule: periodeNormalized=$periodeNormalized');
+
+      if (periodeNormalized.contains('hari') ||
+          periodeNormalized == 'harian' ||
+          periodeNormalized == 'daily') {
+        next = last.add(Duration(days: effectiveInterval));
+      } else if (periodeNormalized.contains('minggu') ||
+          periodeNormalized == 'mingguan' ||
+          periodeNormalized == 'weekly') {
+        next = last.add(Duration(days: effectiveInterval * 7));
+      } else if (periodeNormalized.contains('bulan') ||
+          periodeNormalized == 'bulanan' ||
+          periodeNormalized == 'monthly') {
+        next = DateTime(last.year, last.month + effectiveInterval, last.day);
+      } else if (periodeNormalized.contains('tahun') ||
+          periodeNormalized == 'tahunan' ||
+          periodeNormalized == 'yearly') {
+        next = DateTime(last.year + effectiveInterval, last.month, last.day);
+      } else {
+        // Default to daily if periode format is unknown
+        print(
+          'calculateNextSchedule: Unknown periode format, defaulting to daily',
+        );
+        next = last.add(Duration(days: effectiveInterval));
+      }
+
+      final result =
+          "${next.year}-${next.month.toString().padLeft(2, '0')}-${next.day.toString().padLeft(2, '0')}";
+      print('calculateNextSchedule: result=$result');
+      return result;
+    } catch (e) {
+      print('calculateNextSchedule: Error parsing date: $e');
+      return null;
+    }
   }
 }
 

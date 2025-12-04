@@ -495,6 +495,30 @@ class ChecksheetService {
           lastDate = lastResult[0]['schedule']?['tgl_selesai'];
         }
 
+        // Calculate next schedule date based on last completed
+        String? nextDate = AssetJobDetail.calculateNextSchedule(
+          lastDate,
+          template['periode'] ?? '',
+          template['interval_periode'] ?? 0,
+        );
+
+        // If no calculated next date, check for pending schedules in database
+        if (nextDate == null) {
+          final pendingSchedule =
+              await _client
+                      .from('cek_sheet_schedule')
+                      .select('tgl_jadwal')
+                      .eq('assets_id', assetId)
+                      .isFilter('tgl_selesai', null)
+                      .order('tgl_jadwal', ascending: true)
+                      .limit(1)
+                  as List;
+
+          if (pendingSchedule.isNotEmpty) {
+            nextDate = pendingSchedule[0]['tgl_jadwal'];
+          }
+        }
+
         jobDetails.add(
           AssetJobDetail(
             templateId: templateId,
@@ -505,6 +529,7 @@ class ChecksheetService {
             periode: template['periode'] ?? '',
             intervalPeriode: template['interval_periode'] ?? 0,
             lastChecksheetDate: lastDate,
+            nextScheduleDate: nextDate,
           ),
         );
       }
